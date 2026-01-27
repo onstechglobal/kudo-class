@@ -9,11 +9,33 @@ class RoleModel
     protected string $table = 'tb_roles';
 
     /* ========= GET ALL ROLES ========= */
-    public function getAllRoles(){
-        return DB::table($this->table)
+    /* ========= GET ALL ROLES WITH PERMISSIONS ========= */
+    public function getAllRolesWithPermissions()
+    {
+        $roles = DB::table('tb_roles')
             ->orderBy('role_id', 'desc')
             ->get();
+
+        $roleIds = $roles->pluck('role_id');
+
+        $permissions = DB::table('tb_role_permissions as rp')
+            ->join('tb_permissions as p', 'p.permission_id', '=', 'rp.permission_id')
+            ->whereIn('rp.role_id', $roleIds)
+            ->select(
+                'rp.role_id',
+                'p.module',
+                'p.action'
+            )
+            ->get()
+            ->groupBy('role_id');
+
+        // attach permissions to role
+        return $roles->map(function ($role) use ($permissions) {
+            $role->permissions = $permissions[$role->role_id] ?? collect();
+            return $role;
+        });
     }
+
 
     /* ========= GET ROLE BY ID ========= */
     public function getRoleById(int $id){

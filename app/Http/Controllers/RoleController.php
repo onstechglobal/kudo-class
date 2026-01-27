@@ -18,7 +18,7 @@ class RoleController extends Controller
     public function index()
     {
         return response()->json(
-            $this->model->getAllRoles()
+            $this->model->getAllRolesWithPermissions()
         );
     }
 

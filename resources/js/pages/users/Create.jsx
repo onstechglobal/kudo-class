@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
-
 import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
@@ -36,12 +35,14 @@ export default function CreateUser() {
   const [schools, setSchools] = useState([]);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [autoGenerate, setAutoGenerate] = useState(true);
 
   const [form, setForm] = useState({
     role_id: "",
     status: "active",
 
     name: "",      // Teacher / Parent name
+    email: "",    
     username: "",
     password: generatePassword(),
 
@@ -50,6 +51,10 @@ export default function CreateUser() {
     board: "",
     phone: "",
     address: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
 
     // teacher / parent
     school_id: "",
@@ -77,22 +82,29 @@ export default function CreateUser() {
 
   /* ================= AUTO USERNAME ================= */
   useEffect(() => {
-    let username = "";
+  if (!autoGenerate) return;
 
-    if (form.role_id === "2" && form.school_name) {
-      username = `sch_${slugify(form.school_name)}`;
-    }
+  let username = "";
 
-    if (form.role_id === "3" && form.phone) {
-      username = `tr_${form.phone.replace(/\D/g, "")}`;
-    }
+  if (form.role_id === "2" && form.school_name) {
+    username = `sch_${slugify(form.school_name)}`;
+  }
 
-    if (form.role_id === "4" && form.phone) {
-      username = `par_${form.phone.replace(/\D/g, "")}`;
-    }
+  if (form.role_id === "3" && form.phone) {
+    username = `tr_${form.phone.replace(/\D/g, "")}`;
+  }
 
-    setForm(prev => ({ ...prev, username }));
-  }, [form.role_id, form.school_name, form.phone]);
+  if (form.role_id === "4" && form.phone) {
+    username = `par_${form.phone.replace(/\D/g, "")}`;
+  }
+
+  setForm(prev => ({
+    ...prev,
+    username,
+    password: autoGenerate ? generatePassword() : prev.password,
+  }));
+}, [form.role_id, form.school_name, form.phone, autoGenerate]);
+
 
   /* ================= FIELD UPDATE ================= */
   function updateField(name, value) {
@@ -106,6 +118,7 @@ export default function CreateUser() {
       role_id: val,
       status: "active",
       name: "",
+      email: "",
       username: "",
       password: generatePassword(),
 
@@ -113,6 +126,11 @@ export default function CreateUser() {
       board: "",
       phone: "",
       address: "",
+      city: "",
+      state: "",
+      country: "",
+      pincode: "",
+
       school_id: "",
       qualification: "",
     });
@@ -121,24 +139,50 @@ export default function CreateUser() {
 
   /* ================= VALIDATION ================= */
   function validate() {
-    const err = {};
+  const err = {};
 
-    if (!form.role_id) err.role_id = "Role is required";
-
-    if (form.role_id === "2") {
-      if (!form.school_name) err.school_name = "School name required";
-      if (!form.phone) err.phone = "Phone required";
-    }
-
-    if (form.role_id === "3" || form.role_id === "4") {
-      if (!form.school_id) err.school_id = "School required";
-      if (!form.phone) err.phone = "Phone required";
-      if (!form.name) err.name = "Name is required"; // ✅ Teacher/Parent Name validation
-    }
-
-    setErrors(err);
-    return Object.keys(err).length === 0;
+  if (!form.role_id) err.role_id = "Role is required";
+  
+  if(!form.username){
+    err.username = "Username is required";
+  }else if(form.username.length < 4){
+    err.username = "Username must be at least 4 characters";
   }
+
+  if(!form.password){
+    err.password = "Password is required";
+  }else if(form.password.length < 8) {
+    err.password = "Password must be at least 8 characters";
+  }
+
+  if (form.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      err.email = "Invalid email address";
+    }
+  }
+
+  if (form.role_id === "2") {
+    if (!form.school_name) err.school_name = "School name required";
+    if (!form.board) err.board = "Board required";
+    if (!form.phone) err.phone = "Phone required";
+     if (!form.address) err.address = "Address required";
+    if (!form.city) err.city = "City is required";
+    if (!form.state) err.state = "State is required";
+    if (!form.country) err.country = "Country is required";
+    if (!form.pincode) err.pincode = "Pincode is required";
+  }
+
+  if (form.role_id === "3" || form.role_id === "4") {
+    if (!form.school_id) err.school_id = "School required";
+    if (!form.phone) err.phone = "Phone required";
+    if (!form.name) err.name = "Name is required";
+  }
+
+  setErrors(err);
+  return Object.keys(err).length === 0;
+}
+
 
   /* ================= SUBMIT ================= */
   async function submit(e) {
@@ -167,7 +211,7 @@ export default function CreateUser() {
   /* ================= UI ================= */
   return (
     <AdminLayout>
-      <div className="bg-[#F8FAFC] min-h-screen">
+      <div className="bg-[#F8FAFC] min-h-screen p-6">
 
         {/* HEADER */}
         <div className="bg-white border-b border-gray-200 px-8 py-5">
@@ -180,7 +224,7 @@ export default function CreateUser() {
                 </Link>
                 <div>
                   <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    Users / Add User
+                    <Link to="/admin/users">Users</Link> / <Link>Add</Link>
                   </nav>
                   <h1 className="text-2xl font-black text-gray-900 tracking-tight">
                     Add User
@@ -198,24 +242,21 @@ export default function CreateUser() {
           </div>
 
         {/* CONTENT */}
-        <div className="p-8 max-w-[1600px] mx-auto">
-          <div className="grid grid-cols-12 gap-8">
+        <div className="sm:p-8 max-w-[1600px] mx-auto">
+          <div className="sm:grid sm:grid-cols-12 sm:gap-8">
 
             {/* LEFT CARD */}
-            <div className="col-span-12 lg:col-span-3">
+            <div className="py-8 sm:py-0 col-span-12 md:col-span-4 xl:col-span-3">
               <div className="bg-white rounded-3xl p-6 border border-gray-200 text-center">
                 <AvatarLetter text={form.username} />
-                <h3 className="mt-4 font-black">
-                  {form.username || "New User"}
-                </h3>
-                <p className="text-xs text-gray-400 uppercase">
+                <p className="mt-4 text-s text-gray-400 uppercase">
                   {roles.find(r => r.value === form.role_id)?.label || "Role"}
                 </p>
               </div>
             </div>
 
             {/* RIGHT FORM */}
-            <div className="col-span-12 lg:col-span-9 bg-white rounded-[2.5rem] p-10 border border-gray-200">
+            <div className="col-span-12 md:col-span-8 xl:col-span-9 bg-white rounded-[2.5rem] p-10 border border-gray-200">
 
               {/* BASIC DETAILS */}
               <h2 className="font-bold text-lg mb-6">Basic Details</h2>
@@ -239,6 +280,14 @@ export default function CreateUser() {
                   ]}
                 />
 
+                {/* ✅ EMAIL FIELD (OPTIONAL) */}
+                <Input
+                  label="Email (optional)"
+                  value={form.email}
+                  onChange={e => updateField("email", e.target.value)}
+                  error={errors.email}
+                />
+
                 {form.role_id === "2" && (
                   <>
                     <Input label="School Name" value={form.school_name}
@@ -247,10 +296,52 @@ export default function CreateUser() {
                     <Input label="Phone" value={form.phone}
                       onChange={e => updateField("phone", e.target.value)}
                       error={errors.phone} />
-                    <Input label="Board" value={form.board}
-                      onChange={e => updateField("board", e.target.value)} />
+                    
+                    <CustomSelect
+                      label="Board"
+                      value={form.board}
+                      onChange={val => updateField("board", val)}
+                      error={errors.board}
+                      options={[
+                        { value: "CBSC", label: "CBSC" },
+                        { value: "ICSE", label: "ICSE" },
+                        { value: "State", label: "State Board" },
+                      ]}
+                    />
+
                     <Input label="Address" value={form.address}
-                      onChange={e => updateField("address", e.target.value)} />
+                      onChange={e => updateField("address", e.target.value)} 
+                       error={errors.address}
+                    />
+
+                    {/* ✅ NEW SCHOOL-ONLY FIELDS */}
+                    <Input
+                      label="Country"
+                      value={form.country}
+                      onChange={e => updateField("country", e.target.value)}
+                      error={errors.country}
+                    />
+
+                    <Input
+                      label="State"
+                      value={form.state}
+                      onChange={e => updateField("state", e.target.value)}
+                      error={errors.state}
+                    />
+
+                    <Input
+                      label="City"
+                      value={form.city}
+                      onChange={e => updateField("city", e.target.value)}
+                      error={errors.city}
+                    />
+
+                    <Input
+                      label="Pincode"
+                      value={form.pincode}
+                      onChange={e => updateField("pincode", e.target.value)}
+                      error={errors.pincode}
+                    />
                   </>
                 )}
 
@@ -277,9 +368,9 @@ export default function CreateUser() {
                         />
                         <Input label="Qualification"
                           value={form.qualification}
-                          onChange={e =>
-                            updateField("qualification", e.target.value)
-                          } />
+                          onChange={e => updateField("qualification", e.target.value)}
+                          error={errors.qualification}
+                        />
                       </>
                     )}
 
@@ -304,24 +395,44 @@ export default function CreateUser() {
               {/* CONFIGURATION */}
               <h2 className="font-bold text-lg mt-10 mb-6">Configuration</h2>
 
+              <div className="md:col-span-2 flex items-center gap-3 mb-4">
+                <input
+                  type="checkbox"
+                  checked={autoGenerate}
+                  onChange={(e) => setAutoGenerate(e.target.checked)}
+                  className="w-5 h-5 rounded"
+                />
+                <span className="font-semibold text-sm">
+                  Auto-generate username & password
+                </span>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-8">
-                <Input label="Username" value={form.username} readOnly />
+                <Input
+                  label="Username"
+                  value={form.username}
+                  onChange={e => updateField("username", e.target.value)}
+                  error={errors.username}
+                />
 
                 <div className="relative">
                   <Input
                     label="Password"
                     type={showPassword ? "text" : "password"}
                     value={form.password}
-                    readOnly
+                    onChange={e => updateField("password", e.target.value)}
+                    error={errors.password}
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-10 text-gray-500"
                   >
-                    {showPassword ? <EyeOff /> : <Eye />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+
               </div>
 
             </div>

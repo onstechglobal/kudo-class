@@ -1,308 +1,197 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { School, Calendar, MapPin, Phone, Save, Camera, ArrowLeft, Mail, Clock, ShieldCheck, Loader2 } from 'lucide-react';
-import AdminLayout from '../../Layouts/AdminLayout';
-import InputField from '../../components/school/InputField';
-import SelectField from '../../components/school/SelectField';
+import { CalendarDays, Save, ArrowLeft, Clock, Loader2, School } from 'lucide-react';
 
+import AdminLayout from '../../layouts/AdminLayout';
+import Input from '../../components/form/Input';
+import CustomSelect from '../../components/form/CustomSelect';
+import { Api_url } from '../../helpers/api';
 
-const EditSchool = () => {
-  const { id } = useParams(); // Grabs the '3' from /edit-school-data/3
-  const [activeTab, setActiveTab] = useState('general');
+const EditAcademicYear = () => {
+  const navigate = useNavigate();
+  const { id: scrambledId } = useParams();
+
   const [loading, setLoading] = useState(false);
+  const [loading1, setLoading1] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [schools, setSchools] = useState([]);
 
   const [formData, setFormData] = useState({
-    school_name: '',
-    email: '',
-    phone: '',
-    alternate_phone: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    country: 'India',
-    pincode: '',
-    logo_url: '',
-    timezone: 'IST (UTC+5:30)',
-    academic_start_month: 4,
+    school_id: '',
+    year_name: '',
+    start_date: '',
+    end_date: '',
     status: 'active'
   });
 
-  // --- FETCH EXISTING DATA ---
-  useEffect(() => {
-    const fetchSchool = async () => {
-      try {
-        const response = await axios.get(`http://127.0.0.1:8000/get-school/${id}`);
-        if (response.data) {
-          setFormData(response.data);
-          // If a logo exists, set the preview to the full Laravel storage URL
-          if (response.data.logo_url) {
-            setPreviewUrl(`http://127.0.0.1:8000/storage/${response.data.logo_url}`);
-          }
-        }
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setFetching(false);
+  const statusOptions = [
+    { label: 'Active', value: 'active' },
+    { label: 'Inactive', value: 'inactive' }
+  ];
+
+  const unscrambleId = (scrambled) => {
+    try {
+      const decoded = atob(scrambled);
+      const match = decoded.match(/ay_(.*)_z2/);
+      if (match && match[1]) {
+        return parseInt(match[1], 16);
       }
-    };
-    fetchSchool();
-  }, [id]);
-
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Show new file preview
+    } catch (e) {
+      console.error("Failed to unscramble ID", e);
+      return null;
     }
   };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setFetching(true);
+      try {
+        const schoolRes = await axios.get(`${Api_url.name}school_data?all=1`);
+        const schoolOptions = schoolRes.data.data.map(school => ({
+          label: school.school_name,
+          value: school.school_id
+        }));
+        setSchools(schoolOptions);
+
+        const realId = unscrambleId(scrambledId);
+        if (realId) {
+          const res = await axios.get(`${Api_url.name}get-academic-year/${realId}`);
+          const yearData = res.data.data;
+          setFormData({
+            school_id: yearData.school_id,
+            year_name: yearData.year_name,
+            start_date: yearData.start_date,
+            end_date: yearData.end_date,
+            status: yearData.is_active == 1 ? 'active' : 'inactive'
+          });
+        }
+      } catch (error) {
+        console.error("Load Error:", error);
+      } finally {
+        // Short delay for smooth transition
+        setTimeout(() => setFetching(false), 100);
+      }
+    };
+    loadData();
+  }, [scrambledId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    // 1. You MUST use FormData for files
-    const dataToSend = new FormData();
-
-    // 2. Add this line so Laravel knows it is an UPDATE
-    dataToSend.append('_method', 'PUT');
-
-    // 3. Append your text fields
-    Object.keys(formData).forEach((key) => {
-      // Skip logo_url if it's just the old string from the DB
-      if (key !== 'logo_url' && formData[key] !== null) {
-        dataToSend.append(key, formData[key]);
-      }
-    });
-
-    // 4. Append the actual file if one exists
-    if (selectedFile) {
-      dataToSend.append('school_logo', selectedFile);
-    }
+    setLoading1(true);
+    const realId = unscrambleId(scrambledId);
 
     try {
-      const { data: csrf } = await axios.get('http://127.0.0.1:8000/csrf-token');
-
-      // 5. Use POST here (the _method 'PUT' inside the data handles the rest)
-      const response = await axios.post(`http://127.0.0.1:8000/update-school/${id}`, dataToSend, {
-        headers: {
-          'X-CSRF-TOKEN': csrf.token,
-          'Content-Type': 'multipart/form-data'
-        },
+      const { data: tokenData } = await axios.get(`${Api_url.name}csrf-token`, { withCredentials: true });
+      const response = await axios.post(`${Api_url.name}update-academic-year/${realId}`, formData, {
+        headers: { 'X-CSRF-TOKEN': tokenData.token },
         withCredentials: true
       });
-
-      if (response.data.status === 200) {
-        alert("School Updated Successfully!");
-        // Optional: updated the preview with the new server path returned by your controller
-      }
+      if (response.data.status === 200) navigate('/academic-year');
     } catch (error) {
-      console.error("Error details:", error.response?.data);
-      alert("Update failed. Check console for details.");
+      if (error.response?.data?.errors) setErrors(error.response.data.errors);
     } finally {
-      setLoading(false);
+      setLoading1(false);
     }
   };
 
-
-  const tabs = [
-    { id: 'general', label: 'General Information', icon: <School size={18} /> },
-    { id: 'config', label: 'Configuration', icon: <ShieldCheck size={18} /> },
-  ];
+  // We combine fetching and loading to show the same preloader style
+  const isGlobalLoading = fetching || loading;
+  const isGlobalLoading1 = loading1;
 
   return (
     <AdminLayout>
-      <div className="bg-[#F8FAFC] min-h-screen relative">
+      <div className="bg-[#F8FAFC] min-h-screen font-sans p-6">
         <form onSubmit={handleSubmit}>
-          {/* --- HEADER --- */}
-          <div className="bg-white border-b border-gray-200 px-8 py-5">
+
+          {/* --- FIXED HEADER --- */}
+          <div className="bg-white border-b border-gray-200 px-8 py-5 sticky top-0 z-30">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Link to="/schools">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+                <Link to="/academic-year">
+                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
                     <ArrowLeft size={20} />
                   </button>
                 </Link>
                 <div>
                   <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    Administration / School / New
+                    <Link to="/academic-year" className="cursor-pointer hover:text-blue-800 transition-colors"> Academic Years </Link>
+                    <span className="text-gray-400 mx-2">/</span>
+                    <button className="cursor-pointer uppercase font-bold">EDIT</button>
                   </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Edit: {formData.school_name}
-                  </h1>
+                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">Edit Academic Year</h1>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-70"
-                >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                  Save School Record
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={isGlobalLoading}
+                className="flex items-center gap-2 bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold shadow-lg active:scale-95 disabled:opacity-70 cursor-pointer"
+              >
+                {isGlobalLoading1 ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                Update Academic Year
+              </button>
             </div>
           </div>
 
+          {/* --- LOWER CONTENT AREA --- */}
+          <div className="relative min-h-[calc(100vh-100px)]">
 
-          {/* --- IN-DIV PRELOADER --- */}
-          {loading && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[2px] transition-all">
-              <div className="flex flex-col items-center gap-3 bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-100 border-t-blue-600"></div>
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                  Please Wait...
-                </p>
-              </div>
-            </div>
-          )}
-
-
-
-          <div className="p-8 max-w-[1600px] mx-auto">
-            {/* --- TAB NAVIGATION --- */}
-            <div className="flex items-center gap-2 mb-8 bg-white p-1.5 rounded-2xl border border-gray-200 w-fit shadow-sm">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                    : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-12 gap-8">
-              {/* --- LEFT SIDE: LOGO --- */}
-              <div className="col-span-12 lg:col-span-3">
-                <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center">
-                  <div className="relative w-40 h-40 mx-auto mb-6 group">
-                    <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                      {previewUrl ? (
-                        <img src={previewUrl} className="w-full h-full object-cover" alt="Logo" />
-                      ) : (
-                        <School size={48} className="text-gray-200" />
-                      )}
-                    </div>
-                    <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl shadow-lg border-4 border-white cursor-pointer hover:bg-blue-700">
-                      <Camera size={20} />
-                      <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                    </label>
-                  </div>
-                  <h3 className="text-lg font-black text-gray-900">School Logo</h3>
+            {/* FIXED PRELOADER: Visible even while scrolling, below the header */}
+            {isGlobalLoading && (
+              <div className="fixed top-[97px] left-0 right-0 bottom-0 z-50 flex flex-col items-center justify-center bg-[#F8FAFC]/90 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-4 -mt-32">
+                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#faae1c]"></div>
+                  <p className="text-sm font-bold text-gray-500 uppercase tracking-widest animate-pulse">
+                    Please Wait...
+                  </p>
                 </div>
               </div>
+            )}
 
-              {/* --- RIGHT SIDE: FORM FIELDS --- */}
-              <div className="col-span-12 lg:col-span-9">
-                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm min-h-[500px]">
-
-                  {activeTab === 'general' && (
-                    <div className="space-y-10 animate-in fade-in duration-500">
-                      <section>
-                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                          <School className="text-blue-600" size={24} /> Basic Details
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <InputField label="School Name" name="school_name" value={formData.school_name} onChange={handleChange} placeholder="" />
-                          {/*<InputField label="School Code" name="school_code" value={formData.school_code} onChange={handleChange} placeholder="" /> */}
-                          <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} icon={<Mail size={16} />} />
-                          <InputField label="Phone" name="phone" value={formData.phone} onChange={handleChange} icon={<Phone size={16} />} />
-                          <InputField label="Alt. Phone" name="alternate_phone" value={formData.alternate_phone} onChange={handleChange} />
-                        </div>
-                      </section>
-
-                      <section>
-                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                          <MapPin className="text-blue-600" size={24} /> Address Information
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="md:col-span-2">
-                            <InputField label="Address Line 1" name="address_line1" value={formData.address_line1} onChange={handleChange} />
-                          </div>
-                          <div className="md:col-span-2">
-                            <InputField label="Address Line 2" name="address_line2" value={formData.address_line2} onChange={handleChange} />
-                          </div>
-                          <InputField label="City" name="city" value={formData.city} onChange={handleChange} />
-                          <InputField label="State" name="state" value={formData.state} onChange={handleChange} />
-                          <div className="grid grid-cols-2 gap-4">
-                            <InputField label="Country" name="country" value={formData.country} onChange={handleChange} />
-                            <InputField label="Pincode" name="pincode" value={formData.pincode} onChange={handleChange} />
-                          </div>
-                        </div>
-                      </section>
+            <div className="p-0 sm:p-8 max-w-[1600px] mx-auto">
+              <div className="sm:grid sm:grid-cols-12 sm:gap-8">
+                <div className="py-8 sm:py-0 col-span-12 lg:col-span-3">
+                  <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center sticky top-28">
+                    <div className="w-32 h-32 mx-auto mb-6 bg-blue-50 rounded-3xl flex items-center justify-center">
+                      <CalendarDays size={48} className="text-blue-600" />
                     </div>
-                  )}
+                    <h3 className="text-lg font-black text-gray-900 mb-2">Modify Session</h3>
+                    <p className="text-sm text-gray-500">Update the dates or name for this specific school cycle.</p>
+                  </div>
+                </div>
 
-                  {activeTab === 'config' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Academic Start Month
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                            <Calendar size={16} />
-                          </div>
-                          <select
-                            name="academic_start_month"
-                            value={formData.academic_start_month}
-                            onChange={handleChange}
-                            className="w-full pl-12 px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold text-gray-800 focus:bg-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
-                          >
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                          </select>
-                        </div>
+                <div className="col-span-12 lg:col-span-9">
+                  <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
+                    <section>
+                      <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                        <School className="text-blue-600" size={24} /> Basic Information
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <CustomSelect label="Select School" options={schools} value={formData.school_id} onChange={(val) => handleSelectChange('school_id', val)} error={errors.school_id} />
+                        <CustomSelect label="Status" options={statusOptions} value={formData.status} onChange={(val) => handleSelectChange('status', val)} />
+                        <Input label="Academic Year Name" name="year_name" value={formData.year_name} onChange={handleChange} error={errors.year_name} />
                       </div>
-
-
-                      <SelectField
-                        label="Timezone"
-                        name="timezone"
-                        value={formData.timezone}
-                        onChange={handleChange}
-                        options={['IST (UTC+5:30)', 'GMT (UTC+0)', 'EST (UTC-5)']}
-                        icon={<Clock size={16} />}
-                      />
-                      <SelectField
-                        label="Status"
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        options={['active', 'inactive']}
-                      />
-                    </div>
-                  )}
+                    </section>
+                    <section className="pt-6 border-t border-gray-100">
+                      <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                        <Clock className="text-blue-600" size={24} /> Session Duration
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Input type="date" label="Start Date" name="start_date" value={formData.start_date} onChange={handleChange} error={errors.start_date} className="cursor-pointer" />
+                        <Input type="date" label="End Date" name="end_date" value={formData.end_date} onChange={handleChange} error={errors.end_date} className="cursor-pointer" />
+                      </div>
+                    </section>
+                  </div>
                 </div>
               </div>
             </div>
@@ -313,5 +202,4 @@ const EditSchool = () => {
   );
 };
 
-
-export default EditSchool;
+export default EditAcademicYear;

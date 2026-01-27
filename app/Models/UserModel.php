@@ -122,8 +122,10 @@ class UserModel
             'board'         => $data['board'] ?? null,
             'phone'         => $data['phone'] ?? null,
             'address_line1' => $data['address'] ?? null,
-            'address_line2' => $data['address2'] ?? null,
             'city'          => $data['city'] ?? null,
+            'state'         => $data['state'] ?? null,
+            'country'       => $data['country'] ?? null,
+            'pincode'       => $data['pincode'] ?? null,
             'status'        => $data['status'],
             'created_at'    => now(),
         ]);
@@ -221,7 +223,6 @@ class UserModel
                                 ? Hash::make($data['password'])
                                 : DB::raw('password'),
                 'status'   => $data['status'],
-                'updated_at' => now(),
             ]);
 
             $user = DB::table($this->table)->where('user_id', $userId)->first();
@@ -233,6 +234,7 @@ class UserModel
                     'address_line1' => $data['address'] ?? null,
                     'phone'       => $data['phone'] ?? null,
                     'status'      => $data['status'],
+                    'updated_at' => now(),
                 ]);
             }
 
@@ -240,12 +242,14 @@ class UserModel
                 DB::table('tb_teachers')->where('user_id', $userId)->update([
                     'qualification' => $data['qualification'] ?? null,
                     'mobile'        => $data['phone'] ?? null,
+                    'updated_at' => now(),
                 ]);
             }
 
             if ($user->role_id == 4) {
                 DB::table('tb_parents')->where('user_id', $userId)->update([
                     'mobile' => $data['phone'] ?? null,
+                    'updated_at' => now(),
                 ]);
             }
 

@@ -3,6 +3,7 @@ export default function AvatarLetter({
   size = 40, // px
   rounded = "full", // full | 3xl
   className = "",
+  bgColor = "#FAAE1C"
 }) {
   const letter = text?.trim()?.charAt(0)?.toUpperCase() || "U";
 
@@ -18,7 +19,7 @@ export default function AvatarLetter({
       style={{
         width: size,
         height: size,
-        backgroundColor: "#FAAE1C", // ✅ STATIC COLOR
+        backgroundColor: bgColor, // ✅ STATIC COLOR
         fontSize: size * 0.5,
         fontWeight:400
       }}

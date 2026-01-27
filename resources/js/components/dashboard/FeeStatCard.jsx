@@ -4,8 +4,8 @@ function FeeStatCard({ icon, title, value, bg }) {
             <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${bg}`}>
                 {icon}
             </div>
-            <p className="text-xl font-semibold text-gray-700">{title}</p>
-            <p className="text-3xl font-medium text-gray-700">{value}</p>
+            <p className="text-lg md:text-xl font-semibold text-gray-700">{title}</p>
+            <p className="text-2xl md:text-3xl font-medium text-gray-700">{value}</p>
         </div>
     );
 }

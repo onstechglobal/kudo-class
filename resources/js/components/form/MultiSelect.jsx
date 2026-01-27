@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, X } from "lucide-react";
 
-export default function MultiSelect({ label, options = [], value = [], onChange }) {
+export default function MultiSelect({
+  label,
+  options = [],
+  value = [],
+  onChange,
+  placeholder = "Select options",
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef();
 
-  /* Close dropdown on outside click */
+  /* Close on outside click */
   useEffect(() => {
     function handleClickOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) {
@@ -13,7 +19,8 @@ export default function MultiSelect({ label, options = [], value = [], onChange 
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   function toggleOption(option) {
@@ -29,57 +36,79 @@ export default function MultiSelect({ label, options = [], value = [], onChange 
   );
 
   return (
-    <div className="space-y-2" ref={ref}>
-      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-        {label}
-      </label>
+    <div className="w-full relative" ref={ref}>
+      {label && (
+        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+          {label}
+        </label>
+      )}
 
-      {/* INPUT */}
-      <div
+      {/* TRIGGER (same pattern as CustomSelect) */}
+      <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="
-          min-h-[56px] flex flex-wrap items-center gap-2
-          px-4 py-2 bg-gray-50 rounded-2xl
-          border border-gray-300 cursor-pointer
-          focus-within:ring-4 focus-within:ring-blue-50
-        "
+        className={`
+          w-full min-h-[56px]
+          flex items-center justify-between
+          px-5 py-4 rounded-xl text-sm transition
+          ${
+            open
+              ? "bg-white border border-blue-500 ring-2 ring-blue-100"
+              : "bg-gray-50 border border-transparent hover:bg-gray-100"
+          }
+        `}
       >
-        {value.length === 0 && (
-          <span className="text-gray-400 text-sm font-semibold">
-            Select permissions
-          </span>
-        )}
+        <div className="flex flex-wrap gap-2 max-w-[90%]">
+          {value.length === 0 && (
+            <span className="text-gray-400 font-medium">
+              {placeholder}
+            </span>
+          )}
 
-        {value.map(v => (
-          <span key={`selected-${v.permission_id}`}
-            className="flex items-center gap-1 bg-blue-100 text-blue-700
-                       px-3 py-1 rounded-full text-xs font-bold"
-          >
-            {v.module}
-            <X
-              size={12}
-              className="cursor-pointer"
-              onClick={e => {
-                e.stopPropagation();
-                toggleOption(v);
-              }}
-            />
-          </span>
-        ))}
+          {value.map(v => (
+            <span
+              key={v.permission_id}
+              className="flex items-center gap-1
+                bg-blue-100 text-blue-700
+                px-3 py-1 rounded-full text-xs font-bold"
+              onClick={e => e.stopPropagation()}
+            >
+              {v.module}
+              <X
+                size={12}
+                className="cursor-pointer"
+                onClick={e => {
+                  e.stopPropagation();
+                  toggleOption(v);
+                }}
+              />
+            </span>
+          ))}
+        </div>
 
         <ChevronDown
           size={16}
-          className={`ml-auto text-gray-500 transition ${open ? "rotate-180" : ""}`}
+          className={`transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
         />
-      </div>
+      </button>
 
       {/* DROPDOWN */}
       {open && filteredOptions.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-auto">
+        <div
+          className="
+            absolute z-50 w-full mt-2
+            bg-white border border-gray-200
+            rounded-xl shadow-lg
+            max-h-48 overflow-auto
+          "
+        >
           {filteredOptions.map(opt => (
-             <div key={`option-${opt.permission_id}`}
+            <div
+              key={opt.permission_id}
               onClick={() => toggleOption(opt)}
-              className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+              className="px-4 py-2 text-sm cursor-pointer hover:bg-blue-50"
             >
               {opt.module}
             </div>

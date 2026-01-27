@@ -43,7 +43,7 @@ export default function Dashboard() {
                     title="KPI Summary"
                     icon={<ShieldAlert className="text-blue-600" />}
                 >
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <MiniCard
                             icon={<Users size={32} className="text-blue-500" />}
                             colorClass="bg-blue-50"
@@ -94,7 +94,7 @@ export default function Dashboard() {
                     title="Today at a Glance"
                     icon={<CalendarDays className="text-blue-500" />}
                 >
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <MiniCard
                             icon={<CalendarDays size={32} className="text-blue-500" />}
                             colorClass="bg-blue-50"
@@ -128,7 +128,7 @@ export default function Dashboard() {
 
                 {/* QUICK ACTIONS — FULL WIDTH */}
                 <Section title="Quick Actions">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <QuickActionCard
                             icon={<Users size={28} />}
                             title="Add Student"
@@ -177,7 +177,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* STATS */}
-                        <div className="grid grid-cols-2 grid-rows-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 grid-rows-2 gap-4">
                             <StatCard
                                 title="Today"
                                 value="92%"

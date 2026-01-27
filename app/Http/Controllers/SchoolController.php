@@ -13,24 +13,7 @@ class SchoolController extends Controller
         $this->model = new SchoolModel();
     }
 
-    /* ====== GET ALL USERS ========= */
-	public function index1(Request $request) {
-		$schools = $this->model->getSchoolList(5);
-		$stats = $this->model->getSchoolStats();
 
-		return response()->json([
-			'data' => $schools->items(),
-			'total' => $stats['total'],
-			'active' => $stats['active'],
-			'inactive' => $stats['inactive'],
-			'current_page' => $schools->currentPage(),
-			'last_page' => $schools->lastPage(),
-			'from' => $schools->firstItem(),
-			'to' => $schools->lastItem(),
-		]);
-	}
-	
-	
 	/* ====== GET ALL SCHOOLS WITH FILTERS ========= */
 	public function index(Request $request) {
 		// Pass the entire request or specific filters to the model
@@ -40,7 +23,7 @@ class SchoolController extends Controller
 			'status' => $request->query('status'),
 		];
 
-		$schools = $this->model->getSchoolList(5, $filters);
+		$schools = $this->model->getSchoolList(8, $filters);
 		$stats = $this->model->getSchoolStats();
 
 		return response()->json([
@@ -61,12 +44,22 @@ class SchoolController extends Controller
 		$data = $request->all();
 
 		if ($request->hasFile('school_logo')) {
-			$path = $request->file('school_logo')->store('logos', 'public');
-			$data['logo_url'] = $path; 
+			$file = $request->file('school_logo');
+
+			$logoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+			$destination = public_path('uploads/schools');
+			if (!file_exists($destination)) {
+				mkdir($destination, 0777, true);
+			}
+
+			$file->move($destination, $logoName);
 		}
 
-		$result = $this->model->insertSchool($data);
-
+		$result = $this->model->insertSchool($data,$logoName);
+		
+		$user_data = $this->model->insertUserData($data,$result);
+		
 		return response()->json([
 			'status' => $result ? 200 : 500,
 			'message' => $result ? 'School Added Successfully' : 'Failed to add school'
@@ -93,11 +86,23 @@ class SchoolController extends Controller
 
 		// 1. Handle New File Upload
 		if ($request->hasFile('school_logo')) {
-			$path = $request->file('school_logo')->store('logos', 'public');
-			$data['logo_url'] = $path;
+			$file = $request->file('school_logo');
+
+			$logoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+			$destination = public_path('uploads/schools');
+			if (!file_exists($destination)) {
+				mkdir($destination, 0777, true);
+			}
+
+			$file->move($destination, $logoName);
+		}
+		
+		if(!isset($logoName) || empty($logoName)){
+			$logoName = '';
 		}
 
-		$result = $this->model->updateSchool($id, $data);
+		$result = $this->model->updateSchool($id, $data, $logoName);
 
 		return response()->json([
 			'status' => 200,

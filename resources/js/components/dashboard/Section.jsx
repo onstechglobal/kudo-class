@@ -1,9 +1,8 @@
-
 function Section({ title, icon, rightAction, children }) {
     return (
         <div className="bg-white rounded-2xl shadow-sm">
-            <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-3 text-2xl font-semibold text-gray-800">
+            <div className="sm:flex items-center justify-between px-6 py-4">
+                <div className="flex items-center gap-3 text-xl sm:text-2xl font-semibold text-gray-800">
                     {icon}
                     {title}
                 </div>
@@ -15,5 +14,5 @@ function Section({ title, icon, rightAction, children }) {
         </div>
     );
 }
-
+ 
 export default Section;

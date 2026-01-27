@@ -29,7 +29,7 @@ export default function Login() {
         <div className="min-h-screen w-full flex">
 
             {/* LEFT SIDE – LOGO + TEXT */}
-            <div className="hidden lg:flex w-[54%] items-center justify-center
+            <div className="hidden lg:flex w-1/2 items-center justify-center
                 bg-gradient-to-br from-blue-900 to-blue-500 relative px-10">
 
                 {/* DECORATIVE CIRCLE */}
@@ -42,7 +42,7 @@ export default function Login() {
                         className="h-28 mb-6"
                     />
 
-                    <h1 className="text-[3.5rem] font-extrabold tracking-tight mb-4">
+                    <h1 className="text-5xl font-extrabold tracking-tight mb-4">
                         KudoClass
                     </h1>
 
@@ -55,7 +55,7 @@ export default function Login() {
 
 
             {/* RIGHT SIDE – LOGIN + LOGO ONLY */}
-            <div className="w-full lg:w-[46%] flex flex-col items-center justify-center bg-white px-6">
+            <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-white px-6">
 
                 {/* TOP LOGO */}
 
@@ -63,7 +63,7 @@ export default function Login() {
 
                     {/* HEADER */}
                     <div className="mb-8">
-                        <h2 className="text-[2rem] font-bold text-slate-800 mb-2">
+                        <h2 className="text-4xl font-bold text-slate-800 mb-2">
                             Welcome Back
                         </h2>
                         <p className="text-slate-500 text-sm">

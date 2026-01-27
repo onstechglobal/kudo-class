@@ -7,12 +7,13 @@ use Illuminate\Support\Facades\Hash;
 class TeacherModel{
     protected string $table = 'tb_teachers';
 
-    public function create(array $data, int $userId){
+    public function create(array $data, int $userId)
+    {
         return DB::table($this->table)->insert([
             'school_id'     => $data['school_id'] ?? 1,
             'user_id'       => $userId,
             'employee_code' => $data['employee_code'] ?? null,
-            'first_name'    => $data['first_name'] ?? $data['name'],
+            'first_name'    => $data['first_name'],
             'last_name'     => $data['last_name'] ?? null,
             'email'         => $data['email'],
             'mobile'        => $data['mobile'] ?? null,
@@ -20,6 +21,7 @@ class TeacherModel{
             'joining_date'  => $data['joining_date'] ?? null,
             'qualification' => $data['qualification'] ?? null,
             'experience_years' => $data['experience_years'] ?? null,
+            'photo_url'     => $data['photo'] ?? null,   // Image path relative to uploads folder
             'status'        => $data['status'] ?? 'active',
             'created_at'    => now(),
         ]);
@@ -36,11 +38,11 @@ class TeacherModel{
                 't.designation',
                 't.joining_date',
                 't.status',
-                'u.email',
+                't.email',
+                't.photo_url',
                 'u.mobile'
             )
             ->orderBy('t.teacher_id', 'desc')
             ->get();
     }
 }
-

@@ -1,123 +1,161 @@
-import React, { useState } from 'react';
-import axios from 'axios'; // Import Axios
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
-  School, Globe, Calendar, MapPin,
-  Phone, Save, Camera, ArrowLeft,
-  CheckCircle2, Mail, Clock, ShieldCheck, Loader2
+  CalendarDays,
+  Save,
+  ArrowLeft,
+  Clock,
+  Loader2,
+  School,
+  Info
 } from 'lucide-react';
-import AdminLayout from '../../Layouts/AdminLayout';
-import { Link } from 'react-router-dom';
-import InputField from '../../components/school/InputField';
-import SelectField from '../../components/school/SelectField';
 
+import AdminLayout from '../../layouts/AdminLayout';
+import Input from '../../components/form/Input';
+import CustomSelect from '../../components/form/CustomSelect';
+import { Api_url } from '../../helpers/api';
 
-const AddSchool = () => {
-  const [activeTab, setActiveTab] = useState('general');
+const AddAcademicYear = () => {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [schools, setSchools] = useState([]);
 
-  // 1. Initialize State with your Database Field names
   const [formData, setFormData] = useState({
-    school_code: '',
-    school_name: '',
-    email: '',
-    phone: '',
-    alternate_phone: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    country: 'India',
-    pincode: '',
-    logo_url: '',
-    timezone: 'IST (UTC+5:30)',
-    academic_start_month: 4,
+    school_id: '',
+    year_name: '',
+    start_date: '',
+    end_date: '',
     status: 'active'
   });
 
-  // Handle file selection
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file)); // Show a preview in the UI
+  /* ---------------- OPTIONS ---------------- */
+  const statusOptions = [
+    { label: 'Active', value: 'active' },
+    { label: 'Inactive', value: 'inactive' }
+  ];
+
+  /* ---------------- FETCH SCHOOLS ---------------- */
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const response = await axios.get(`${Api_url.name}school_data?all=1`);
+        const schoolOptions = response.data.data.map(school => ({
+          label: school.school_name,
+          value: school.school_id
+        }));
+        setSchools(schoolOptions);
+      } catch (error) {
+        console.error("Error fetching schools:", error);
+      }
+    };
+    fetchSchools();
+  }, []);
+
+
+  /* ---------------- VALIDATION ---------------- */
+  const validateForm = () => {
+    let newErrors = {};
+
+    if (!formData.school_id) newErrors.school_id = 'School is required';
+    if (!formData.year_name.trim())
+      newErrors.year_name = 'Academic year name is required';
+    if (!formData.start_date)
+      newErrors.start_date = 'Start date is required';
+    if (!formData.end_date)
+      newErrors.end_date = 'End date is required';
+
+    if (
+      formData.start_date &&
+      formData.end_date &&
+      new Date(formData.start_date) >= new Date(formData.end_date)
+    ) {
+      newErrors.end_date = 'End date must be after start date';
     }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  // 2. Handle Input Changes
+  /* ---------------- HANDLERS ---------------- */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
+  const handleSelectChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
+  };
 
+  /* ---------------- SUBMIT ---------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setLoading(true);
-
-    // IMPORTANT: Create FormData because JSON cannot carry files
-    const dataToSend = new FormData();
-
-    // Append all text fields
-    Object.keys(formData).forEach(key => {
-      dataToSend.append(key, formData[key]);
-    });
-
-    // Append the file
-    if (selectedFile) {
-      dataToSend.append('school_logo', selectedFile);
-    }
-
     try {
-      const { data: tokenData } = await axios.get('http://127.0.0.1:8000/csrf-token');
+      const { data: tokenData } = await axios.get(
+        `${Api_url.name}csrf-token`,
+        { withCredentials: true }
+      );
 
-      const response = await axios.post('http://127.0.0.1:8000/schooldata', dataToSend, {
-        headers: {
-          'X-CSRF-TOKEN': tokenData.token,
-          'Content-Type': 'multipart/form-data', // Tell the server to expect a file
-        },
-        withCredentials: true
-      });
+      const response = await axios.post(
+        `${Api_url.name}save-academic-year`,
+        formData,
+        {
+          headers: { 'X-CSRF-TOKEN': tokenData.token },
+          withCredentials: true
+        }
+      );
 
       if (response.data.status === 200) {
-        alert("School Registered Successfully!");
+        navigate('/academic-year');
       }
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-
-  const tabs = [
-    { id: 'general', label: 'General Information', icon: <School size={18} /> },
-    { id: 'config', label: 'Configuration', icon: <ShieldCheck size={18} /> },
-  ];
-
   return (
     <AdminLayout>
-      <div className="bg-[#F8FAFC] min-h-screen">
+      <div className="bg-[#F8FAFC] min-h-screen p-6">
         <form onSubmit={handleSubmit}>
-          {/* --- HEADER --- */}
+          {/* ---------- HEADER ---------- */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Link to="/schools">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400">
+                <Link to="/academic-year">
+                  <button
+                    type="button"
+                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
+                  >
                     <ArrowLeft size={20} />
                   </button>
                 </Link>
+
                 <div>
                   <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    Administration / School / New
+                    <Link
+                      to="/academic-year"
+                      className="hover:text-blue-800 transition-colors"
+                    >
+                      Academic Years
+                    </Link>
+                    <span className="text-gray-400 mx-2">/</span>
+                    <button className="cursor-pointer uppercase font-bold">
+                      New
+                    </button>
                   </nav>
                   <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    {formData.school_name || "New School Registration"}
+                    New Academic Year
                   </h1>
                 </div>
               </div>
@@ -126,146 +164,108 @@ const AddSchool = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-70"
+                  className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                  Save School Record
+                  {loading ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <Save size={18} />
+                  )}
+                  Save Academic Year
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="p-8 max-w-[1600px] mx-auto">
-            {/* --- TAB NAVIGATION --- */}
-            <div className="flex items-center gap-2 mb-8 bg-white p-1.5 rounded-2xl border border-gray-200 w-fit shadow-sm">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                    : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-12 gap-8">
-              {/* --- LEFT SIDE: LOGO --- */}
-              <div className="col-span-12 lg:col-span-3">
-                <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center">
-                  <div className="relative w-40 h-40 mx-auto mb-6 group">
-                    <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                      {previewUrl ? (
-                        <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
-                      ) : (
-                        <School size={48} className="text-gray-200" />
-                      )}
-                    </div>
-                    <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl shadow-lg border-4 border-white cursor-pointer hover:bg-blue-700 transition-colors">
-                      <Camera size={20} />
-                      <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                    </label>
+          {/* ---------- BODY ---------- */}
+          <div className="p-0 sm:p-8 max-w-[1600px] mx-auto">
+            <div className="sm:grid sm:grid-cols-12 sm:gap-8">
+              {/* LEFT CARD */}
+              <div className="py-8 sm:py-0 col-span-12 lg:col-span-3">
+                <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center sticky top-8">
+                  <div className="w-32 h-32 mx-auto mb-6 bg-blue-50 rounded-3xl flex items-center justify-center">
+                    <CalendarDays size={48} className="text-blue-600" />
                   </div>
-                  <h3 className="text-lg font-black text-gray-900">School Logo</h3>
+                  <h3 className="text-lg font-black text-gray-900 mb-2">
+                    Academic Session
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Define the academic cycle used for attendance, exams and
+                    fees.
+                  </p>
+
                 </div>
               </div>
 
-              {/* --- RIGHT SIDE: FORM FIELDS --- */}
+              {/* RIGHT FORM */}
               <div className="col-span-12 lg:col-span-9">
-                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm min-h-[500px]">
+                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
+                  {/* BASIC */}
+                  <section>
+                    <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                      <School className="text-blue-600" size={24} />
+                      Basic Information
+                    </h2>
 
-                  {activeTab === 'general' && (
-                    <div className="space-y-10 animate-in fade-in duration-500">
-                      <section>
-                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                          <School className="text-blue-600" size={24} /> Basic Details
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <InputField label="School Name" name="school_name" value={formData.school_name} onChange={handleChange} placeholder="" />
-                          {/*<InputField label="School Code" name="school_code" value={formData.school_code} onChange={handleChange} placeholder="" /> */}
-                          <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} icon={<Mail size={16} />} />
-                          <InputField label="Phone" name="phone" value={formData.phone} onChange={handleChange} icon={<Phone size={16} />} />
-                          <InputField label="Alt. Phone" name="alternate_phone" value={formData.alternate_phone} onChange={handleChange} />
-                        </div>
-                      </section>
-
-                      <section>
-                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                          <MapPin className="text-blue-600" size={24} /> Address Information
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="md:col-span-2">
-                            <InputField label="Address Line 1" name="address_line1" value={formData.address_line1} onChange={handleChange} />
-                          </div>
-                          <div className="md:col-span-2">
-                            <InputField label="Address Line 2" name="address_line2" value={formData.address_line2} onChange={handleChange} />
-                          </div>
-                          <InputField label="City" name="city" value={formData.city} onChange={handleChange} />
-                          <InputField label="State" name="state" value={formData.state} onChange={handleChange} />
-                          <div className="grid grid-cols-2 gap-4">
-                            <InputField label="Country" name="country" value={formData.country} onChange={handleChange} />
-                            <InputField label="Pincode" name="pincode" value={formData.pincode} onChange={handleChange} />
-                          </div>
-                        </div>
-                      </section>
-                    </div>
-                  )}
-
-                  {activeTab === 'config' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Academic Start Month
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                            <Calendar size={16} />
-                          </div>
-                          <select
-                            name="academic_start_month"
-                            value={formData.academic_start_month}
-                            onChange={handleChange}
-                            className="w-full pl-12 px-5 py-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold text-gray-800 focus:bg-white focus:border-blue-500 outline-none appearance-none cursor-pointer"
-                          >
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                          </select>
-                        </div>
-                      </div>
-
-
-                      <SelectField
-                        label="Timezone"
-                        name="timezone"
-                        value={formData.timezone}
-                        onChange={handleChange}
-                        options={['IST (UTC+5:30)', 'GMT (UTC+0)', 'EST (UTC-5)']}
-                        icon={<Clock size={16} />}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <CustomSelect
+                        label="Select School"
+                        options={schools}
+                        value={formData.school_id}
+                        onChange={(val) => handleSelectChange('school_id', val)}
+                        error={errors.school_id}
+                        placeholder="Choose a school..."
                       />
-                      <SelectField
+
+                      <CustomSelect
                         label="Status"
-                        name="status"
+                        options={statusOptions}
                         value={formData.status}
+                        onChange={(val) =>
+                          handleSelectChange('status', val)
+                        }
+                      />
+
+                      <Input
+                        label="Academic Year Name"
+                        name="year_name"
+                        placeholder="2025-26"
+                        value={formData.year_name}
                         onChange={handleChange}
-                        options={['Active', 'Inactive']}
+                        error={errors.year_name}
                       />
                     </div>
-                  )}
+                  </section>
+
+                  {/* DATES */}
+                  <section className="pt-6 border-t border-gray-100">
+                    <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                      <Clock className="text-blue-600" size={24} />
+                      Session Duration
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input
+                        type="date"
+                        label="Start Date"
+                        name="start_date"
+                        value={formData.start_date}
+                        onChange={handleChange}
+                        error={errors.start_date}
+                        className="cursor-pointer"
+                      />
+
+                      <Input
+                        type="date"
+                        label="End Date"
+                        name="end_date"
+                        value={formData.end_date}
+                        onChange={handleChange}
+                        error={errors.end_date}
+                        className="cursor-pointer"
+                      />
+                    </div>
+                  </section>
                 </div>
               </div>
             </div>
@@ -276,5 +276,4 @@ const AddSchool = () => {
   );
 };
 
-
-export default AddSchool;
+export default AddAcademicYear;

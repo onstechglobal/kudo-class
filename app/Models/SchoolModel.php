@@ -19,16 +19,17 @@ class SchoolModel
             ->get();
     }
 	
-	public function getSchoolList1($perpage=5){
+	public function getSchoolList1($perpage=8){
 		return DB::table($this->table)->paginate($perpage);
 	}
 	
-	public function getSchoolList($perpage = 5, $filters = []) {
+	public function getSchoolList($perpage = 8, $filters = []) {
 		return DB::table($this->table)
 			->when(!empty($filters['search']), function ($query) use ($filters) {
 				$query->where(function($q) use ($filters) {
 					$q->where('school_name', 'like', '%' . $filters['search'] . '%')
 					  ->orWhere('school_code', 'like', '%' . $filters['search'] . '%')
+					  ->orWhere('school_id', 'like', '%' . $filters['search'] . '%')
 					  ->orWhere('email', 'like', '%' . $filters['search'] . '%');
 				});
 			})
@@ -59,16 +60,17 @@ class SchoolModel
 	
 	
 	/* ====== INSERT NEW SCHOOL ========= */
-	public function insertSchool($data) {
+	public function insertSchool($data,$logoName) {
 		// 1. Generate School Code
 		$prefix = 'SCH-';
-		$cleanName = str_replace(' ', '', $data['school_name']);
-		$namePart = strtoupper(substr($cleanName, 0, 2));
-		$phonePart = substr($data['phone'], -3);
-		$generatedCode = $prefix.$namePart.$phonePart ;
+		/* Generate random code */
+		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+		$code = substr(str_shuffle($chars), 0, 4);
+		
+		$generatedCode = $prefix.$code ;
 		
 		// 2. Insert with data casting
-		return DB::table($this->table)->insert([
+		return DB::table($this->table)->insertGetId([
 			'school_id'            => null,
 			'school_code'          => $generatedCode,
 			'school_name'          => $data['school_name'],
@@ -82,11 +84,31 @@ class SchoolModel
 			'country'              => $data['country'] ?? 'India',
 			'pincode'              => $data['pincode'],
 			'board'                => $data['board'],
-			'logo_url'             => $data['logo_url'] ?? null,
+			'logo_url'             => $logoName ?? null,
 			'academic_start_month' => (int)$data['academic_start_month'],
 			'status'               => $data['status'],
 			'created_at'           => now(),
 			'updated_at'           => now(),
+		]);
+	}
+	
+	/* ====== INSERT NEW SCHOOL As User ========= */
+	public function insertUserData($data,$school_id) {
+		
+		$school_name = preg_replace('/[^a-z0-9]/', '', strtolower($data['school_name']));
+		$user_name = 'sch_'.$school_name;
+		
+		// 2. Insert with data casting
+		return DB::table('tb_users')->insert([
+			'username'   => $user_name,
+            'school_id'  => $school_id,
+            'name'       => $data['school_name'] ?? null,
+            'email'      => $data['email'] ?? null,
+            'mobile'     => $data['phone'] ?? null,
+            'password'   => Hash::make($data['password']),
+            'role_id'    => "2", // numeric ID
+            'status'     => $data['status'],
+            'created_at' => now(),
 		]);
 	}
 	
@@ -95,7 +117,7 @@ class SchoolModel
 		return DB::table($this->table)->where('school_id', $id)->first();
 	}
 
-	public function updateSchool($id, $data) {
+	public function updateSchool($id, $data, $logoName) {
 		$updateData = [
 			'school_name'           => $data['school_name'],
 			'email'                 => $data['email'],
@@ -114,7 +136,9 @@ class SchoolModel
 		];
 
 		// Only update logo_url if a new one was uploaded
-		if (isset($data['logo_url'])) {
+		if (isset($logoName) && !empty($logoName)) {
+			$updateData['logo_url'] = $logoName;
+		}if (isset($data['logo_url'])) {
 			$updateData['logo_url'] = $data['logo_url'];
 		}
 

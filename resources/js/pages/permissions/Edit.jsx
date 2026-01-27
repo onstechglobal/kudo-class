@@ -4,7 +4,8 @@ import axios from "axios";
 import AdminLayout from "@/layouts/AdminLayout";
 import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import Input from "@/components/form/Input";
-import Select from "@/components/form/Select";
+import CustomButton from "@/components/form/CustomButton";
+import CustomSelect from "@/components/form/CustomSelect";
 
 export default function EditPermissions() {
     const { id } = useParams();
@@ -46,43 +47,43 @@ export default function EditPermissions() {
 
     return (
         <AdminLayout>
-            <div className="bg-[#F8FAFC] min-h-screen">
+            <div className="bg-[#F8FAFC] min-h-screen p-6">
 
                 {/* ===== SUB HEADER ===== */}
                 <div className="bg-white border-b border-gray-200 px-8 py-5">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Link
-                                to="/admin/permissions"
-                                className="p-2 hover:bg-gray-100 rounded-full
-                                text-gray-400 hover:text-gray-900"
-                            >
-                                <ArrowLeft size={20} />
-                            </Link>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-                            <div>
-                                <div className="text-xs font-black text-blue-600 uppercase tracking-widest">
-                                    Access Control / Permissions / Edit
-                                </div>
-                                <h1 className="text-2xl font-black text-gray-900">
-                                    Edit Permission
-                                </h1>
-                            </div>
+                        <div className="flex items-center gap-4">
+                        <Link to="/admin/permissions">
+                            <button
+                            type="button"
+                            className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
+                            >
+                            <ArrowLeft size={20} />
+                            </button>
+                        </Link>
+
+                        <div>
+                            <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
+                            <Link to="/admin/permissions">Permissions</Link> / <Link>Edit</Link>
+                            </nav>
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                            Edit Permissions
+                            </h1>
+                        </div>
                         </div>
 
-                        <button
-                            onClick={submit}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700
-                            text-white px-7 py-2.5 rounded-xl font-bold text-sm
-                            shadow-lg shadow-blue-100 active:scale-95"
-                        >
-                            <Save size={18} /> Update Permission
-                        </button>
+                        <CustomButton
+                        text="Update Permission"
+                        Icon={Save}
+                        onClick={submit}
+                        className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+                        />
                     </div>
                 </div>
 
                 {/* ===== CONTENT ===== */}
-                <div className="p-8 max-w-4xl mx-auto">
+                <div className="py-8 sm:p-8 max-w-6xl mx-auto">
                     <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm">
 
                         <div className="flex items-center justify-between mb-8">
@@ -90,16 +91,18 @@ export default function EditPermissions() {
                                 Permission Details
                             </h2>
 
+                            {/*
                             <span className="flex items-center gap-2 text-indigo-600
                             text-xs font-black uppercase bg-indigo-50
                             px-3 py-1 rounded-full">
                                 <ShieldCheck size={14} /> System Permission
                             </span>
+                            */}
                         </div>
 
                         <form
                             onSubmit={submit}
-                            className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8 max-w-2xl"
+                            className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8"
                         >
                             <Input
                                 label="Permission Name"
@@ -108,15 +111,18 @@ export default function EditPermissions() {
                                 onChange={handleChange}
                             />
 
-                            <Select
+                            <CustomSelect
                                 label="Status"
-                                name="status"
                                 value={form.status}
-                                onChange={handleChange}
-                            >
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </Select>
+                                onChange={(val) =>
+                                    setForm(prev => ({ ...prev, status: val }))
+                                }
+                                options={[
+                                    { value: "active", label: "Active" },
+                                    { value: "inactive", label: "Inactive" },
+                                ]}
+                            />
+
                         </form>
                     </div>
                 </div>
