@@ -58,6 +58,8 @@ import Attendance from "./pages/attendance/Attendance";
 import FeeStucture from "./pages/fee-structure/Index";
 import CreateFee from "./pages/fee-structure/CreateFee";
 
+import EditFee from "./pages/fee-structure/EditFee";
+
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("token");
@@ -127,8 +129,8 @@ export default function App() {
 
                 <Route path="/fee-structure" element={<FeeStucture />} />
                 <Route path="/fee-structure/create" element={<CreateFee />} />
+                <Route path="/fee-structure/edit/:id" element={<EditFee />} />
 
-                
 
             </Routes>
         </BrowserRouter>

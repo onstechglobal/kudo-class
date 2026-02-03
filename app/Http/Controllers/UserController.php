@@ -29,24 +29,67 @@ class UserController extends Controller
             'status'   => 'required|in:active,inactive',
         ]);
 
-        $this->model->createUserByRole($request->all());
+        // $this->model->createUserByRole($request->all());
 
-        return response()->json(['message' => 'User created successfully']);
+        // return response()->json(['message' => 'User created successfully']);
+		try {
+			$this->model->createUserByRole($request->all());
+			return response()->json(['message' => 'User created successfully']);
+		} catch (\Exception $e) {
+			return response()->json(['error' => $e->getMessage()], 500);
+		}
+		
     }
 
     /* ======== SHOW USER =========== */
-    public function show($id){
+    public function show($id){		
         $user = $this->model->getUserById($id);
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['status' => false, 'message' => 'User not found'], 404);
         }
-        return response()->json($user);
+        return response()->json(['status' => true, 'user'=>$user]);
+		// return response()->json($user);
     }
 
     /* =========== UPDATE USER ========== */
     public function update(Request $request, $id){
-        $this->model->updateUserByRole($id, $request->all());
-        return response()->json(['message' => 'User updated successfully']);
+		$data = $request->all();
+		
+		if ($request->hasFile('profile')) {
+			$file = $request->file('profile');
+			$photoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+			if ($request->role === 'Teacher') {
+				$folder = 'teachers';
+			} elseif ($request->role === 'Parent') {
+				$folder = 'parent';
+			} else {
+				$folder = 'school';
+			}
+
+			$destination = public_path('uploads/' . $folder);
+			if (!file_exists($destination)) {
+				mkdir($destination, 0777, true);
+			}
+
+			$file->move($destination, $photoName);
+
+			// add filename to data sent to model
+			$data['profile'] = '/'.$folder.'/'.$photoName;
+		}
+		
+		// $this->model->updateUserByRole($id, $data);
+	
+        // return response()->json(['status' => true, 'message' => 'User updated successfully']);
+		
+		
+		try {
+			$this->model->updateUserByRole($id, $data);
+			return response()->json(['status' => true, 'message' => 'User updated successfully']);
+		} catch (\Exception $e) {
+			return response()->json(['error' => $e->getMessage()], 500);
+		}
+		
     }
 
     /* ======== DELETE USER ========== */
@@ -54,4 +97,10 @@ class UserController extends Controller
         $this->model->deleteUser($id);
         return response()->json(['message' => 'Deleted']);
     }
+	
+	/* ======== UPDATE PASSWORD ========== */
+	public function passwordUpdate(Request $request, $id){
+		$user = $this->model->Updatepassword($request->all(), $id);
+		return response()->json($user);	
+	}
 }

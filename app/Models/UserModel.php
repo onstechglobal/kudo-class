@@ -6,8 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-class UserModel
-{
+class UserModel{
     protected string $table = 'tb_users';
 
     /* =======================
@@ -36,15 +35,18 @@ class UserModel
        GET USER BY ID
     ======================= */
     public function getUserById(int $id){
-        $user = DB::table('tb_users as u')
+		
+        $user = DB::table('tb_users as u') 
             ->leftJoin('tb_schools as s', 's.school_id', '=', 'u.school_id')
             ->leftJoin('tb_teachers as t', 't.user_id', '=', 'u.user_id')
             ->leftJoin('tb_parents as p', 'p.user_id', '=', 'u.user_id')
+            ->leftJoin('tb_roles as r', 'r.role_id', '=', 'u.role_id')
             ->select(
                 'u.user_id',
-                'u.name',
                 'u.role_id',
                 'u.username',
+                'u.name',
+                'u.mobile',
                 'u.email',
                 'u.status',
 
@@ -54,44 +56,29 @@ class UserModel
                 's.school_name',
                 's.board',
                 's.phone as school_phone',
-                's.address_line1 as school_address',
-                's.country as school_country',
-                's.state as school_state',
-                's.city as school_city',
-                's.pincode as school_pincode',
+                's.address_line1 as address',
 
                 // teacher
                 't.qualification',
                 't.mobile as teacher_mobile',
-                't.address as teacher_address',
-                't.country as teacher_country',
-                't.state as teacher_state',
-                't.city as teacher_city',
-                't.pincode as teacher_pincode',
-
+                't.photo_url',
+				
+				// role
+				'r.role_name',
+			
                 // parent
                 'p.mobile as parent_mobile'
             )
             ->where('u.user_id', $id)
             ->first();
-
+			
         if (!$user) return null;
 
         // normalize phone
         if ($user->role_id == 2) {
             $user->phone = $user->school_phone;
-            $user->address = $user->school_address;
-            $user->country = $user->school_country;
-            $user->state = $user->school_state;
-            $user->city = $user->school_city;
-            $user->pincode = $user->school_pincode;
         } elseif ($user->role_id == 3) {
             $user->phone = $user->teacher_mobile;
-            $user->address = $user->teacher_address;
-            $user->country = $user->teacher_country;
-            $user->state = $user->teacher_state;
-            $user->city = $user->teacher_city;
-            $user->pincode = $user->teacher_pincode;
         } elseif ($user->role_id == 4) {
             $user->phone = $user->parent_mobile;
         }
@@ -158,7 +145,7 @@ class UserModel
             'password'   => Hash::make($data['password']),
             'role_id'    => $data['role_id'], // numeric ID
             'mobile'     => $data['phone'] ?? null,
-            'school_id'  => '123',//$schoolId,
+            'school_id'  => $schoolId,
             'status'     => $data['status'],
             'created_at' => now(),
         ]);
@@ -173,7 +160,7 @@ class UserModel
             'email'      => $data['email'] ?? null,
             'password'   => Hash::make($data['password']),
             'role_id'    => $data['role_id'],
-            'school_id'  => 12, //$data['school_id'],
+            'school_id'  => $data['school_id'],
             'mobile'     => $data['phone'] ?? null,
             'status'     => $data['status'],
             'created_at' => now(),
@@ -184,7 +171,7 @@ class UserModel
             'user_id'       => $userId,
             'first_name'    => $data['name'] ?? null,
             'email'         => $data['email'] ?? null,
-            'school_id'     => 12, //$data['school_id'],
+            'school_id'     => $data['school_id'],
             'qualification' => $data['qualification'] ?? null,
             'mobile'         => $data['phone'] ?? null,
             'created_at'    => now(),
@@ -235,7 +222,14 @@ class UserModel
     /* ================= UPDATE USER (ACS FLOW) ================= */
     public function updateUserByRole(int $userId, array $data){
         DB::beginTransaction();
-
+		if(!empty($data['profile'])){
+			$profile = $data['profile'];
+		}else if(!empty($data['userprofile'])){
+			$profile = $data['userprofile'];
+		}else{
+			$profile = '';
+		}
+		
         try {
             DB::table($this->table)->where('user_id', $userId)->update([
                 'username' => $data['username'],
@@ -263,6 +257,7 @@ class UserModel
                 DB::table('tb_teachers')->where('user_id', $userId)->update([
                     'qualification' => $data['qualification'] ?? null,
                     'mobile'        => $data['phone'] ?? null,
+					'photo_url' => $profile,
                     'updated_at' => now(),
                 ]);
             }
@@ -282,10 +277,51 @@ class UserModel
     }
 
     /* ===== DELETE USER ===== */
-    public function deleteUser(int $id)
-    {
+    public function deleteUser(int $id) {
         return DB::table($this->table)
             ->where('user_id', $id)
             ->delete();
     }
+	/* ===== DELETE USER ===== */
+    public function updatePassword($data, $id){
+		$user = DB::table($this->table)
+			->where('user_id', $id)
+			->first();
+
+		// User not found
+		if (!$user) {
+			return [
+				'status' => false,
+				'message' => 'User not found'
+			];
+		}
+
+		// Old password does not match
+		if (!Hash::check($data['oldpassword'], $user->password)) {
+			return [
+				'status' => false,
+				'message' => 'Old password is incorrect'
+			];
+		}
+		
+		if($data['npassword'] === $data['cpassword']){
+			// Update new password
+			DB::table($this->table)
+				->where('user_id', $id)
+				->update([
+					'password' => Hash::make($data['npassword'])
+				]);
+
+			return [
+				'status' => true,
+				'message' => 'Password updated successfully'
+			];
+		}else{
+			return [
+				'status' => true,
+				'message' => 'Confirm  password is incorrect'
+			];
+		}
+	}
+
 }

@@ -6,6 +6,7 @@ import {
 import { Calendar, ArrowLeft, ArrowRight, CheckCircle, XCircle } from "lucide-react";
 import AdminLayout from "../../layouts/AdminLayout";
 import CustomSelect from "../../components/form/CustomSelect";
+import StaticButtons from "../../components/common/StaticButtons";
 import DatePicker from "react-datepicker";
 import { Api_url } from "../../helpers/api";
 
@@ -526,11 +527,6 @@ export default function Attendance() {
   /* ---------------- DISCARD CHANGES ---------------- */
   const discardChanges = () => {
     fetchAttendance(startDate);
-    setMessage({
-      type: 'info',
-      text: 'Changes discarded'
-    });
-    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
   const yTicks = Array.from({ length: 11 }, (_, i) => i * 20);
@@ -604,7 +600,7 @@ export default function Attendance() {
                       onChange={handleDateChange}
                       maxDate={endDate}
                       dateFormat="MMM dd, yyyy"
-                      className="outline-none focus:ring-2 focus:ring-blue-500 p-0 border-0 opacity-0"
+                      className="outline-none focus:ring-2 focus:ring-blue-500 w-0 h-0 p-0 border-0 opacity-0"
                     />
                   </div>
                 </div>
@@ -918,22 +914,7 @@ export default function Attendance() {
 
         {/* ACTION BAR */}
         {view === "list" && (
-          <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white lg:ml-[260px] p-4 sm:px-10 flex justify-end items-center">
-            <div className="flex gap-3">
-              <button 
-                onClick={discardChanges}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm hover:shadow-xl cursor-pointer border border-gray-200"
-              >
-                Discard
-              </button>
-              <button
-                onClick={saveAttendance}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm cursor-pointer bg-[#faae1c] text-white hover:bg-[#faae1c]/90"
-              >
-                Save Attendance
-              </button>
-            </div>
-          </div>
+          <StaticButtons discardText="Discard" discardClick={discardChanges} saveText="Save Attendance" saveClick={saveAttendance} />
         )}
 
       </div>

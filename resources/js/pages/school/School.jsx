@@ -302,7 +302,7 @@ const SchoolListing = () => {
                     {/* --- FILTERS SECTION --- */}
                     <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 ">
                         <div className="sm:flex gap-3">
-                            <div className="mb-4 sm:mb-0 flex-1 min-w-[250px] sm:min-w-[300px] w-full">
+                            <div className="mb-4 sm:mb-0 flex-1 min-w-[200px] sm:min-w-[300px] w-full">
                                 <div className="relative group">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                     <input
@@ -329,7 +329,6 @@ const SchoolListing = () => {
                                 <Filter size={16} /> <span className="font-medium">More Filters</span>
                             </button>
                         </div>
-
                     </div>
 
                     {/* ---- Success Messages ---- */}
@@ -456,20 +455,20 @@ const SchoolListing = () => {
                                     <button
                                         disabled={currentPage === 1}
                                         onClick={() => setCurrentPage(prev => prev - 1)}
-                                        className={`px-3 py-1 border rounded text-sm ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
+                                        className={`px-2 sm:px-3 py-1 border rounded text-xs sm:text-sm ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
                                     >
                                         Prev
                                     </button>
 
                                     {/* Simple page indicator */}
-                                    <div className="flex items-center px-4 text-sm font-medium text-gray-700">
+                                    <div className="flex items-center px-2 sm:px-4 text-sm font-medium text-gray-700">
                                         Page {currentPage} of {lastPage}
                                     </div>
 
                                     <button
                                         disabled={currentPage === lastPage}
                                         onClick={() => setCurrentPage(prev => prev + 1)}
-                                        className={`px-3 py-1 border rounded text-sm ${currentPage === lastPage ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
+                                        className={`px-2 sm:px-3 py-1 border rounded text-xs sm:text-sm ${currentPage === lastPage ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
                                     >
                                         Next
                                     </button>

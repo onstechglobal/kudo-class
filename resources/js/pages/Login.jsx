@@ -17,7 +17,7 @@ export default function Login() {
         try {
             const res = await api.post("api/login", { email, password });
             localStorage.setItem("user", JSON.stringify(res.data.user));
-            //window.location.href = "/dashboard";
+            window.location.href = "/dashboard";
             console.log(res);
             console.log(res.data);
         } catch (err) {

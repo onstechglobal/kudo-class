@@ -35,7 +35,7 @@ class LoginController extends Controller{
 			], 401);
 		}
 
-		// ✅ SESSION LOGIN
+		//SESSION LOGIN
 		session([
 			'logged_in' => true,
 			'user_id'   => $user->user_id,
@@ -51,8 +51,10 @@ class LoginController extends Controller{
 			'message' => 'Login successful',
 			'user' => [
 				'id'          => $user->user_id,
-				'name'        => $user->name ?? 'User',
+				'username'    => $user->username,
+				'name'   	  => $user->name ?? 'User',
 				'email'       => $user->email,
+				'school_id'   => $user->school_id,
 				'role'        => !empty($user->role_name) ? $user->role_name : '',
 				'role_id'     => $user->role_id,
 				'permissions' => $permissions

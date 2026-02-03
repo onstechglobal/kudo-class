@@ -1,14 +1,15 @@
-// C:\xampp\htdocs\kudoclass\resources\js\pages\fee-structure\CreateFee.jsx
+// C:\xampp\htdocs\kudoclass\resources\js\pages\fee-structure\EditFee.jsx
 import AdminLayout from "../../layouts/AdminLayout";
 import PageHeader from "../../components/common/PageHeader";
 import Input from "../../components/form/Input";
 import CustomSelect from "../../components/form/CustomSelect";
 import api from "../../helpers/api";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { School, Save, Bus, Loader2, AlertCircle, Check } from "lucide-react";
 
-const CreateFee = () => {
+const EditFee = () => {
+    const { id } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [fetchingData, setFetchingData] = useState(true);
@@ -71,14 +72,6 @@ const CreateFee = () => {
                         .filter(year => year.value);
                     
                     setAcademicYears(activeYears);
-                    
-                    // Set default academic year if available
-                    if (activeYears.length > 0) {
-                        setFormData(prev => ({
-                            ...prev,
-                            academic_year_id: activeYears[0].value
-                        }));
-                    }
                 }
                 
                 // Fetch classes
@@ -93,69 +86,45 @@ const CreateFee = () => {
                         .filter(cls => cls.value);
                     
                     setClasses(formattedClasses);
+                }
+                
+                // Fetch fee structure data
+                const feeResponse = await api.get(`/api/fee-structures/${id}`);
+                
+                if (feeResponse.data.success && feeResponse.data.data) {
+                    const feeData = feeResponse.data.data;
                     
-                    // Set default class if available
-                    if (formattedClasses.length > 0) {
-                        setFormData(prev => ({
-                            ...prev,
-                            class_ids: [formattedClasses[0].value]
-                        }));
-                    }
+                    setFormData({
+                        fee_name: feeData.fee_name || "",
+                        fee_type: feeData.fee_type || "academic",
+                        amount: feeData.amount || "",
+                        frequency: feeData.frequency || "monthly",
+                        status: feeData.status || "active",
+                        academic_year_id: feeData.academic_year_id?.toString() || "",
+                        driver_name: feeData.driver_name || "",
+                        class_ids: feeData.class_ids?.map(id => id.toString()) || [],
+                    });
+                } else {
+                    setError("Fee structure not found");
                 }
             } catch (err) {
                 console.error("Error fetching initial data:", err);
-                // Set static fallback data
-                setAcademicYears([
-                    { label: "2023-2024", value: "1" },
-                    { label: "2024-2025", value: "2" },
-                    { label: "2025-2026", value: "3" },
-                ]);
-                
-                setClasses([
-                    { label: "Nursery", value: "1" },
-                    { label: "LKG", value: "2" },
-                    { label: "UKG", value: "3" },
-                    { label: "Class 1", value: "4" },
-                    { label: "Class 2", value: "5" },
-                    { label: "Class 3", value: "6" },
-                    { label: "Class 4", value: "7" },
-                    { label: "Class 5", value: "8" },
-                    { label: "Class 6", value: "9" },
-                    { label: "Class 7", value: "10" },
-                    { label: "Class 8", value: "11" },
-                    { label: "Class 9", value: "12" },
-                    { label: "Class 10", value: "13" },
-                    { label: "Class 11", value: "14" },
-                    { label: "Class 12", value: "15" },
-                ]);
-                
-                // Set defaults
-                setFormData(prev => ({
-                    ...prev,
-                    academic_year_id: "1",
-                    class_ids: ["1"]
-                }));
+                setError("Failed to load fee structure data");
             } finally {
                 setFetchingData(false);
             }
         };
         
-        fetchInitialData();
-    }, []);
+        if (id) {
+            fetchInitialData();
+        }
+    }, [id]);
 
     const handleChange = (name, value) => {
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
-        
-        // Clear selected classes when switching to transport fee
-        if (name === 'fee_type' && value === 'transport') {
-            setFormData(prev => ({
-                ...prev,
-                class_ids: []
-            }));
-        }
     };
 
     const handleSubmit = async (e) => {
@@ -181,8 +150,12 @@ const CreateFee = () => {
             if (formData.fee_type !== 'transport' && (!formData.class_ids || formData.class_ids.length === 0)) {
                 throw new Error("Please select at least one class");
             }
+            
+            if (formData.fee_type === 'transport' && !formData.driver_name.trim()) {
+                throw new Error("Driver name is required for transport fee");
+            }
 
-            // Prepare payload - convert class_ids to integers
+            // Prepare payload
             const payload = {
                 fee_name: formData.fee_name,
                 amount: parseFloat(formData.amount),
@@ -199,9 +172,9 @@ const CreateFee = () => {
                 payload.driver_name = formData.driver_name;
             }
 
-            console.log("Submitting payload:", payload);
+            console.log("Updating payload:", payload);
             
-            const response = await api.post('/api/fee-structures', payload);
+            const response = await api.put(`/api/fee-structures/${id}`, payload);
             
             if (response.data.success) {
                 setSuccess(true);
@@ -209,18 +182,18 @@ const CreateFee = () => {
                     navigate('/fee-structure');
                 }, 1500);
             } else {
-                throw new Error(response.data.message || "Failed to create fee structure");
+                throw new Error(response.data.message || "Failed to update fee structure");
             }
         } catch (err) {
-            console.error("Submit error:", err);
-            console.error("Submit error details:", err.response?.data);
+            console.error("Update error:", err);
+            console.error("Update error details:", err.response?.data);
             
             // Display validation errors if available
             if (err.response?.data?.errors) {
                 const errorMessages = Object.values(err.response.data.errors).flat();
                 setError(errorMessages.join(', ') || "Validation failed");
             } else {
-                setError(err.response?.data?.message || err.message || "Failed to create fee structure");
+                setError(err.response?.data?.message || err.message || "Failed to update fee structure");
             }
         } finally {
             setLoading(false);
@@ -244,11 +217,12 @@ const CreateFee = () => {
                     required
                 />
                 <Input
-                    label="Driver Name (Optional)"
+                    label="Driver Name *"
                     name="driver_name"
                     value={formData.driver_name}
                     onChange={(e) => handleChange("driver_name", e.target.value)}
                     placeholder="Enter driver name"
+                    required
                 />
                 <Input
                     label="Monthly Amount (₹) *"
@@ -302,6 +276,7 @@ const CreateFee = () => {
                         options={feeTypeOptions.filter(opt => opt.value !== 'transport')}
                         value={formData.fee_type}
                         onChange={(value) => handleChange("fee_type", value)}
+                        disabled={true} // Fee type cannot be changed after creation
                     />
                     <CustomSelect
                         label="Frequency *"
@@ -332,6 +307,7 @@ const CreateFee = () => {
                         value={formData.academic_year_id}
                         onChange={(value) => handleChange("academic_year_id", value)}
                         required
+                        disabled={true} // Academic year cannot be changed after creation
                     />
                     <div className="col-span-1 md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -405,6 +381,28 @@ const CreateFee = () => {
         );
     }
 
+    if (error && !fetchingData) {
+        return (
+            <AdminLayout>
+                <div className="p-6">
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <AlertCircle className="text-red-500" size={24} />
+                            <h2 className="text-lg font-bold text-red-700">Error Loading Data</h2>
+                        </div>
+                        <p className="text-red-600 mb-4">{error}</p>
+                        <button
+                            onClick={() => navigate('/fee-structure')}
+                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                        >
+                            Back to Fee Structures
+                        </button>
+                    </div>
+                </div>
+            </AdminLayout>
+        );
+    }
+
     return (
         <AdminLayout>
             <div className="bg-[#F8FAFC] min-h-screen p-6">
@@ -415,8 +413,8 @@ const CreateFee = () => {
                             <PageHeader
                                 prevRoute="/fee-structure"
                                 breadcrumbParent="Fee Structure"
-                                breadcrumbCurrent="Add"
-                                title="Configure Fee Structure"
+                                breadcrumbCurrent="Edit"
+                                title="Edit Fee Structure"
                             />
 
                             <div className="flex items-center gap-3">
@@ -435,17 +433,17 @@ const CreateFee = () => {
                                     {loading ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Saving...
+                                            Updating...
                                         </>
                                     ) : success ? (
                                         <>
                                             <Check size={18} />
-                                            Saved!
+                                            Updated!
                                         </>
                                     ) : (
                                         <>
                                             <Save size={18} />
-                                            Save Structure
+                                            Update Structure
                                         </>
                                     )}
                                 </button>
@@ -465,64 +463,83 @@ const CreateFee = () => {
                         <div className="mx-6 mt-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
                             <Check className="text-green-500" size={20} />
                             <span className="text-green-700">
-                                Fee structure created successfully! Redirecting...
+                                Fee structure updated successfully! Redirecting...
                             </span>
                         </div>
                     )}
 
-                    {/* Fee Type Tabs */}
-                    <div className="flex gap-4 mb-8 mt-5 ml-7 bg-white p-2 rounded-2xl border border-gray-200 w-fit">
-                        <button
-                            type="button"
-                            onClick={() => handleChange("fee_type", "academic")}
-                            className={`px-8 py-3 rounded-xl font-black text-sm transition-all
-                                flex items-center gap-2 cursor-pointer
-                                ${
-                                    formData.fee_type !== "transport"
-                                        ? "text-white bg-[#0468C3] hover:bg-[#0468C3]"
-                                        : "text-gray-400 hover:bg-gray-50"
-                                }
-                            `}
+                    {/* Fee Type Display (Cannot change type after creation) */}
+                    <div className="flex gap-4 mb-8 mt-5 ml-7">
+                        <div className={`px-8 py-3 rounded-xl font-black text-sm
+                            flex items-center gap-2
+                            ${formData.fee_type === "transport" 
+                                ? "text-white bg-blue-600" 
+                                : "text-white bg-[#0468C3]"
+                            }`}
                         >
-                            <School size={24} />
-                            Academic Fee
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => handleChange("fee_type", "transport")}
-                            className={`px-8 py-3 rounded-xl font-black text-sm transition-all
-                                flex items-center gap-2 cursor-pointer
-                                ${
-                                    formData.fee_type === "transport"
-                                        ? "text-white bg-[#0468C3] hover:bg-[#0468C3]"
-                                        : "text-gray-400 hover:bg-gray-50"
-                                }
-                            `}
-                        >
-                            <Bus size={24} />
-                            Transport Fee
-                        </button>
+                            {formData.fee_type === "transport" ? (
+                                <>
+                                    <Bus size={24} />
+                                    Transport Fee
+                                </>
+                            ) : (
+                                <>
+                                    <School size={24} />
+                                    Academic Fee
+                                </>
+                            )}
+                        </div>
+                        <div className="px-4 py-3 bg-blue-50 text-blue-700 rounded-xl text-sm">
+                            <span className="font-medium">Note:</span> Fee type cannot be changed after creation
+                        </div>
                     </div>
 
                     {/* Form Body */}
                     <div className="py-0 sm:p-8 max-w-[1600px] mx-auto">
-                        <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
-                            <div className="mb-8">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                                    {formData.fee_type === "transport" ? "Transport Fee Configuration" : "Academic Fee Configuration"}
-                                </h2>
-                                <p className="text-gray-600">
-                                    {formData.fee_type === "transport" 
-                                        ? "Configure transport route fees for your school"
-                                        : "Configure academic fee structure for selected classes"}
-                                </p>
+                        <div className="sm:grid sm:grid-cols-12 sm:gap-8">
+                            {/* Info Card */}
+                            <div className="py-8 sm:py-0 col-span-12 md:col-span-4 xl:col-span-3">
+                                <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
+                                    <div className="relative w-40 h-40 mx-auto mb-6">
+                                        <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                                            <AvatarLetter 
+                                                text={formData.fee_type === "transport" ? "T" : "A"} 
+                                            />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
+                                        {formData.fee_type === "transport" ? "Transport Fee" : "Academic Fee"}
+                                    </h3>
+                                    <p className="text-sm text-gray-500 text-center">
+                                        {formData.fee_type === "transport" 
+                                            ? "Configure transport route fees"
+                                            : "Configure academic fee structure"}
+                                    </p>
+                                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                                        <p className="text-sm text-blue-700 font-medium">
+                                            <strong>Academic Year:</strong> {
+                                                academicYears.find(ay => ay.value === formData.academic_year_id)?.label || 
+                                                "No academic year selected"
+                                            }
+                                        </p>
+                                        {formData.fee_type !== 'transport' && formData.class_ids.length > 0 && (
+                                            <p className="text-sm text-blue-700 font-medium mt-2">
+                                                <strong>Classes:</strong> {formData.class_ids.length}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            
-                            {formData.fee_type === "transport" 
-                                ? renderTransportForm() 
-                                : renderAcademicForm()
-                            }
+
+                            {/* Form Fields */}
+                            <div className="col-span-12 md:col-span-8 xl:col-span-9">
+                                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
+                                    {formData.fee_type === "transport" 
+                                        ? renderTransportForm() 
+                                        : renderAcademicForm()
+                                    }
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -531,4 +548,16 @@ const CreateFee = () => {
     );
 };
 
-export default CreateFee;
+function AvatarLetter({ text }) {
+    const letter = text?.trim()?.charAt(0)?.toUpperCase() || "U";
+    return (
+        <div
+            className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center text-white text-5xl font-black"
+            style={{ backgroundColor: "#FAAE1C" }}
+        >
+            {letter}
+        </div>
+    );
+}
+
+export default EditFee;

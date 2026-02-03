@@ -6,6 +6,7 @@ import AdminLayout from '../../layouts/AdminLayout';
 import Input from '../../components/form/Input';
 import CustomSelect from '../../components/form/CustomSelect';
 import CustomButton from '../../components/form/CustomButton';
+import StaticButtons from "../../components/common/StaticButtons";
 import { Api_url } from '../../helpers/api';
 import PageHeader from '../../components/common/PageHeader';
 
@@ -146,24 +147,6 @@ const AddSchool = () => {
                 breadcrumbCurrent="New"
                 title="New School Registration"
               />
-
-              <div className="items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
-                >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-                  Save School Record
-                </button>
-                {/* Render the warning here */}
-                {serverWarning && (
-                  <p className="text-red-500 text-xs font-bold mt-2 animate-pulse">
-                    ⚠️ {serverWarning}
-                  </p>
-                )}
-              </div>
-
             </div>
           </div>
 
@@ -259,6 +242,7 @@ const AddSchool = () => {
               </div>
             </div>
           )} */}
+          <StaticButtons saveText="Save School Record" saveClick={handleSubmit} dataLoading={loading} error={serverWarning} />
         </form>
       </div>
     </AdminLayout>

@@ -324,7 +324,7 @@ const AcademicListing = () => {
                 {/* --- FILTERS SECTION --- */}
                 <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 ">
                     <div className="sm:flex gap-3">
-                        <div className="mb-4 sm:mb-0 flex-1 min-w-[250px] sm:min-w-[300px] w-full">
+                        <div className="mb-4 sm:mb-0 flex-1 min-w-[200px] sm:min-w-[300px] w-full">
                             <div className="relative group">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                 <input
@@ -346,7 +346,7 @@ const AcademicListing = () => {
 
                         <button
                             onClick={() => setFilterOpen(true)}
-                            className="flex items-center gap-2 px-4 bg-gray-100 rounded-lg"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"
                         >
                             <Filter size={16} /> <span className="font-medium">More Filters</span>
                         </button>
@@ -394,7 +394,7 @@ const AcademicListing = () => {
                                 ) : academic_data.length > 0 ? (
                                     academic_data.map((year) => (
                                         <tr key={year.academic_year_id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="p-4">
+                                            <td className="p-4 min-w-[150px] sm:min-w-[200px]">
                                                 <div className="flex items-center gap-3">
                                                     <AvatarLetter text={year.school_name} size={40} />
                                                     <div className="text-sm font-bold ">{year.school_name}</div>
@@ -434,24 +434,24 @@ const AcademicListing = () => {
                     {/* PAGINATION */}
                     {!loading && academic_data?.length > 0 && (
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 sm:flex items-center justify-between">
-                            <span className="text-sm text-gray-500 pb-2">
+                            <span className="text-sm text-gray-500">
                                 Showing {paginationInfo.from} to {paginationInfo.to} of {total_years} records
                             </span>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 mt-2 sm:mt-0">
                                 <button
                                     disabled={currentPage === 1}
                                     onClick={() => setCurrentPage(prev => prev - 1)}
-                                    className={`px-3 py-1 border rounded text-sm ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
+                                    className={`px-2 sm:px-3 py-1 border rounded text-xs sm:text-sm ${currentPage === 1 ? 'bg-gray-100 text-gray-400' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
                                 >
                                     Prev
                                 </button>
-                                <div className="flex items-center px-4 text-sm font-medium">
+                                <div className="flex items-center px-2 sm:px-4 text-sm font-medium">
                                     Page {currentPage} of {lastPage}
                                 </div>
                                 <button
                                     disabled={currentPage === lastPage}
                                     onClick={() => setCurrentPage(prev => prev + 1)}
-                                    className={`px-3 py-1 border rounded text-sm ${currentPage === lastPage ? 'bg-gray-100 text-gray-400' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
+                                    className={`px-2 sm:px-3 py-1 border rounded text-xs sm:text-sm ${currentPage === lastPage ? 'bg-gray-100 text-gray-400' : 'bg-white hover:bg-gray-50 cursor-pointer'}`}
                                 >
                                     Next
                                 </button>
