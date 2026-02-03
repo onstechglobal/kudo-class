@@ -8,6 +8,9 @@ import {
   Briefcase,
   Camera,
   CheckCircle2,
+  MapPin,
+  EyeOff,
+  Eye
 } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
@@ -15,6 +18,11 @@ import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
+import EditPreloader from '../../components/common/EditPreloader';
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function EditTeacher() {
   const navigate = useNavigate();
@@ -24,6 +32,7 @@ export default function EditTeacher() {
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [originalPhoto, setOriginalPhoto] = useState(null);
+  const [imgError, setImgError] = useState(false);
 
   /* IMAGE */
   const [selectedFile, setSelectedFile] = useState(null);
@@ -33,6 +42,8 @@ export default function EditTeacher() {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    father_name: "",
+    mother_name: "",
     email: "",
     mobile: "",
     designation: "",
@@ -40,9 +51,18 @@ export default function EditTeacher() {
     qualification: "",
     experience_years: "",
     status: "active",
+    address: "",
+    country: "",
+    state: "",
+    district: "",
+    city: "",
+    pincode: "",
+    username: "",
+    password: "", 
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const statusOptions = [
     { label: "Active", value: "active" },
@@ -54,12 +74,20 @@ export default function EditTeacher() {
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
+    const handleJoiningDate = (d) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
 
+      const new_joining_date = `${year}-${month}-${day}`;
+      setForm((prev) => ({ ...prev, ["joining_date"]: new_joining_date }));
+      if (errors["joining_date"]) setErrors((prev) => ({ ...prev, ["joining_date"]: null }));
+    };
   /* ================= FETCH TEACHER ================= */
   useEffect(() => {
     const fetchTeacher = async () => {
       try {
-        const res = await axios.get(`${Api_url.name}teacher/${id}`);
+        const res = await axios.get(`${Api_url.name}api/teacher/${id}`);
         if (res.data.teacher) {
           const data = res.data.teacher;
 
@@ -69,13 +97,24 @@ export default function EditTeacher() {
             email: data.email || "",
             mobile: data.mobile || "",
             designation: data.designation || "",
-            joining_date: data.joining_date
-              ? data.joining_date.split("T")[0]
-              : "",
+            joining_date: data.joining_date  || "",
             qualification: data.qualification || "",
             experience_years: data.experience_years || "",
             status: data.status || "active",
+
+            father_name: data.father_name || "",
+            mother_name: data.mother_name || "",
+
+            address: data.address || "",
+            country: data.country || "",
+            state: data.state || "",
+            district: data.district || "",
+            city: data.city || "",
+            pincode: data.pincode || "",
+            username: data.username || "", 
+            password: "",
           });
+
 
           // Set original photo URL (Laravel now returns full URL)
           if (data.photo_url) {
@@ -142,7 +181,10 @@ export default function EditTeacher() {
 
     try {
       const payload = new FormData();
-      Object.keys(form).forEach((key) => payload.append(key, form[key]));
+      Object.keys(form).forEach((key) => {
+        if (key === "password" && !form.password.trim()) return;
+        payload.append(key, form[key]);
+      });
       if (selectedFile) {
         payload.append("teacher_photo", selectedFile);
       } else if (originalPhoto) {
@@ -151,7 +193,7 @@ export default function EditTeacher() {
       }
 
       const res = await axios.post(
-        `${Api_url.name}update-teacher/${id}`,
+        `${Api_url.name}api/update-teacher/${id}`,
         payload,
         {
           headers: {
@@ -162,7 +204,9 @@ export default function EditTeacher() {
       );
 
       if (res.data.status === 200) {
-        setSuccess(true);
+        navigate('/teachers', {
+           state: { status: 'success', message: 'Teacher updated successfully!' } 
+        });
       } else {
         alert(res.data.message || "Update failed");
       }
@@ -182,45 +226,25 @@ export default function EditTeacher() {
     setOriginalPhoto(null);
   };
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-            <p className="text-sm font-medium text-gray-600">Loading teacher details...</p>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout>
-      <div className="bg-[#F8FAFC] min-h-screen">
+       {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
+        {loading && (
+          <EditPreloader />
+        )}
+      <div className="bg-[#F8FAFC] min-h-screen p-6">
         <form onSubmit={submit}>
           {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/teachers">
-                  <button
-                    type="button"
-                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/teachers">Teachers</Link> / <Link>Edit</Link>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Edit Teacher
-                  </h1>
-                </div>
-              </div>
+             
+              <PageHeader
+                prevRoute="/teachers"
+                breadcrumbParent="Teachers"
+                breadcrumbCurrent="Edit"
+                title="Edit Teacher"
+              />
 
               <CustomButton
                 text={loading ? "Updating..." : "Update Teacher"}
@@ -239,42 +263,33 @@ export default function EditTeacher() {
               <div className="bg-white rounded-3xl p-8 text-center">
                 <div className="relative w-40 h-40 mx-auto mb-4">
                   <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                    {previewUrl ? (
-                      <img 
-                        src={previewUrl} 
-                        alt="Teacher Preview" 
-                        className="w-full h-full object-cover" 
+                    {previewUrl && !imgError ? (
+                      <img
+                        src={previewUrl}
+                        alt="Teacher Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          setImgError(true);
+                        }}
                       />
                     ) : (
                       <AvatarLetter text={`${form.first_name?.charAt(0) || 'T'}`} />
                     )}
                   </div>
-                  
+
                   {/* Camera Icon */}
                   <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition">
                     <Camera size={20} />
-                    <input 
-                      type="file" 
-                      hidden 
-                      accept="image/*" 
-                      onChange={handleFileChange} 
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleFileChange}
                     />
                   </label>
-                  
-                  {/* Remove Icon (only show if there's a photo) */}
-                  {previewUrl && (
-                    <button
-                      type="button"
-                      onClick={removePhoto}
-                      className="absolute -bottom-2 -left-2 p-3 bg-red-500 text-white rounded-xl cursor-pointer hover:bg-red-600 transition"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  )}
+
                 </div>
-                
+
                 <p className="text-xs text-gray-500">
                   {selectedFile ? "New photo selected" : "Click camera to upload new photo"}
                 </p>
@@ -294,40 +309,99 @@ export default function EditTeacher() {
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input 
-                      label="First Name" 
-                      value={form.first_name || ""} 
-                      onChange={(e) => updateField("first_name", e.target.value)} 
-                      error={errors.first_name} 
+                    <Input
+                      label="First Name"
+                      value={form.first_name || ""}
+                      onChange={(e) => updateField("first_name", e.target.value)}
+                      error={errors.first_name}
                       required
                     />
-                    <Input 
-                      label="Last Name" 
-                      value={form.last_name || ""} 
-                      onChange={(e) => updateField("last_name", e.target.value)} 
-                      error={errors.last_name} 
+                    <Input
+                      label="Last Name"
+                      value={form.last_name || ""}
+                      onChange={(e) => updateField("last_name", e.target.value)}
+                      error={errors.last_name}
                     />
-                    <Input 
-                      label="Email" 
+                    <Input
+                      label="Father Name"
+                      value={form.father_name}
+                      onChange={(e) => updateField("father_name", e.target.value)}
+                    />
+
+                    <Input
+                      label="Mother Name"
+                      value={form.mother_name}
+                      onChange={(e) => updateField("mother_name", e.target.value)}
+                    />
+                    <Input
+                      label="Email"
                       type="email"
-                      value={form.email || ""} 
-                      onChange={(e) => updateField("email", e.target.value)} 
-                      error={errors.email} 
+                      value={form.email || ""}
+                      onChange={(e) => updateField("email", e.target.value)}
+                      error={errors.email}
                       required
                     />
-                    <Input 
-                      label="Mobile" 
-                      value={form.mobile || ""} 
-                      onChange={(e) => updateField("mobile", e.target.value)} 
-                      error={errors.mobile} 
+                    <Input
+                      label="Mobile"
+                      value={form.mobile || ""}
+                      onChange={(e) => updateField("mobile", e.target.value)}
+                      error={errors.mobile}
                       required
                     />
 
-                    <CustomSelect 
-                      label="Status" 
-                      options={statusOptions} 
-                      value={form.status || ""} 
-                      onChange={(val) => updateField("status", val)} 
+                    <CustomSelect
+                      label="Status"
+                      options={statusOptions}
+                      value={form.status || ""}
+                      onChange={(val) => updateField("status", val)}
+                    />
+                  </div>
+                </section>
+
+                {/* ADDRESS DETAILS */}
+                <section>
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+                    <MapPin className="text-blue-600" /> Address Details
+                  </h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input
+                      label="Address"
+                      value={form.address}
+                      onChange={(e) => updateField("address", e.target.value)}
+                      textarea
+                      rows={3}
+                    />
+
+                    <Input
+                      label="Country"
+                      value={form.country}
+                      onChange={(e) => updateField("country", e.target.value)}
+                    />
+
+                    <Input
+                      label="State"
+                      value={form.state}
+                      onChange={(e) => updateField("state", e.target.value)}
+                    />
+
+                    <Input
+                      label="District"
+                      value={form.district}
+                      onChange={(e) => updateField("district", e.target.value)}
+                    />
+
+                    <Input
+                      label="City"
+                      value={form.city}
+                      onChange={(e) => updateField("city", e.target.value)}
+                    />
+
+                    <Input
+                      label="Pincode"
+                      value={form.pincode}
+                      onChange={(e) => updateField("pincode", e.target.value)}
+                      error={errors.pincode}
                     />
                   </div>
                 </section>
@@ -339,54 +413,75 @@ export default function EditTeacher() {
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input 
-                      label="Designation" 
-                      value={form.designation || ""} 
-                      onChange={(e) => updateField("designation", e.target.value)} 
-                      error={errors.designation} 
+                    <Input
+                      label="Designation"
+                      value={form.designation || ""}
+                      onChange={(e) => updateField("designation", e.target.value)}
+                      error={errors.designation}
                       required
                     />
-                    <Input 
-                      label="Qualification" 
-                      value={form.qualification || ""} 
-                      onChange={(e) => updateField("qualification", e.target.value)} 
+                    <Input
+                      label="Qualification"
+                      value={form.qualification || ""}
+                      onChange={(e) => updateField("qualification", e.target.value)}
                     />
-                    <Input 
-                      label="Experience (Years)" 
+                    <Input
+                      label="Experience (Years)"
                       type="number"
-                      value={form.experience_years || ""} 
-                      onChange={(e) => updateField("experience_years", e.target.value)} 
+                      value={form.experience_years || ""}
+                      onChange={(e) => updateField("experience_years", e.target.value)}
                     />
-                    <Input 
-                      label="Joining Date" 
-                      type="date" 
-                      value={form.joining_date || ""} 
-                      onChange={(e) => updateField("joining_date", e.target.value)} 
-                      error={errors.joining_date} 
-                      required
-                    />
+                    
+                    <div>
+                      <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Joining Date</label>
+                     <DatePicker
+                        name="joining_date"
+                        selected={form.joining_date|| ""}
+                        onChange={handleJoiningDate}
+                        dateFormat="yyyy-mm-dd"
+                        className="w-full px-4 py-3 rounded-lg outline-none bg-gray-50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        wrapperClassName="w-full"
+                      />
+                    </div>
                   </div>
                 </section>
+                <section>
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+                    <Briefcase className="text-blue-600" /> Login Credentials
+                  </h2>
+
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <Input
+                      label="Username"
+                      value={form.username}
+                      onChange={(e) => updateField("username", e.target.value)}
+                      required
+                    />
+
+                    <div className="relative">
+                      <Input
+                        label="New Password"
+                        type={showPassword ? "text" : "password"}
+                        value={form.password}
+                        onChange={(e) => updateField("password", e.target.value)}
+                        placeholder="Leave blank to keep existing password"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-10 text-gray-500"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                </section>  
+
               </div>
             </div>
           </div>
 
-          {/* SUCCESS MODAL */}
-          {success && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-8 max-w-md text-center">
-                <CheckCircle2 className="mx-auto text-[#faae1c]" size={48} />
-                <h3 className="text-xl font-bold mt-4">Teacher Updated Successfully</h3>
-                <button 
-                  type="button" 
-                  onClick={() => navigate("/teachers")} 
-                  className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          )}
         </form>
       </div>
     </AdminLayout>
@@ -396,8 +491,8 @@ export default function EditTeacher() {
 /* ================= AVATAR ================= */
 function AvatarLetter({ text }) {
   return (
-    <div 
-      className="w-32 h-32 rounded-3xl flex items-center justify-center text-white text-5xl font-black" 
+    <div
+      className="w-32 h-32 rounded-3xl flex items-center justify-center text-white text-5xl font-black"
       style={{ backgroundColor: "#FAAE1C" }}
     >
       {text}

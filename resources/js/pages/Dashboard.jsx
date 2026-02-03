@@ -47,28 +47,36 @@ export default function Dashboard() {
                         <MiniCard
                             icon={<Users size={32} className="text-blue-500" />}
                             colorClass="bg-blue-50"
+                            titleClass="lg:min-h-[56px]"
                             title="Total Students"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="1,280"
                             sub="Total Students"
                         />
                         <MiniCard
                             icon={<GraduationCap size={32} className="text-teal-500" />}
                             colorClass="bg-teal-50"
+                            titleClass="lg:min-h-[56px]"
                             title="Total Teachers"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="75"
                             sub="Total Teachers"
                         />
                         <MiniCard
                             icon={<UserCheck size={32} className="text-orange-500" />}
                             colorClass="bg-orange-50"
+                            titleClass="lg:min-h-[56px]"
                             title="Active Parents"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="1,200"
                             sub="Active Parents"
                         />
                         <MiniCard
                             icon={<ClipboardCheck size={32} className="text-rose-500" />}
                             colorClass="bg-rose-50"
+                            titleClass="lg:min-h-[56px]"
                             title="Today's Attendance"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="92%"
                             greenText="+2.5%"
                             sub="vs yesterday"
@@ -99,6 +107,8 @@ export default function Dashboard() {
                             icon={<CalendarDays size={32} className="text-blue-500" />}
                             colorClass="bg-blue-50"
                             title="Events Today"
+                            titleClass="lg:min-h-[56px] xl:min-h-[fit-content]"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="2"
                             sub="Events Today"
                         />
@@ -106,6 +116,8 @@ export default function Dashboard() {
                             icon={<FileText size={32} className="text-teal-500" />}
                             colorClass="bg-teal-50"
                             title="Exams Today"
+                            titleClass="lg:min-h-[56px] xl:min-h-[fit-content]"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="1"
                             sub="Exams Today"
                         />
@@ -113,6 +125,8 @@ export default function Dashboard() {
                             icon={<Megaphone size={32} className="text-orange-500" />}
                             colorClass="bg-orange-50"
                             title="Circulars Today"
+                            titleClass="lg:min-h-[56px] xl:min-h-[fit-content]"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="3"
                             sub="Circulars Today"
                         />
@@ -120,6 +134,8 @@ export default function Dashboard() {
                             icon={<Palmtree size={32} className="text-rose-500" />}
                             colorClass="bg-rose-50"
                             title="Holidays Today"
+                            titleClass="lg:min-h-[56px] xl:min-h-[fit-content]"
+                            contentClass="lg:min-h-[56px] xl:min-h-[fit-content]"
                             value="0"
                             sub="Holidays Today"
                         />

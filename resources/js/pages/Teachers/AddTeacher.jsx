@@ -8,6 +8,9 @@ import {
   Briefcase,
   Camera,
   CheckCircle2,
+  MapPin,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
@@ -15,13 +18,37 @@ import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
+import EditPreloader from '../../components/common/EditPreloader';
+import DatePicker from "react-datepicker";
 
+import "react-datepicker/dist/react-datepicker.css";
 export default function AddTeacher() {
+
+  const generatePassword = (length = 10) => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
+    return Array.from({ length }, () =>
+      chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join("");
+  };
+
   const navigate = useNavigate();
   const submittingRef = useRef(false);
 
   const [loading, setLoading] = useState(false);
   const [credentials, setCredentials] = useState(null);
+  const [autoGenerate, setAutoGenerate] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+
+  React.useEffect(() => {
+    if (autoGenerate) {
+      setForm((prev) => ({
+        ...prev,
+        password: generatePassword(),
+      }));
+    }
+  }, [autoGenerate]);
+
 
   /* IMAGE */
   const [selectedFile, setSelectedFile] = useState(null);
@@ -31,6 +58,8 @@ export default function AddTeacher() {
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    father_name: "",
+    mother_name: "",
     email: "",
     mobile: "",
     designation: "",
@@ -38,6 +67,14 @@ export default function AddTeacher() {
     qualification: "",
     experience_years: "",
     status: "active",
+    address: "",
+    country: "",
+    state: "",
+    district: "",
+    city: "",
+    pincode: "",
+    username: "",
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -46,12 +83,31 @@ export default function AddTeacher() {
     { label: "Active", value: "active" },
     { label: "Inactive", value: "inactive" },
   ];
+  const handleJoiningDate = (d) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
 
+      const new_joining_date = `${year}-${month}-${day}`;
+      setForm((prev) => ({ ...prev, ["joining_date"]: new_joining_date }));
+      if (errors["joining_date"]) setErrors((prev) => ({ ...prev, ["joining_date"]: null }));
+    };
   /* UPDATE FIELD */
   const updateField = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // Auto-generate username from mobile
+      if (autoGenerate && name === "mobile" && value.length === 10) {
+        updated.username = `tr_${value}`;
+      }
+
+      return updated;
+    });
+
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
+
 
   /* FILE */
   const handleFileChange = (e) => {
@@ -108,7 +164,7 @@ export default function AddTeacher() {
       }
 
       const res = await axios.post(
-        `${Api_url.name}teacher`,
+        `${Api_url.name}api/saveteacher`,
         payload,
         { 
           headers: { 
@@ -137,26 +193,19 @@ export default function AddTeacher() {
 
   return (
     <AdminLayout>
-      <div className="bg-[#F8FAFC] min-h-screen">
+      <div className="bg-[#F8FAFC] min-h-screen p-6">
         <form onSubmit={submit}>
           {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/teachers">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/teachers">Teachers</Link> / <Link>Add</Link>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Add Teacher
-                  </h1>
-                </div>
-              </div>
+             
+              <PageHeader
+                prevRoute="/teachers"
+                breadcrumbParent="Teachers"
+                breadcrumbCurrent="Add"
+                title="Add Teacher"
+              />
+
               <CustomButton
                 text={loading ? "Saving..." : "Save Teacher"}
                 Icon={Save}
@@ -227,6 +276,16 @@ export default function AddTeacher() {
                         onChange={(e) => updateField("last_name", e.target.value)} 
                         error={errors.last_name} 
                       />
+                      <Input
+                        label="Father Name"
+                        value={form.father_name}
+                        onChange={(e) => updateField("father_name", e.target.value)}
+                      />
+                      <Input
+                        label="Mother Name"
+                        value={form.mother_name}
+                        onChange={(e) => updateField("mother_name", e.target.value)}
+                      />
                       <Input 
                         label="Email" 
                         type="email"
@@ -248,6 +307,56 @@ export default function AddTeacher() {
                         options={statusOptions}
                         value={form.status}
                         onChange={(val) => updateField("status", val)}
+                      />
+                    </div>
+                  </section>
+
+                  {/* ADDRESS */}
+                  <section>
+                    <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+                      <MapPin className="text-blue-600" />
+                      Address Details
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Input
+                        label="Address"
+                        value={form.address}
+                        onChange={(e) => updateField("address", e.target.value)}
+                        error={errors.address}
+                        textarea
+                        rows={3}
+                      />
+
+                      <Input
+                        label="Country"
+                        value={form.country}
+                        onChange={(e) => updateField("country", e.target.value)}
+                      />
+
+                      <Input
+                        label="State"
+                        value={form.state}
+                        onChange={(e) => updateField("state", e.target.value)}
+                      />
+
+                      <Input
+                        label="District"
+                        value={form.district}
+                        onChange={(e) => updateField("district", e.target.value)}
+                      />
+
+                      <Input
+                        label="City"
+                        value={form.city}
+                        onChange={(e) => updateField("city", e.target.value)}
+                      />
+
+                      <Input
+                        label="Pincode"
+                        value={form.pincode}
+                        onChange={(e) => updateField("pincode", e.target.value)}
+                        error={errors.pincode}
                       />
                     </div>
                   </section>
@@ -278,14 +387,61 @@ export default function AddTeacher() {
                         value={form.experience_years} 
                         onChange={(e) => updateField("experience_years", e.target.value)} 
                       />
-                      <Input 
-                        label="Joining Date" 
-                        type="date" 
-                        value={form.joining_date} 
-                        onChange={(e) => updateField("joining_date", e.target.value)} 
-                        error={errors.joining_date} 
+                      <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Joining Date</label>
+                      <DatePicker
+                          name="joining_date"
+                          selected={form.joining_date|| ""}
+                          onChange={handleJoiningDate}
+                          dateFormat="yyyy-mm-dd"
+                          className="w-full px-4 py-3 rounded-lg outline-none bg-gray-50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                          wrapperClassName="w-full"
+                        />
+                      </div>
+                    </div>
+                  </section>
+                  <section>
+                    <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+                      <Briefcase className="text-blue-600" /> Login Credentials
+                    </h2>
+
+                    <div className="md:col-span-2 flex items-center gap-3 mb-4">
+                      <input
+                        type="checkbox"
+                        checked={autoGenerate}
+                        onChange={(e) => setAutoGenerate(e.target.checked)}
+                        className="w-5 h-5 rounded"
+                      />
+                      <span className="font-semibold text-sm">
+                        Auto-generate username & password
+                      </span>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <Input
+                        label="Username"
+                        value={form.username}
+                        onChange={(e) => updateField("username", e.target.value)}
                         required
                       />
+
+                      <div className="relative">
+                        <Input
+                          label="Password"
+                          type={showPassword ? "text" : "password"}
+                          value={form.password}
+                          onChange={(e) => updateField("password", e.target.value)}
+                          required
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-10 text-gray-500"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                   </section>
                 </div>
@@ -320,7 +476,10 @@ export default function AddTeacher() {
 
                 <button
                   type="button"
-                  onClick={() => navigate("/teachers")}
+                  onClick={() => navigate("/teachers", {
+                    state: { status: 'success', message: 'Teacher added successfully!' } 
+                    })
+                  }
                   className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
                 >
                   OK

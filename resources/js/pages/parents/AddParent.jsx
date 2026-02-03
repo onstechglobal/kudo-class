@@ -1,28 +1,23 @@
 import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  ArrowLeft,
-  Save,
-  User,
-  CheckCircle2,
-} from "lucide-react";
+import { Save, User, Home } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
 import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
 
 export default function AddParent() {
   const navigate = useNavigate();
   const submittingRef = useRef(false);
 
   const [loading, setLoading] = useState(false);
-  const [credentials, setCredentials] = useState(null);
   const [errors, setErrors] = useState({});
 
-  /* FORM - ONLY fields that exist in your table */
+  /* FORM STATE */
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -30,6 +25,15 @@ export default function AddParent() {
     mobile: "",
     alternate_mobile: "",
     status: "active",
+    address_line1: "",
+    address_line2: "",
+    country: "India", // Defaulted
+    state: "",
+    district: "", // New Field
+    city: "",
+    pincode: "",
+    is_primary: 1,
+    parent_type: "normal",
   });
 
   const statusOptions = [
@@ -48,16 +52,16 @@ export default function AddParent() {
   /* VALIDATION */
   const validate = () => {
     const err = {};
-
     if (!form.first_name.trim()) err.first_name = "First name is required";
     if (!form.email.trim()) err.email = "Email is required";
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) err.email = "Invalid email address";
+    else if (!/^\S+@\S+\.\S+$/.test(form.email)) err.email = "Invalid email";
 
     if (!form.mobile.trim()) err.mobile = "Mobile number is required";
-    else if (!/^[0-9]{10}$/.test(form.mobile)) err.mobile = "Mobile must be 10 digits";
-
-    if (form.alternate_mobile && !/^[0-9]{10}$/.test(form.alternate_mobile))
-      err.alternate_mobile = "Alternate mobile must be 10 digits";
+    if (!form.address_line1.trim()) err.address_line1 = "Address is required";
+    if (!form.state.trim()) err.state = "State is required";
+    if (!form.district.trim()) err.district = "District is required";
+    if (!form.city.trim()) err.city = "City is required";
+    if (!form.pincode.trim()) err.pincode = "Pincode is required";
 
     setErrors(err);
     return Object.keys(err).length === 0;
@@ -65,43 +69,26 @@ export default function AddParent() {
 
   /* SUBMIT */
   const submit = async (e) => {
-    e.preventDefault();
-
-    if (submittingRef.current || credentials) return;
+    if (e) e.preventDefault();
+    if (submittingRef.current) return;
     if (!validate()) return;
 
     submittingRef.current = true;
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${Api_url.name}parents`,
-        form,
-        { 
-          headers: { 
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          } 
-        }
-      );
-
-      if (res.data.status === 201) {
-        setCredentials({
-          username: res.data.username,
-          password: res.data.password,
-        });
+      const res = await axios.post(`${Api_url.name}api/parents`, form);
+      if (res.data.status === 201 || res.data.status === 200) {
+        navigate("/parents");
       } else {
         alert(res.data.message || "Failed to add parent");
+        submittingRef.current = false;
       }
     } catch (err) {
-      console.error("Add parent error:", err.response?.data || err.message);
-      
       if (err.response?.status === 422) {
-        // Validation errors
-        const validationErrors = err.response.data.errors;
-        setErrors(validationErrors);
+        setErrors(err.response.data.errors);
       } else {
-        alert(err.response?.data?.message || "Failed to add parent. Please try again.");
+        alert("Failed to add parent. Please try again.");
       }
       submittingRef.current = false;
     } finally {
@@ -113,145 +100,74 @@ export default function AddParent() {
     <AdminLayout>
       <div className="bg-[#F8FAFC] min-h-screen">
         <form onSubmit={submit}>
-          {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/parents">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/parents">Parents</Link> / <Link>Add</Link>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Add Parent
-                  </h1>
-                </div>
-              </div>
+              <PageHeader
+                prevRoute="/parents"
+                breadcrumbParent="Parents"
+                breadcrumbCurrent="Add"
+                title="Add Parent"
+              />
               <CustomButton
                 text={loading ? "Saving..." : "Save Parent"}
                 Icon={Save}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 disabled:opacity-50 disabled:cursor-not-allowed"
-                to="#"
+                className="bg-[#faae1c] text-white"
                 onClick={submit}
-                disabled={loading || submittingRef.current}
+                disabled={loading}
               />
             </div>
           </div>
 
-          {/* BODY */}
-          <div className="p-8 max-w-[1600px] mx-auto">
-            <div className="grid grid-cols-12 gap-8">
-              {/* LEFT - AVATAR SECTION */}
-              <div className="col-span-12 lg:col-span-3">
-                <div className="bg-white rounded-3xl p-8 text-center">
-                  <div className="relative w-40 h-40 mx-auto mb-6">
-                    <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                      <AvatarLetter text={`${form.first_name?.charAt(0) || 'P'}`} />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Parent Avatar (Initials)
-                  </p>
+          <div className="p-8 max-w-[1600px] mx-auto grid grid-cols-12 gap-8">
+            {/* LEFT - AVATAR */}
+            <div className="col-span-12 lg:col-span-3">
+              <div className="bg-white rounded-3xl p-8 text-center sticky top-8">
+                <div className="w-40 h-40 mx-auto mb-6 rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                  <AvatarLetter text={`${form.first_name?.trim().charAt(0).toUpperCase() || "P"}`} />
                 </div>
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Parent Profile</p>
               </div>
+            </div>
 
-              {/* RIGHT - FORM FIELDS */}
-              <div className="col-span-12 lg:col-span-9">
-                <div className="bg-white rounded-[2.5rem] p-10">
-                  {/* BASIC DETAILS */}
-                  <section>
-                    <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-                      <User className="text-blue-600" />
-                      Parent Details
-                    </h2>
+            {/* RIGHT - FORM */}
+            <div className="col-span-12 lg:col-span-9">
+              <div className="bg-white rounded-[2.5rem] p-10 shadow-sm">
+                <section>
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+                    <User className="text-blue-600" size={24} /> Parent Details
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input label="First Name *" value={form.first_name} onChange={(e) => updateField("first_name", e.target.value)} error={errors.first_name} />
+                    <Input label="Last Name" value={form.last_name} onChange={(e) => updateField("last_name", e.target.value)} />
+                    <Input label="Email *" type="email" value={form.email} onChange={(e) => updateField("email", e.target.value)} error={errors.email} />
+                    <Input label="Mobile Number *" value={form.mobile} onChange={(e) => updateField("mobile", e.target.value)} error={errors.mobile} />
+                    <Input label="Alternate Mobile" value={form.alternate_mobile} onChange={(e) => updateField("alternate_mobile", e.target.value)} />
+                    <CustomSelect label="Status" options={statusOptions} value={form.status} onChange={(val) => updateField("status", val)} />
+                  </div>
+                </section>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input 
-                        label="First Name *" 
-                        value={form.first_name} 
-                        onChange={(e) => updateField("first_name", e.target.value)} 
-                        error={errors.first_name} 
-                        required
-                      />
-                      <Input 
-                        label="Last Name" 
-                        value={form.last_name} 
-                        onChange={(e) => updateField("last_name", e.target.value)} 
-                        error={errors.last_name}
-                      />
-                      <Input 
-                        label="Email *" 
-                        type="email"
-                        value={form.email} 
-                        onChange={(e) => updateField("email", e.target.value)} 
-                        error={errors.email} 
-                        required
-                      />
-                      <Input 
-                        label="Mobile Number *" 
-                        value={form.mobile} 
-                        onChange={(e) => updateField("mobile", e.target.value)} 
-                        error={errors.mobile} 
-                        required
-                      />
-                      <Input 
-                        label="Alternate Mobile" 
-                        value={form.alternate_mobile} 
-                        onChange={(e) => updateField("alternate_mobile", e.target.value)} 
-                        error={errors.alternate_mobile} 
-                      />
-                      <CustomSelect
-                        label="Status"
-                        options={statusOptions}
-                        value={form.status}
-                        onChange={(val) => updateField("status", val)}
-                      />
+                <section className="mt-12 pt-10 border-t border-gray-100">
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2">
+                    <Home className="text-green-600" size={24} /> Family Address
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Input label="Address Line 1 *" value={form.address_line1} onChange={(e) => updateField("address_line1", e.target.value)} error={errors.address_line1} />
                     </div>
-                  </section>
-                </div>
+                    
+                    {/* UPDATED ORDER START */}
+                    <Input label="Country *" value={form.country} onChange={(e) => updateField("country", e.target.value)} />
+                    <Input label="State *" value={form.state} onChange={(e) => updateField("state", e.target.value)} error={errors.state} />
+                    <Input label="District *" value={form.district} onChange={(e) => updateField("district", e.target.value)} error={errors.district} />
+                    <Input label="City *" value={form.city} onChange={(e) => updateField("city", e.target.value)} error={errors.city} />
+                    {/* UPDATED ORDER END */}
+
+                    <Input label="Pincode *" value={form.pincode} onChange={(e) => updateField("pincode", e.target.value)} error={errors.pincode} />
+                  </div>
+                </section>
               </div>
             </div>
           </div>
-
-          {/* SUCCESS MODAL */}
-          {credentials && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-8 max-w-md text-center">
-                <CheckCircle2 className="mx-auto text-[#faae1c]" size={48} />
-                <h3 className="text-xl font-bold mt-4">
-                  Parent Added Successfully
-                </h3>
-                <p className="text-gray-600 mt-2">
-                  Login credentials have been generated for the parent.
-                </p>
-
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-left mb-2">
-                    <strong>Username:</strong> <span className="font-mono">{credentials.username}</span>
-                  </p>
-                  <p className="text-left">
-                    <strong>Password:</strong> <span className="font-mono">{credentials.password}</span>
-                  </p>
-                </div>
-
-                <p className="text-sm text-red-500 mt-4">
-                  Please save these credentials. They cannot be retrieved later.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => navigate("/parents")}
-                  className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          )}
         </form>
       </div>
     </AdminLayout>
@@ -260,10 +176,7 @@ export default function AddParent() {
 
 function AvatarLetter({ text }) {
   return (
-    <div
-      className="w-32 h-32 rounded-3xl flex items-center justify-center text-white text-5xl font-black"
-      style={{ backgroundColor: "#FAAE1C" }}
-    >
+    <div className="w-full h-full flex items-center justify-center text-white text-5xl font-black shadow-inner" style={{ backgroundColor: "#FAAE1C" }}>
       {text}
     </div>
   );

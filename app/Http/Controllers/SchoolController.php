@@ -39,30 +39,45 @@ class SchoolController extends Controller
 	}
 	
 	
-	/* ====== SAVE NEW SCHOOL ========= */
 	public function savedata(Request $request) {
 		$data = $request->all();
 
+		// 1. Check if Email or Phone already exists
+		$existing = $this->model->checkExistingSchool($data['email'], $data['phone']);
+		if ($existing) {
+			return response()->json([
+				'status' => 409, // Conflict
+				'message' => 'A school with this email or phone number already exists.'
+			]);
+		}
+
+		// 2. Handle File Upload (Optional)
+		$logoName = null; 
 		if ($request->hasFile('school_logo')) {
 			$file = $request->file('school_logo');
-
 			$logoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
 			$destination = public_path('uploads/schools');
+			
 			if (!file_exists($destination)) {
 				mkdir($destination, 0777, true);
 			}
-
 			$file->move($destination, $logoName);
 		}
 
-		$result = $this->model->insertSchool($data,$logoName);
+		// 3. Insert into Database
+		$result = $this->model->insertSchool($data, $logoName);
 		
-		$user_data = $this->model->insertUserData($data,$result);
-		
+		if ($result) {
+			$this->model->insertUserData($data, $result);
+			return response()->json([
+				'status' => 200,
+				'message' => 'School Added Successfully'
+			]);
+		}
+
 		return response()->json([
-			'status' => $result ? 200 : 500,
-			'message' => $result ? 'School Added Successfully' : 'Failed to add school'
+			'status' => 500,
+			'message' => 'Failed to add school'
 		]);
 	}
 	

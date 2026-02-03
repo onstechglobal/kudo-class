@@ -6,6 +6,8 @@ import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import Input from "@/components/form/Input";
 import CustomButton from "@/components/form/CustomButton";
 import CustomSelect from "@/components/form/CustomSelect";
+import PageHeader from "../../components/common/PageHeader";
+
 
 export default function EditPermissions() {
     const { id } = useParams();
@@ -18,7 +20,7 @@ export default function EditPermissions() {
     });
 
     useEffect(() => {
-        axios.get(`/permissions/${id}`).then(res => {
+        axios.get(`/api/permissions/${id}`).then(res => {
             setForm({
                 module: res.data.module || "",
                 status: res.data.status || "active"
@@ -33,7 +35,7 @@ export default function EditPermissions() {
 
     function submit(e) {
         e.preventDefault();
-        axios.put(`/permissions/${id}`, form)
+        axios.put(`/api/permissions/${id}`, form)
             .then(() => navigate("/admin/permissions"));
     }
 
@@ -53,31 +55,18 @@ export default function EditPermissions() {
                 <div className="bg-white border-b border-gray-200 px-8 py-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-                        <div className="flex items-center gap-4">
-                        <Link to="/admin/permissions">
-                            <button
-                            type="button"
-                            className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                            >
-                            <ArrowLeft size={20} />
-                            </button>
-                        </Link>
-
-                        <div>
-                            <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                            <Link to="/admin/permissions">Permissions</Link> / <Link>Edit</Link>
-                            </nav>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                            Edit Permissions
-                            </h1>
-                        </div>
-                        </div>
+                        <PageHeader
+                            prevRoute="/admin/permissions"
+                            breadcrumbParent="Permissions"
+                            breadcrumbCurrent="Edit"
+                            title="Edit Permissions"
+                        />
 
                         <CustomButton
-                        text="Update Permission"
-                        Icon={Save}
-                        onClick={submit}
-                        className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+                            text="Update Permission"
+                            Icon={Save}
+                            onClick={submit}
+                            className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
                         />
                     </div>
                 </div>

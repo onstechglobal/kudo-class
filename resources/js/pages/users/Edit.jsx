@@ -3,27 +3,50 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
-import CustomButton from "@/components/form/CustomButton";
+import CustomButton from "@/components/form/CustomButton"; 
 import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
+import EditPreloader from '../../components/common/EditPreloader';
 
 export default function EditUser() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  /* ================= ROLES ================= */
-  const roles = [
-    { value: "2", label: "School" },
-    { value: "3", label: "Teacher" },
-    { value: "4", label: "Parent" },
-  ];
 
   /* ================= STATE ================= */
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [roles, setRoles] = useState([]);
+
+  
+  /* ================= FETCH ROLES ================= */
+  useEffect(() => {
+    axios
+      .get(`${Api_url.name}api/roles`, { withCredentials: true })
+      .then(res => {
+        const list = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.data)
+            ? res.data.data
+            : [];
+
+        setRoles(
+          list
+            .filter(r => r.role_name?.toLowerCase() !== "admin")
+            .sort((a, b) => Number(a.role_id) - Number(b.role_id))
+            .map(r => ({
+              value: String(r.role_id),
+              label: r.role_name
+                .toLowerCase()
+                .replace(/\b\w/g, c => c.toUpperCase()),
+            }))
+        );
+      })
+      .catch(() => setRoles([]));
+  }, []);
 
   const [form, setForm] = useState({
     role_id: "",
@@ -53,12 +76,12 @@ export default function EditUser() {
   /* ================= LOAD USER & SCHOOLS ================= */
   useEffect(() => {
     Promise.all([
-      axios.get(`${Api_url.name}users/${id}`, { withCredentials: true }),
-      axios.get(`${Api_url.name}school`, { withCredentials: true }),
+      axios.get(`${Api_url.name}api/users/${id}`, { withCredentials: true }),
+      axios.get(`${Api_url.name}api/school`, { withCredentials: true }),
     ])
       .then(([userRes, schoolRes]) => {
         const u = userRes.data;
-
+        console.log(u);
         setForm({
           role_id: String(u.role_id),
           status: u.status || "active",
@@ -68,7 +91,7 @@ export default function EditUser() {
           phone: u.phone || "",
 
           username: u.username || "",
-          password: "", // ✅ NEVER preload password
+          password: "",
 
           school_name: u.school_name || "",
           board: u.board || "",
@@ -85,8 +108,8 @@ export default function EditUser() {
         const list = Array.isArray(schoolRes.data)
           ? schoolRes.data
           : Array.isArray(schoolRes.data?.data)
-          ? schoolRes.data.data
-          : [];
+            ? schoolRes.data.data
+            : [];
 
         setSchools(list);
       })
@@ -153,7 +176,7 @@ export default function EditUser() {
     if (!validate()) return;
 
     try {
-      const { data } = await axios.get(`${Api_url.name}csrf-token`, {
+      const { data } = await axios.get(`${Api_url.name}api/csrf-token`, {
         withCredentials: true,
       });
 
@@ -162,12 +185,13 @@ export default function EditUser() {
       // ✅ KEEP OLD PASSWORD IF EMPTY
       if (!payload.password) delete payload.password;
 
-      await axios.put(`${Api_url.name}users/${id}`, payload, {
+      const response = await axios.put(`${Api_url.name}api/users/${id}`, payload, {
         headers: { "X-CSRF-TOKEN": data.csrfToken },
         withCredentials: true,
       });
-
-      navigate("/admin/users");
+      navigate('/admin/users', {
+        state: { status: 'success', message: 'User updated successfully!' }
+      });
     } catch (err) {
       console.error("Update failed", err);
     }
@@ -176,7 +200,7 @@ export default function EditUser() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="p-8">Loading...</div>
+        <EditPreloader />
       </AdminLayout>
     );
   }
@@ -188,35 +212,22 @@ export default function EditUser() {
 
         {/* HEADER */}
         <div className="bg-white border-b border-gray-200 px-8 py-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-                <div className="flex items-center gap-4">
-                <Link to="/admin/users">
-                    <button
-                    type="button"
-                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer"
-                    >
-                    <ArrowLeft size={20} />
-                    </button>
-                </Link>
+            <PageHeader
+              prevRoute="/admin/users"
+              breadcrumbParent="Users"
+              breadcrumbCurrent="Edit"
+              title="Edit User"
+            />
 
-                <div>
-                    <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                     <Link to="/admin/users">Users</Link> / <Link>Edit</Link>
-                    </nav>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Edit User
-                    </h1>
-                </div>
-                </div>
-
-                <CustomButton
-                text="Update User"
-                Icon={Save}
-                onClick={submit}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-                />
-            </div>
+            <CustomButton
+              text="Update User"
+              Icon={Save}
+              onClick={submit}
+              className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+            />
+          </div>
         </div>
 
         {/* CONTENT */}
@@ -278,7 +289,7 @@ export default function EditUser() {
 
                   <Input label="Country" value={form.country}
                     onChange={e => updateField("country", e.target.value)}
-                    error={errors.country} /> 
+                    error={errors.country} />
 
                   <Input label="State" value={form.state}
                     onChange={e => updateField("state", e.target.value)}

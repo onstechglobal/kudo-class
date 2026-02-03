@@ -18,7 +18,9 @@ class AcademicController extends Controller
 	public function index(Request $request) {
 		$filters = [
 			'search' => $request->query('search'),
-			'status' => $request->query('status'), // '1' or '0'
+			'status' => $request->query('status'),
+			'start_date' => $request->query('start_date'),
+			'end_date' => $request->query('end_date'),
 		];	
 
 		$list = $this->model->getAcademicList(10, $filters);

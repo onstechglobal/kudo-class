@@ -1,10 +1,11 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import axios from "axios";
 import AdminLayout from "@/layouts/AdminLayout";
-import Stat from "../../components/StatCard";
-import CustomButton from "@/components/form/CustomButton";
-import AvatarLetter from "@/components/AvatarLetter";
-import DeleteConfirmModal from '@/components/common/DeleteConfirmModal';
+import Stat from "../../components/common/StatCard";
+import CustomButton from "../../components/form/CustomButton";
+import AvatarLetter from "../../components/common/AvatarLetter";
+import DeleteConfirmModal from "../../components/common/DeleteConfirmModal";
 
 import {
   Search,
@@ -18,6 +19,11 @@ import {
 import { Link } from "react-router-dom";
 
 export default function UserListing() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [message, setMessage] = useState('');
+  const [messageClass, setMessageClass] = useState('');
+
   /* ================= STATES ================= */
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +51,7 @@ export default function UserListing() {
   const fetchUsers = (page = 1) => {
     setLoading(true);
 
-    axios.get("/users", {
+    axios.get("/api/users", {
       params: { page }
     }).then(res => {
       const data = res.data.data ?? res.data ?? [];
@@ -75,7 +81,32 @@ export default function UserListing() {
   useEffect(() => {
     fetchUsers(currentPage);
   }, [currentPage]);
+  /* Add/edit success message */
+  useEffect(() => {
+      if (location.state?.message) {
+          if(location.state.status && location.state.status=='success'){
+              setMessageClass('text-green-700 border-green-600 bg-green-50');
 
+          }else if(location.state.status && location.state.status=='failed'){
+              setMessageClass('text-red-700 border-red-600 bg-red-50');
+
+          }else{
+              setMessageClass('');
+          }
+      setMessage(location.state.message);
+
+      const timer = setTimeout(() => {
+          setMessage('');
+          setMessageClass('');
+      }, 5000);
+
+      setTimeout(() => {
+          navigate(location.pathname, { replace: true });
+      }, 0);
+
+      return () => clearTimeout(timer);
+      }
+  }, []);
   /* ================= SEARCH ================= */
   const applySearch = () => {
     setAppliedSearch(searchInput);
@@ -91,11 +122,15 @@ export default function UserListing() {
 
   /* ================= DELETE ================= */
   const handleDelete = (id) => {
-    axios.delete(`/users/${id}`).then(() => {
+    axios.delete(`/api/users/${id}`).then(() => {
       if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage(prev => prev - 1);
+        setMessage('Deleted Successfully'); 
+        setMessageClass('text-red-700 border-red-600 bg-red-50');
       } else {
         fetchUsers(currentPage);
+        setMessage('Deleted Successfully');
+        setMessageClass('text-red-700 border-red-600 bg-red-50');
       }
     });
   };
@@ -185,7 +220,12 @@ export default function UserListing() {
 
           </div>
         </div>
-
+        {/* ---- Success Messages ---- */}
+          {message && (
+              <div className={`flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] ${messageClass} px-4 py-3 text-sm font-medium mb-3`}>
+              {message}
+              </div>
+          )}
         {/* TABLE */}
         <div className="bg-white rounded-xl border border-gray-300 overflow-x-auto">
           <div class="overflow-x-auto">
@@ -202,18 +242,18 @@ export default function UserListing() {
               <tbody className="divide-y">
                 {loading && (
                   <tr>
-                    <td colSpan="5" className="p-6 text-center text-gray-500">
-                      <div className=" inset-0 z-10 flex items-center justify-center rounded-xl">
+                    <td colSpan="4" className="p-6 text-center text-gray-500">
+                      <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
                           <div className="flex flex-col items-center gap-4">
                               <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
                               <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
-                                  Loading Users...
+                                  Loading Data...
                               </p>
                           </div>
-                        </div>
+                      </div>
                     </td>
                   </tr>
-                )}
+                )} 
 
                 {!loading && filteredUsers.map(u => (
                   <tr key={u.user_id} className="border border-gray-200 hover:bg-gray-50">
@@ -254,8 +294,8 @@ export default function UserListing() {
 
                 {!loading && filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="p-6 text-center text-gray-500">
-                      No users found
+                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                        <p className="text-lg font-semibold">No user found</p>
                     </td>
                   </tr>
                 )}

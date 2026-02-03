@@ -28,7 +28,7 @@ class ParentController extends Controller
     /**
      * Store parent + user (same flow as Teacher store)
      */
-    public function store(Request $request)
+    public function store1(Request $request)
     {
         $request->validate([
             'first_name' => 'required',
@@ -64,63 +64,111 @@ class ParentController extends Controller
             ]);
         });
     }
+	
+	
+	// ParentController.php
+
+	public function store(Request $request){
+		$request->validate([
+			'first_name' => 'required',
+			'email'      => 'required|email|unique:tb_users,email',
+			'mobile'     => 'required|digits:10',
+			'address_line1' => 'required',
+			'city'       => 'required',
+		]);
+
+		return DB::transaction(function () use ($request) {
+			$username = 'par_' . $request->mobile;
+			$password = $this->generatePassword();
+
+			// 1. Create User via Model
+			$userId = $this->model->createUser([
+				'username' => $username,
+				'name'     => $request->first_name . ' ' . $request->last_name,
+				'email'    => $request->email,
+				'mobile'   => $request->mobile,
+				'password' => Hash::make($password),
+			]);
+
+			// 2. Create Family via Model
+			$familyId = $this->model->createFamily([
+				'address_line1' => $request->address_line1,
+				'address_line2' => $request->address_line2,
+				'city'          => $request->city,
+				'state'         => $request->state,
+				'pincode'       => $request->pincode,
+				'district'       => $request->district,
+				'country'       => $request->country ?? 'India',
+			]);
+
+			// 3. Create Parent via Model
+			$this->model->createParent($request->all(), $userId, $familyId);
+
+			return response()->json([
+				'status'   => 201,
+				'message'  => 'Parent added successfully',
+				'username' => $username,
+				'password' => $password
+			]);
+		});
+	}
+	
+	
+	public function searchParents(Request $request) {
+		$q = $request->query('q');
+		if (!$q) return response()->json([]);
+
+		$parents = $this->model->searchParents($q);
+		return response()->json($parents);
+	}
+
 
     /**
      * Show single parent
      */
-    public function show($id)
-    {
-        $parent = DB::table('tb_parents')->where('parent_id', $id)->first();
+	public function show($id){
+		$parent = $this->model->getParentById($id);
 
-        if (!$parent) {
-            return response()->json(['message' => 'Parent not found'], 404);
-        }
+		if (!$parent) {
+			return response()->json(['message' => 'Parent not found'], 404);
+		}
 
-        return response()->json(['parent' => $parent]);
-    }
+		return response()->json(['parent' => $parent]);
+	}
+	
 
     /**
      * Update parent
      */
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'first_name' => 'required',
-            'email'      => 'required|email',
-            'mobile'     => 'required|digits:10',
-        ]);
+   public function update(Request $request, $id){
+		$request->validate([
+			'first_name'    => 'required',
+			'email'         => 'required|email',
+			'mobile'        => 'required|digits:10',
+			'address_line1' => 'required',
+			'city'          => 'required',
+		]);
 
-        return DB::transaction(function () use ($request, $id) {
+		return DB::transaction(function () use ($request, $id) {
+			$parent = DB::table('tb_parents')->where('parent_id', $id)->first();
+			
+			if (!$parent) {
+				return response()->json(['message' => 'Parent not found'], 404);
+			}
 
-            $parent = DB::table('tb_parents')->where('parent_id', $id)->first();
-            if (!$parent) {
-                return response()->json(['message' => 'Parent not found'], 404);
-            }
+			$this->model->updateParentData(
+				$id, 
+				$request->all(), 
+				$parent->user_id, 
+				$parent->family_id
+			);
 
-            // Update parent table
-            DB::table('tb_parents')->where('parent_id', $id)->update([
-                'first_name'        => $request->first_name,
-                'last_name'         => $request->last_name,
-                'email'             => $request->email,
-                'mobile'            => $request->mobile,
-                'alternate_mobile'  => $request->alternate_mobile,
-                'status'            => $request->status,
-                'updated_at'        => now()
-            ]);
-
-            // Update user table (SAME AS TEACHER LOGIC)
-            DB::table('tb_users')->where('user_id', $parent->user_id)->update([
-                'name'   => $request->first_name,
-                'email'  => $request->email,
-                'mobile' => $request->mobile,
-            ]);
-
-            return response()->json([
-                'status'  => 200,
-                'message' => 'Parent updated successfully'
-            ]);
-        });
-    }
+			return response()->json([
+				'status'  => 200,
+				'message' => 'Parent and Family details updated successfully'
+			]);
+		});
+	}
 
     /**
      * Delete parent + user

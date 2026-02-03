@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import AdminLayout from "@/layouts/AdminLayout";
-import Stat from "@/components/StatCard";
-import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
-import CustomButton from "@/components/form/CustomButton";
-import AvatarLetter from "@/components/AvatarLetter";
+import AdminLayout from "../../layouts/AdminLayout";
+import Stat from "../../components/common/StatCard";
+import DeleteConfirmModal from "../../components/common/DeleteConfirmModal";
+import CustomButton from "../../components/form/CustomButton";
+import AvatarLetter from "../../components/common/AvatarLetter";
 import {
   Search,
   Plus,
@@ -44,7 +44,7 @@ export default function PermissionListing() {
   const fetchPermissions = (page = 1) => {
     setLoading(true);
 
-    axios.get("/permissions", {
+    axios.get("/api/permissions", {
       params: {
         page,
       },
@@ -174,14 +174,14 @@ export default function PermissionListing() {
                 {loading && (
                   <tr>
                     <td colSpan="5" className="p-6 text-center text-gray-500">
-                      <div className=" inset-0 z-10 flex items-center justify-center rounded-xl">
+                      <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
                           <div className="flex flex-col items-center gap-4">
                               <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
                               <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
-                                  Loading Permission...
+                                  Loading Data...
                               </p>
                           </div>
-                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -228,8 +228,8 @@ export default function PermissionListing() {
 
                 {!loading && filteredPermissions.length === 0 && (
                   <tr>
-                    <td colSpan="3" className="p-6 text-center text-gray-500">
-                      No permissions found
+                    <td colSpan="3" className="px-6 py-8 text-center text-gray-500">
+                      <p className="text-lg font-semibold">No permission found</p>
                     </td>
                   </tr>
                 )}

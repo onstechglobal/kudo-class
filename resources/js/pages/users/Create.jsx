@@ -7,6 +7,8 @@ import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
+
 
 /* ================= HELPERS ================= */
 function generatePassword(length = 10) {
@@ -22,27 +24,57 @@ function slugify(text = "") {
 }
 
 export default function CreateUser() {
-  const navigate = useNavigate();
-
-  /* ================= ROLES ================= */
-  const roles = [
-    { value: "2", label: "School" },
-    { value: "3", label: "Teacher" },
-    { value: "4", label: "Parent" },
-  ];
+  const navigate = useNavigate(); 
 
   /* ================= STATE ================= */
   const [schools, setSchools] = useState([]);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerate, setAutoGenerate] = useState(true);
+  const [roles, setRoles] = useState([]);
+
+  /* ================= FETCH ROLES ================= */
+  useEffect(() => {
+    axios
+      .get(`${Api_url.name}api/roles`, { withCredentials: true })
+      .then(res => {
+        const response = res.data;
+
+        const list =
+          Array.isArray(response)
+            ? response
+            : Array.isArray(response.data)
+              ? response.data
+              : [];
+
+        const formattedRoles = list
+          // ❌ hide admin role
+          .filter(r => r.role_name?.toLowerCase() !== "admin")
+
+          // ✅ sort by role_id ASC
+          .sort((a, b) => Number(a.role_id) - Number(b.role_id))
+
+          // ✅ format for select + Capitalize
+          .map(r => ({
+            value: String(r.role_id),
+            label: r.role_name
+              .toLowerCase()
+              .replace(/\b\w/g, char => char.toUpperCase()),
+          }));
+
+        setRoles(formattedRoles);
+      })
+      .catch(() => setRoles([]));
+  }, []);
+
+
 
   const [form, setForm] = useState({
     role_id: "",
     status: "active",
 
     name: "",      // Teacher / Parent name
-    email: "",    
+    email: "",
     username: "",
     password: generatePassword(),
 
@@ -64,17 +96,17 @@ export default function CreateUser() {
   /* ================= FETCH SCHOOLS ================= */
   useEffect(() => {
     axios
-      .get(`${Api_url.name}school`, { withCredentials: true })
+      .get(`${Api_url.name}api/school`, { withCredentials: true })
       .then(res => {
         const response = res.data;
         const list =
           Array.isArray(response)
             ? response
             : Array.isArray(response.data)
-            ? response.data
-            : Array.isArray(response.schools)
-            ? response.schools
-            : [];
+              ? response.data
+              : Array.isArray(response.schools)
+                ? response.schools
+                : [];
         setSchools(list);
       })
       .catch(() => setSchools([]));
@@ -82,28 +114,28 @@ export default function CreateUser() {
 
   /* ================= AUTO USERNAME ================= */
   useEffect(() => {
-  if (!autoGenerate) return;
+    if (!autoGenerate) return;
 
-  let username = "";
+    let username = "";
 
-  if (form.role_id === "2" && form.school_name) {
-    username = `sch_${slugify(form.school_name)}`;
-  }
+    if (form.role_id === "2" && form.school_name) {
+      username = `sch_${slugify(form.school_name)}`;
+    }
 
-  if (form.role_id === "3" && form.phone) {
-    username = `tr_${form.phone.replace(/\D/g, "")}`;
-  }
+    if (form.role_id === "3" && form.phone) {
+      username = `tr_${form.phone.replace(/\D/g, "")}`;
+    }
 
-  if (form.role_id === "4" && form.phone) {
-    username = `par_${form.phone.replace(/\D/g, "")}`;
-  }
+    if (form.role_id === "4" && form.phone) {
+      username = `par_${form.phone.replace(/\D/g, "")}`;
+    }
 
-  setForm(prev => ({
-    ...prev,
-    username,
-    password: autoGenerate ? generatePassword() : prev.password,
-  }));
-}, [form.role_id, form.school_name, form.phone, autoGenerate]);
+    setForm(prev => ({
+      ...prev,
+      username,
+      password: autoGenerate ? generatePassword() : prev.password,
+    }));
+  }, [form.role_id, form.school_name, form.phone, autoGenerate]);
 
 
   /* ================= FIELD UPDATE ================= */
@@ -139,49 +171,49 @@ export default function CreateUser() {
 
   /* ================= VALIDATION ================= */
   function validate() {
-  const err = {};
+    const err = {};
 
-  if (!form.role_id) err.role_id = "Role is required";
-  
-  if(!form.username){
-    err.username = "Username is required";
-  }else if(form.username.length < 4){
-    err.username = "Username must be at least 4 characters";
-  }
+    if (!form.role_id) err.role_id = "Role is required";
 
-  if(!form.password){
-    err.password = "Password is required";
-  }else if(form.password.length < 8) {
-    err.password = "Password must be at least 8 characters";
-  }
-
-  if (form.email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(form.email)) {
-      err.email = "Invalid email address";
+    if (!form.username) {
+      err.username = "Username is required";
+    } else if (form.username.length < 4) {
+      err.username = "Username must be at least 4 characters";
     }
-  }
 
-  if (form.role_id === "2") {
-    if (!form.school_name) err.school_name = "School name required";
-    if (!form.board) err.board = "Board required";
-    if (!form.phone) err.phone = "Phone required";
-     if (!form.address) err.address = "Address required";
-    if (!form.city) err.city = "City is required";
-    if (!form.state) err.state = "State is required";
-    if (!form.country) err.country = "Country is required";
-    if (!form.pincode) err.pincode = "Pincode is required";
-  }
+    if (!form.password) {
+      err.password = "Password is required";
+    } else if (form.password.length < 8) {
+      err.password = "Password must be at least 8 characters";
+    }
 
-  if (form.role_id === "3" || form.role_id === "4") {
-    if (!form.school_id) err.school_id = "School required";
-    if (!form.phone) err.phone = "Phone required";
-    if (!form.name) err.name = "Name is required";
-  }
+    if (form.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email)) {
+        err.email = "Invalid email address";
+      }
+    }
 
-  setErrors(err);
-  return Object.keys(err).length === 0;
-}
+    if (form.role_id === "2") {
+      if (!form.school_name) err.school_name = "School name required";
+      if (!form.board) err.board = "Board required";
+      if (!form.phone) err.phone = "Phone required";
+      if (!form.address) err.address = "Address required";
+      if (!form.city) err.city = "City is required";
+      if (!form.state) err.state = "State is required";
+      if (!form.country) err.country = "Country is required";
+      if (!form.pincode) err.pincode = "Pincode is required";
+    }
+
+    if (form.role_id === "3" || form.role_id === "4") {
+      //if (!form.school_id) err.school_id = "School required";
+      if (!form.phone) err.phone = "Phone required";
+      if (!form.name) err.name = "Name is required";
+    }
+
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  }
 
 
   /* ================= SUBMIT ================= */
@@ -191,18 +223,19 @@ export default function CreateUser() {
 
     try {
       const { data } = await axios.get(
-        `${Api_url.name}csrf-token`,
+        `${Api_url.name}api/csrf-token`,
         { withCredentials: true }
       );
 
-      await axios.post(`${Api_url.name}users`, form, {
+      const response = await axios.post(`${Api_url.name}api/users`, form, {
         headers: {
           "X-CSRF-TOKEN": data.csrfToken,
         },
         withCredentials: true,
       });
-
-      navigate("/admin/users");
+      navigate('/admin/users', {
+        state: { status: 'success', message: 'User created successfully!' } 
+      });
     } catch (err) {
       console.error("Create user failed", err);
     }
@@ -215,31 +248,24 @@ export default function CreateUser() {
 
         {/* HEADER */}
         <div className="bg-white border-b border-gray-200 px-8 py-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/admin/users">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/admin/users">Users</Link> / <Link>Add</Link>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Add User
-                  </h1>
-                </div>
-              </div>
-              <CustomButton
-                text="Save User"
-                Icon={Save}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-                to="#"
-                onClick={submit}
-              />
-            </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+            <PageHeader
+              prevRoute="/admin/users"
+              breadcrumbParent="Users"
+              breadcrumbCurrent="Add"
+              title="Add User"
+            />
+
+            <CustomButton
+              text="Save User"
+              Icon={Save}
+              className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+              to="#"
+              onClick={submit}
+            />
           </div>
+        </div>
 
         {/* CONTENT */}
         <div className="sm:p-8 max-w-[1600px] mx-auto">
@@ -296,7 +322,7 @@ export default function CreateUser() {
                     <Input label="Phone" value={form.phone}
                       onChange={e => updateField("phone", e.target.value)}
                       error={errors.phone} />
-                    
+
                     <CustomSelect
                       label="Board"
                       value={form.board}
@@ -310,8 +336,8 @@ export default function CreateUser() {
                     />
 
                     <Input label="Address" value={form.address}
-                      onChange={e => updateField("address", e.target.value)} 
-                       error={errors.address}
+                      onChange={e => updateField("address", e.target.value)}
+                      error={errors.address}
                     />
 
                     {/* ✅ NEW SCHOOL-ONLY FIELDS */}

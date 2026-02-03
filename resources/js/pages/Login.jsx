@@ -1,11 +1,13 @@
 import { useState } from "react";
 import api from "../helpers/api";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [passwordType, setPasswordType] = useState("password");
 
     const submit = async (e) => {
         e.preventDefault();
@@ -13,9 +15,11 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const res = await api.post("/login", { email, password });
+            const res = await api.post("api/login", { email, password });
             localStorage.setItem("user", JSON.stringify(res.data.user));
-            window.location.href = "/dashboard";
+            //window.location.href = "/dashboard";
+            console.log(res);
+            console.log(res.data);
         } catch (err) {
             setError(
                 err.response?.data?.message || "Invalid email or password"
@@ -90,7 +94,7 @@ export default function Login() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="e.g. admin@kudoclass.com"
+                                placeholder=""
                                 className="w-full px-4 py-3 border border-slate-200 rounded-xl
                                     focus:outline-none focus:ring-4 focus:ring-blue-500/20
                                     focus:border-blue-500"
@@ -103,16 +107,26 @@ export default function Login() {
                             <label className="block text-sm font-semibold text-slate-600 mb-2">
                                 Password
                             </label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full px-4 py-3 border border-slate-200 rounded-xl
-                                    focus:outline-none focus:ring-4 focus:ring-blue-500/20
-                                    focus:border-blue-500"
-                                required
-                            />
+                            <div className="relative">
+                                <input
+                                    type={passwordType}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder=""
+                                    className="w-full px-4 py-3 border border-slate-200 rounded-xl
+                                        focus:outline-none focus:ring-4 focus:ring-blue-500/20
+                                        focus:border-blue-500"
+                                    required
+                                />
+                                
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    { passwordType=='password' ? (
+                                        <Eye className="h-5 w-5 cursor-pointer text-gray-500" onClick={() => {setPasswordType('text')}} />
+                                    ) : (
+                                        <EyeOff className="h-5 w-5 cursor-pointer text-gray-500" onClick={() => {setPasswordType('password')}} />
+                                    )}
+                                </span>
+                            </div>
                         </div>
 
                         {/* FORGOT */}

@@ -4,7 +4,7 @@ import axios from "axios";
 import {
   ArrowLeft,
   Save,
-  BookOpen,
+  BookOpen, 
   CheckCircle2,
 } from "lucide-react";
 
@@ -13,6 +13,8 @@ import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
+
 
 export default function EditSection() {
   const navigate = useNavigate();
@@ -42,7 +44,7 @@ export default function EditSection() {
   /* FETCH CLASSES AND TEACHERS */
   useEffect(() => {
     // CHANGED FROM sections/classes TO section/classes
-    axios.get(`${Api_url.name}section/classes`)
+    axios.get(`${Api_url.name}api/section/classes`)
       .then(res => {
         const classOptions = Array.isArray(res.data) ? res.data.map(c => ({
           label: c.class_name,
@@ -53,7 +55,7 @@ export default function EditSection() {
       .catch(err => console.error("Error fetching classes:", err));
 
     // CHANGED FROM sections/teachers TO section/teachers
-    axios.get(`${Api_url.name}section/teachers`)
+    axios.get(`${Api_url.name}api/section/teachers`)
       .then(res => {
         const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
           label: t.name,
@@ -72,7 +74,7 @@ export default function EditSection() {
   const fetchSection = async () => {
     try {
       // CHANGED FROM sections TO section
-      const res = await axios.get(`${Api_url.name}section/${id}`);
+      const res = await axios.get(`${Api_url.name}api/section/${id}`);
       if (res.data.section) {
         const data = res.data.section;
         setForm({
@@ -118,7 +120,7 @@ export default function EditSection() {
 
     try {
       const res = await axios.post(
-        `${Api_url.name}update-section/${id}`,
+        `${Api_url.name}api/update-section/${id}`,
         form,
         {
           headers: {
@@ -130,6 +132,9 @@ export default function EditSection() {
 
       if (res.data.status === 200) {
         setSuccess(true);
+        navigate('/sections', {
+          state: { status: 'success', message: 'Session updated successfully!' } 
+        });
       } else {
         alert(res.data.message || "Update failed");
       }
@@ -157,32 +162,18 @@ export default function EditSection() {
 
   return (
     <AdminLayout>
-      <div className="bg-[#F8FAFC] min-h-screen">
+      <div className="bg-[#F8FAFC] min-h-screen p-6">
         <form onSubmit={submit}>
           {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                {/* CHANGED FROM /sections TO /section */}
-                <Link to="/sections">
-                  <button
-                    type="button"
-                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-
-                <div>
-                  {/* CHANGED FROM Sections to Section */}
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/sections">Section</Link> / <Link>Edit</Link>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Edit Section
-                  </h1>
-                </div>
-              </div>
+              
+              <PageHeader
+                prevRoute="/sections"
+                breadcrumbParent="Section"
+                breadcrumbCurrent="Edit"
+                title="Edit Section"
+              />
 
               <CustomButton
                 text={loading ? "Updating..." : "Update Section"}
@@ -196,24 +187,8 @@ export default function EditSection() {
 
           {/* BODY */}
           <div className="p-8 max-w-[1600px] mx-auto grid grid-cols-12 gap-8">
-            {/* LEFT - AVATAR SECTION */}
-            <div className="col-span-12 lg:col-span-3">
-              <div className="bg-white rounded-3xl p-8 text-center">
-                <div className="relative w-40 h-40 mx-auto mb-4">
-                  <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                    <AvatarLetter text={form.section_name?.charAt(0) || 'S'} />
-                  </div>
-                </div>
-                
-                <p className="text-xs text-gray-500">
-                  Section Avatar (Initials)
-                </p>
-              </div>
-            </div>
-
-            {/* RIGHT - FORM FIELDS */}
-            <div className="col-span-12 lg:col-span-9">
-              <div className="bg-white rounded-[2.5rem] p-10 space-y-12">
+            <div className="col-span-12">
+              <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
                 {/* BASIC DETAILS */}
                 <section>
                   <h2 className="text-xl font-black mb-6 flex items-center gap-2">
@@ -258,23 +233,7 @@ export default function EditSection() {
             </div>
           </div>
 
-          {/* SUCCESS MODAL */}
-          {success && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-8 max-w-md text-center">
-                <CheckCircle2 className="mx-auto text-[#faae1c]" size={48} />
-                <h3 className="text-xl font-bold mt-4">Section Updated Successfully</h3>
-                <button 
-                  type="button" 
-                  // CHANGED FROM /sections TO /section
-                  onClick={() => navigate("/sections")} 
-                  className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          )}
+         
         </form>
       </div>
     </AdminLayout>

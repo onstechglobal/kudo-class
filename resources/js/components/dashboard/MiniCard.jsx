@@ -1,4 +1,4 @@
-function MiniCard({ icon, title, value, sub, colorClass }) {
+function MiniCard({ icon, title, value, sub, colorClass, titleClass, contentClass }) {
     return (
         <div className="rounded-2xl shadow-sm overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl ">
             
@@ -9,10 +9,10 @@ function MiniCard({ icon, title, value, sub, colorClass }) {
 
             {/* Content */}
             <div className="px-8 py-6 text-center bg-white space-y-3">
-                <p className="text-xl font-medium text-gray-700">{title}</p>
+                <p className={`text-xl font-medium text-gray-700 ${titleClass}`}>{title}</p>
                 <h3 className="text-3xl font-medium text-gray-700">{value}</h3>
                 {sub && (
-                    <div className="flex justify-center gap-1 text-xl font-medium">
+                    <div className={`flex justify-center gap-1 text-xl font-medium ${contentClass}`}>
                         <span className="text-gray-500">{sub}</span>
                     </div>
                 )}

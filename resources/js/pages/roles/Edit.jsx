@@ -7,6 +7,8 @@ import Input from "@/components/form/Input";
 import MultiSelect from "@/components/form/MultiSelect";
 import CustomButton from "@/components/form/CustomButton";
 import CustomSelect from "@/components/form/CustomSelect";
+import PageHeader from "../../components/common/PageHeader";
+
 
 export default function EditRole() {
     const { id } = useParams();
@@ -23,8 +25,8 @@ export default function EditRole() {
 
     useEffect(() => {
         Promise.all([
-            axios.get("/permissions"),
-            axios.get(`/roles/${id}`)
+            axios.get("/api/permissions"),
+            axios.get(`/api/roles/${id}`)
         ]).then(([permRes, roleRes]) => {
 
             setPermissions(permRes.data);
@@ -43,7 +45,7 @@ export default function EditRole() {
     function submit(e) {
         e.preventDefault();
 
-        axios.put(`/roles/${id}`, {
+        axios.put(`/api/roles/${id}`, {
             ...form,
             permissions: selectedPermissions.map(p => p.permission_id)
         }).then(() => {
@@ -66,32 +68,19 @@ export default function EditRole() {
                 {/* ===== SUB HEADER ===== */}
                 <div className="bg-white border-b border-gray-200 px-8 py-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-
-                        <div className="flex items-center gap-4">
-                        <Link to="/admin/roles">
-                            <button
-                            type="button"
-                            className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                            >
-                            <ArrowLeft size={20} />
-                            </button>
-                        </Link>
-
-                        <div>
-                            <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                                <Link to="/admin/roles">Roles</Link> / <Link>Edit</Link>
-                            </nav>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                            Edit Role
-                            </h1>
-                        </div>
-                        </div>
+                        
+                        <PageHeader
+                            prevRoute="/admin/roles"
+                            breadcrumbParent="Roles"
+                            breadcrumbCurrent="Edit"
+                            title="Edit Role"
+                        />
 
                         <CustomButton
-                        text="Update Role"
-                        Icon={Save}
-                        onClick={submit}
-                        className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+                            text="Update Role"
+                            Icon={Save}
+                            onClick={submit}
+                            className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
                         />
                     </div>
                 </div>
@@ -141,7 +130,7 @@ export default function EditRole() {
                                 onChange={setSelectedPermissions}
                             />
 
-                            
+
                         </form>
                     </div>
                 </div>

@@ -7,6 +7,7 @@ import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import MultiSelect from "@/components/form/MultiSelect";
 import CustomButton from "@/components/form/CustomButton";
+import PageHeader from "../../components/common/PageHeader";
 
 /* ================= COMPONENT ================= */
 export default function CreateRole() {
@@ -24,7 +25,7 @@ export default function CreateRole() {
 
   /* ================= FETCH PERMISSIONS ================= */
   useEffect(() => {
-    axios.get("/permissions").then(res => {
+    axios.get("/api/permissions").then(res => {
       setPermissions(res.data || []);
     });
   }, []);
@@ -40,7 +41,7 @@ export default function CreateRole() {
     setErrors({});
 
     try {
-      await axios.post("/roles", {
+      await axios.post("/api/roles", {
         ...form,
         permissions: selectedPermissions.map(p => p.permission_id),
       });
@@ -62,25 +63,12 @@ export default function CreateRole() {
         <div className="bg-white border-b border-gray-200 px-8 py-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-            <div className="flex items-center gap-4">
-              <Link to="/admin/roles">
-                <button
-                  type="button"
-                  className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-              </Link>
-
-              <div>
-                <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                  <Link to="/admin/roles">Roles</Link> / <Link>Add</Link>
-                </nav>
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                  Add Role
-                </h1>
-              </div>
-            </div>
+            <PageHeader
+              prevRoute="/admin/roles"
+              breadcrumbParent="Roles"
+              breadcrumbCurrent="Add"
+              title="Add Role"
+            />
 
             <CustomButton
               text="Save Role"

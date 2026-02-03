@@ -1,9 +1,4 @@
-export default function AvatarLetter({
-  text = "User",
-  size = 40, // px
-  rounded = "full", // full | 3xl
-  className = "",
-  bgColor = "#FAAE1C"
+export default function AvatarLetter({ text = "User", size = 40, rounded = "full", className = "", bgColor = "#FAAE1C", onClick=undefined
 }) {
   const letter = text?.trim()?.charAt(0)?.toUpperCase() || "U";
 
@@ -18,11 +13,14 @@ export default function AvatarLetter({
       `}
       style={{
         width: size,
+        minWidth: size,
+        minHeight: size,
         height: size,
-        backgroundColor: bgColor, // ✅ STATIC COLOR
+        backgroundColor: bgColor,
         fontSize: size * 0.5,
         fontWeight:400
       }}
+      onClick={onClick}
     >
       {letter}
     </div>

@@ -7,7 +7,7 @@ export default function RolePermissions({ roleId }) {
     const [assigned, setAssigned] = useState([]);
 
     useEffect(() => {
-        axios.get(`/api/roles/${roleId}/permissions`)
+        axios.get(`api/api/roles/${roleId}/permissions`)
             .then(res => {
                 setPermissions(res.data.permissions);
                 setAssigned(res.data.assigned);

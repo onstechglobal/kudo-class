@@ -9,6 +9,8 @@ import AdminLayout from '../../layouts/AdminLayout';
 import Input from '../../components/form/Input';
 import CustomSelect from '../../components/form/CustomSelect';
 import { Api_url } from '../../helpers/api';
+import PageHeader from '../../components/common/PageHeader';
+import EditPreloader from '../../components/common/EditPreloader';
 
 const EditStaff = () => {
     const { id } = useParams();
@@ -20,6 +22,7 @@ const EditStaff = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
     const [schoolOptions, setSchoolOptions] = useState([]);
+    const [imgError, setImgError] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -59,7 +62,7 @@ const EditStaff = () => {
         const fetchData = async () => {
             try {
                 // 1. Fetch Schools
-                const schoolRes = await axios.get(`${Api_url.name}school_data?all=1`);
+                const schoolRes = await axios.get(`${Api_url.name}api/school_data?all=1`);
                 const formattedSchools = schoolRes.data.data.map(s => ({
                     label: s.school_name,
                     value: s.school_id.toString()
@@ -67,7 +70,7 @@ const EditStaff = () => {
                 setSchoolOptions(formattedSchools);
 
                 // 2. Fetch Staff (CORRECTED ACCESS)
-                const staffRes = await axios.get(`${Api_url.name}get-staff/${decodedId}`);
+                const staffRes = await axios.get(`${Api_url.name}api/get-staff/${decodedId}`);
 
                 // Since your controller returns { status: 200, data: {...} }
                 if (staffRes.data && staffRes.data.data) {
@@ -133,13 +136,6 @@ const EditStaff = () => {
         }
     };
 
-    /* ================= REMOVE PHOTO ================= */
-    const removePhoto = () => {
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        setOriginalPhoto(null);
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -157,14 +153,16 @@ const EditStaff = () => {
         if (selectedFile) dataToSend.append('staff_photo', selectedFile);
 
         try {
-            const { data: csrf } = await axios.get(`${Api_url.name}csrf-token`);
-            const response = await axios.post(`${Api_url.name}update-staff/${decodedId}`, dataToSend, {
+            const { data: csrf } = await axios.get(`${Api_url.name}api/csrf-token`);
+            const response = await axios.post(`${Api_url.name}api/update-staff/${decodedId}`, dataToSend, {
                 headers: { 'X-CSRF-TOKEN': csrf.token, 'Content-Type': 'multipart/form-data' },
                 withCredentials: true
             });
 
             if (response.data.status === 200) {
-                navigate('/staff');
+                navigate('/staff', {
+                    state: { message: 'Staff updated successfully!' }
+                });
             }
         } catch (error) {
             if (error.response?.data?.errors) setErrors(error.response.data.errors);
@@ -180,21 +178,13 @@ const EditStaff = () => {
                     {/* --- HEADER --- */}
                     <div className="bg-white border-b border-gray-200 px-8 py-5">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <Link to="/staff">
-                                    <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
-                                        <ArrowLeft size={20} />
-                                    </button>
-                                </Link>
-                                <div>
-                                    <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                                        <Link to="/staff" className="hover:text-blue-800 transition-colors"> Staff Directory </Link>
-                                        <span className="text-gray-400 mx-2">/</span>
-                                        <button type="button" className="uppercase font-bold cursor-pointer"> Edit Staff </button>
-                                    </nav>
-                                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Edit Staff Member</h1>
-                                </div>
-                            </div>
+                           
+                            <PageHeader
+                                prevRoute="/staff"
+                                breadcrumbParent="Staff Directory"
+                                breadcrumbCurrent="Edit Staff"
+                                title="Edit Staff Member"
+                            />
 
                             <button
                                 type="submit"
@@ -210,12 +200,7 @@ const EditStaff = () => {
                     <div className="relative min-h-[calc(100vh-100px)]">
                         {/* --- PRELOADER --- */}
                         {loading && (
-                            <div className="fixed top-[97px] left-0 right-0 bottom-0 z-50 flex flex-col items-center justify-center bg-[#F8FAFC]/90 backdrop-blur-md">
-                                <div className="flex flex-col items-center gap-4 -mt-32">
-                                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-                                    <p className="text-sm font-bold text-gray-600 uppercase tracking-widest animate-pulse">Loading Staff Data...</p>
-                                </div>
-                            </div>
+                            <EditPreloader />
                         )}
 
                         {/* --- FORM CONTENT --- */}
@@ -223,14 +208,21 @@ const EditStaff = () => {
                             <div className="sm:grid sm:grid-cols-12 sm:gap-8">
 
                                 {/* Sidebar: Avatar Upload */}
-                                <div className="col-span-12 lg:col-span-3 text-center py-8 sm:py-0">
+                                <div className="col-span-12 lg:col-span-4 xl:col-span-3 text-center py-8 sm:py-0">
                                     <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
                                         <div className="relative w-40 h-40 mx-auto mb-6">
                                             <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                                                {previewUrl ? (
-                                                    <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                                                {previewUrl && !imgError ? (
+                                                    <img 
+                                                        src={previewUrl} 
+                                                        className="w-full h-full object-cover" 
+                                                        alt="Preview" 
+                                                        onError={(e)=> {
+                                                            setImgError(true)
+                                                        }}
+                                                    />
                                                 ) : (
-                                                    <UserCircle size={64} className="text-gray-200" />
+                                                    <AvatarLetter text={formData.name} size={40} />
                                                 )}
                                             </div>
                                             <label className="absolute -bottom-2 right-0 p-3 bg-blue-600 text-white rounded-xl shadow-lg cursor-pointer hover:bg-blue-700 transition-colors">
@@ -238,18 +230,6 @@ const EditStaff = () => {
                                                 <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                                             </label>
                                             
-                                            {/* Remove Icon (only show if there's a photo) */}
-                                            {previewUrl && (
-                                                <button
-                                                type="button"
-                                                onClick={removePhoto}
-                                                className="absolute -bottom-2 -left-2 p-3 bg-red-500 text-white rounded-xl cursor-pointer hover:bg-red-600 transition"
-                                                >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                </svg>
-                                                </button>
-                                            )}
                                         </div>
                                         <h3 className="text-lg font-black text-gray-900">Staff Photo</h3>
                                         <p className="text-xs text-gray-400 mt-2">Update professional headshot</p>
@@ -257,7 +237,7 @@ const EditStaff = () => {
                                 </div>
 
                                 {/* Main Form Fields */}
-                                <div className="col-span-12 lg:col-span-9">
+                                <div className="col-span-12 lg:col-span-8 xl:col-span-9">
                                     <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
 
                                         {/* Section 1: Identity */}
@@ -301,3 +281,17 @@ const EditStaff = () => {
 };
 
 export default EditStaff;
+
+/* ================= AVATAR ================= */
+function AvatarLetter({ text }) {
+  const letter = text?.trim()?.charAt(0)?.toUpperCase() || "U";
+  return (
+    <div
+      className="w-32 h-32 mx-auto rounded-3xl flex items-center justify-center
+      text-white text-5xl font-black"
+      style={{ backgroundColor: "#FAAE1C" }}
+    >
+      {letter}
+    </div>
+  );
+}

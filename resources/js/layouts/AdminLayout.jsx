@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
-import Footer from "../components/Footer";
+import Header from "../components/common/Header";
+import Sidebar from "../components/common/Sidebar";
+import Footer from "../components/common/Footer";
  
 export default function AdminLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -31,7 +31,7 @@ export default function AdminLayout({ children }) {
  
                 {/* Main: The ONLY scrollable part of the page */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden lg:ml-[260px]">
-                    <div className="w-full px-[clamp(12px,1.5vw,32px)] py-5">
+                    <div className="relative w-full px-[clamp(12px,1.5vw,32px)] py-5">
                         {children}
                     </div>
                     <Footer />

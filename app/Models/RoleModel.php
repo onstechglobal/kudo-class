@@ -77,7 +77,7 @@ class RoleModel
             return true;
         });
     }       
-
+	
 
     /* ========= DELETE ROLE ========= */
     public function deleteRole(int $id){

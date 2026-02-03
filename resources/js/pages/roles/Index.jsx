@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import AdminLayout from "@/layouts/AdminLayout";
-import Stat from "@/components/StatCard";
-import CustomButton from "@/components/form/CustomButton";
-import AvatarLetter from "@/components/AvatarLetter";
-import DeleteConfirmModal from "@/components/common/DeleteConfirmModal";
+import AdminLayout from "../../layouts/AdminLayout";
+import Stat from "../../components/common/StatCard";
+import CustomButton from "../../components/form/CustomButton";
+import AvatarLetter from "../../components/common/AvatarLetter";
+import DeleteConfirmModal from "../../components/common/DeleteConfirmModal";
 import {
   Search,
   Edit2,
@@ -44,7 +44,7 @@ export default function RoleListing() {
     setLoading(true);
 
     axios
-      .get("/roles", {
+      .get("/api/roles", {
         params: { page },
       })
       .then((res) => {
@@ -95,7 +95,7 @@ export default function RoleListing() {
 
   /* ================= DELETE ================= */
   const handleDelete = (id) => {
-    axios.delete(`/roles/${id}`).then(() => {
+    axios.delete(`/api/roles/${id}`).then(() => {
       if (filteredRoles.length === 1 && currentPage > 1) {
         setCurrentPage((p) => p - 1);
       } else {
@@ -191,15 +191,15 @@ export default function RoleListing() {
               <tbody className="divide-y divide-gray-100">
                 {loading && (
                   <tr>
-                    <td colSpan="5" className="p-6 text-center text-gray-500">
-                      <div className=" inset-0 z-10 flex items-center justify-center rounded-xl">
+                    <td colSpan="4" className="p-6 text-center text-gray-500">
+                      <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
                           <div className="flex flex-col items-center gap-4">
                               <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
                               <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
-                                  Loading Roles...
+                                  Loading Data...
                               </p>
                           </div>
-                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -263,8 +263,8 @@ export default function RoleListing() {
 
                 {!loading && filteredRoles.length === 0 && (
                   <tr>
-                    <td colSpan="3" className="p-6 text-center text-gray-500">
-                      No roles found
+                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                      <p className="text-lg font-semibold">No role found</p>
                     </td>
                   </tr>
                 )}

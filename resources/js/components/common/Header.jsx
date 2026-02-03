@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Menu, Search, BellRing } from "lucide-react";
-import AvatarLetter from "@/components/AvatarLetter";
+import AvatarLetter from "./AvatarLetter";
+import UserPopup from "./userPopup";
 
 export default function Header({ onMenuOpen, sidebarOpen }) {
   const containerRef = useRef(null);
+  const popupRef = useRef(null);
 
   const [expanded, setExpanded] = useState(false);
+  const [userShow, setUserShow] = useState('hidden');
   const [activeSegment, setActiveSegment] = useState(null);
 
   const [school, setSchool] = useState("Oakwood Academy");
@@ -13,6 +16,10 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
 
   const [schoolInput, setSchoolInput] = useState("");
   const [sessionInput, setSessionInput] = useState("");
+
+  // Get user data and check if Admin
+  const userData = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = userData.role_id == 1;
 
   const schools = [
     "Oakwood Academy",
@@ -25,9 +32,12 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (!containerRef.current?.contains(e.target)) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
         setExpanded(false);
         setActiveSegment(null);
+      }
+      if (popupRef.current && !popupRef.current.contains(e.target)) {
+        setUserShow('hidden');
       }
     };
     window.addEventListener("click", handleClick);
@@ -42,12 +52,19 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
     s.toLowerCase().includes(sessionInput.toLowerCase())
   );
 
+  const handleProfilePopup = (e) => {
+    e.stopPropagation();
+    setExpanded(false);
+    setActiveSegment(null);
+    setSchoolInput("");
+    setUserShow(userShow === 'hidden' ? '' : 'hidden');
+  };
+
   return (
     <>
       {expanded && (
         <div className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm" />
       )}
-
       <header
         className={`sticky top-0 flex h-[80px] items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-10
         ${sidebarOpen ? "z-0" : "z-40"}
@@ -58,7 +75,7 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
             <Menu size={26} />
           </button>
 
-          {/* SEARCH */}
+          {/* SEARCHBAR CONTAINER */}
           <div
             ref={containerRef}
             className={`${
@@ -67,10 +84,9 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
                 : "relative "
             }`}
           >
-            {/* ⬇️ WIDTH FIX APPLIED HERE */}
             <div
               className={`relative 
-                ${expanded ? "w-full max-w-full" : "w-[fit-content] lg:w-[380px]"}
+                ${expanded ? "w-full max-w-full" : isAdmin ? "w-[fit-content] lg:w-[380px]" : "w-[fit-content] lg:w-[200px]"}
               `}
             >
               <div
@@ -78,65 +94,62 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
                   ${expanded ? "w-full lg:w-[580px] shadow-lg border-[#0468c3]" : "border-gray-200"}
                 `}
               >
-                {/* SCHOOL */}
-                <div
-                  className={`relative flex-1 cursor-pointer rounded-full px-4 py-1
-                    ${expanded && activeSegment === "school" ? "shadow-md" : ""}
-                  `}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpanded(true);
-                    setActiveSegment("school");
-                    setSchoolInput("");
-                  }}
-                >
-                  <p className="text-[11px] font-bold uppercase">School</p>
-
-                  {expanded && activeSegment === "school" ? (
-                    <input
-                      autoFocus
-                      value={schoolInput}
-                      onChange={(e) => setSchoolInput(e.target.value)}
-                      placeholder="Which school?"
-                      className="w-full text-[16px] lg:text-sm font-semibold outline-none"
-                    />
-                  ) : (
-                    <p
-                      className="text-sm text-slate-500 truncate 
-                      max-w-[45px] 
-                      [@media(min-width:481px)]:max-w-[100px] 
-                      lg:max-w-[none]"
+                {/* SCHOOL - Only shown to Admin (role_id 1) */}
+                {isAdmin && (
+                  <>
+                    <div
+                      className={`relative flex-1 cursor-pointer rounded-full px-4 py-1
+                        ${expanded && activeSegment === "school" ? "shadow-md" : ""}
+                      `}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpanded(true);
+                        setActiveSegment("school");
+                        setSchoolInput("");
+                        setUserShow('hidden');
+                      }}
                     >
-                      {school}
-                    </p>
-                  )}
+                      <p className="text-[11px] font-bold uppercase">School</p>
 
-                  {/* SCHOOL DROPDOWN */}
-                  {expanded && activeSegment === "school" && (
-                    <div className="absolute left-0 top-full mt-4 w-full rounded-2xl border border-gray-200 bg-white shadow-xl z-50">
-                      <div className="max-h-[240px] overflow-y-auto">
-                        {filteredSchools.map((s) => (
-                          <div
-                            key={s}
-                            onClick={() => {
-                              setSchool(s);
-                              setActiveSegment("session");
-                            }}
-                            className="cursor-pointer px-6 py-3 hover:bg-blue-50 hover:text-blue-600 hover:font-medium"
-                          >
-                            {s}
+                      {expanded && activeSegment === "school" ? (
+                        <input
+                          autoFocus
+                          value={schoolInput}
+                          onChange={(e) => setSchoolInput(e.target.value)}
+                          placeholder="Which school?"
+                          className="w-full text-[16px] lg:text-sm font-semibold outline-none"
+                        />
+                      ) : (
+                        <p className="text-sm text-slate-500 truncate max-w-[45px] [@media(min-width:481px)]:max-w-[100px] lg:max-w-[none]">
+                          {school}
+                        </p>
+                      )}
+
+                      {expanded && activeSegment === "school" && (
+                        <div className="absolute left-0 top-full mt-4 w-full rounded-2xl border border-gray-200 bg-white shadow-xl z-50">
+                          <div className="max-h-[240px] overflow-y-auto">
+                            {filteredSchools.map((s) => (
+                              <div
+                                key={s}
+                                onClick={() => {
+                                  setSchool(s);
+                                  setActiveSegment("session");
+                                }}
+                                className="cursor-pointer px-6 py-3 hover:bg-blue-50 hover:text-blue-600 hover:font-medium"
+                              >
+                                {s}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                    {/* Only show separator if both items exist */}
+                    <div className={`h-5 w-px bg-slate-200 ${expanded ? "hidden" : "hidden sm:block"}`} />
+                  </>
+                )}
 
-                <div className={`h-5 w-px bg-slate-200
-                    ${expanded ? "hidden" : "hidden sm:block"}
-                `} />
-
-                {/* SESSION */}
+                {/* SESSION - Shown to everyone */}
                 <div
                   className={`relative flex-1 cursor-pointer rounded-full px-4
                     ${expanded && activeSegment === "session" ? "shadow-md" : ""}
@@ -146,6 +159,7 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
                     setExpanded(true);
                     setActiveSegment("session");
                     setSessionInput("");
+                    setUserShow('hidden');
                   }}
                 >
                   <p className="text-[11px] font-bold uppercase">Session</p>
@@ -159,12 +173,9 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
                       className="w-full text-[16px] lg:text-sm font-semibold outline-none"
                     />
                   ) : (
-                    <p className="truncate text-sm text-slate-500">
-                      {session}
-                    </p>
+                    <p className="truncate text-sm text-slate-500">{session}</p>
                   )}
 
-                  {/* SESSION DROPDOWN */}
                   {expanded && activeSegment === "session" && (
                     <div className="absolute left-0 top-full mt-4 w-full rounded-2xl border border-gray-200 bg-white shadow-xl z-50">
                       <div className="max-h-[240px] overflow-y-auto">
@@ -186,7 +197,10 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
                   )}
                 </div>
 
-                <button className="ml-2 flex h-9 sm:h-10 w-9 sm:w-10 items-center justify-center rounded-full bg-[#0468c3] text-white cursor-pointer">
+                <button 
+                  className="ml-2 flex h-9 sm:h-10 w-9 sm:w-10 items-center justify-center rounded-full bg-[#0468c3] text-white cursor-pointer"
+                  onClick={() => setUserShow('hidden')}
+                >
                   <Search size={16} strokeWidth={3} />
                 </button>
               </div>
@@ -199,12 +213,18 @@ export default function Header({ onMenuOpen, sidebarOpen }) {
             <BellRing size={20} className="text-white" />
           </div>
 
-          <AvatarLetter
-            text="AD"
-            size={40}
-            className="rounded-full cursor-pointer"
-            bgColor="#0468C3"
-          />
+          <div ref={popupRef} className="relative">
+            <AvatarLetter
+              text="AD"
+              size={40}
+              className="rounded-full cursor-pointer"
+              bgColor="#0468C3"
+              onClick={handleProfilePopup}
+            />
+            <div className={`absolute right-0 top-full mt-2 ${userShow}`}>
+              <UserPopup />
+            </div>
+          </div>
         </div>
       </header>
     </>

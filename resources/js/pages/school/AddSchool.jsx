@@ -23,6 +23,7 @@ const AddSchool = () => {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false); // Success Modal State
   const [errors, setErrors] = useState({});
+  const [serverWarning, setServerWarning] = useState("");
 
   const [formData, setFormData] = useState({
     school_name: '', email: '', phone: '', alternate_phone: '',
@@ -92,35 +93,43 @@ const AddSchool = () => {
     }
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerWarning(""); // Clear previous warnings
     if (!validateForm()) return;
 
     setLoading(true);
     const dataToSend = new FormData();
     Object.keys(formData).forEach(key => dataToSend.append(key, formData[key]));
+
     if (selectedFile) dataToSend.append('school_logo', selectedFile);
 
     try {
-      const { data: tokenData } = await axios.get(`${Api_url.name}csrf-token`);
-      const response = await axios.post(`${Api_url.name}schooldata`, dataToSend, {
+      const { data: tokenData } = await axios.get(`${Api_url.name}api/csrf-token`);
+      const response = await axios.post(`${Api_url.name}api/schooldata`, dataToSend, {
         headers: {
           'X-CSRF-TOKEN': tokenData.token,
           'Content-Type': 'multipart/form-data',
         },
         withCredentials: true
       });
+
       if (response.data.status === 200) {
-        setTimeout(() => {
-          navigate('/school');
-        }, 100);
+        navigate('/school', { 
+          state: { status: 'success', message: 'Data inserted successfully!' } 
+        });
+      } else if (response.data.status === 409) {
+        // Set the warning message instead of an alert
+        setServerWarning(response.data.message);
       }
     } catch (error) {
-      if (error.response?.data?.errors) setErrors(error.response.data.errors);
+      setServerWarning("An error occurred while saving. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <AdminLayout>
@@ -130,25 +139,15 @@ const AddSchool = () => {
           {/* --- HEADER --- */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/school">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
 
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/school" className="hover:text-blue-800 transition-colors"> Schools </Link>
-                    <span className="text-gray-400 mx-2">/</span>
-                    <button type="button" onClick="" className="hover:text-blue-800 transition-colors cursor-pointer uppercase font-bold"> New </button>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight"> New School Registration  </h1>
-                </div>
+              <PageHeader
+                prevRoute="/school"
+                breadcrumbParent="Schools"
+                breadcrumbCurrent="New"
+                title="New School Registration"
+              />
 
-              </div>
-
-              <div className="flex items-center gap-3">
+              <div className="items-center gap-3">
                 <button
                   type="submit"
                   disabled={loading}
@@ -157,7 +156,14 @@ const AddSchool = () => {
                   {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                   Save School Record
                 </button>
+                {/* Render the warning here */}
+                {serverWarning && (
+                  <p className="text-red-500 text-xs font-bold mt-2 animate-pulse">
+                    ⚠️ {serverWarning}
+                  </p>
+                )}
               </div>
+
             </div>
           </div>
 
@@ -166,7 +172,7 @@ const AddSchool = () => {
             <div className="sm:grid sm:grid-cols-12 sm:gap-8">
               <div className="py-8 sm:py-0 col-span-12 md:col-span-4 xl:col-span-3">
                 <div className="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm text-center">
-                  
+
                   <div className="relative w-40 h-40 mx-auto mb-6">
                     <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
                       {previewUrl ? (

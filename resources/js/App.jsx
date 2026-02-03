@@ -10,11 +10,13 @@ import AcademicListing from "./pages/academic-year/AcademicListing";
 import AddAcademicYear from "./pages/academic-year/AddAcademicYear";
 import EditAcademicYear from "./pages/academic-year/EditAcademicYear";
 
-import Students from "./pages/Students/Index";
+import Students from "./pages/students/Index";
 import AddStudent from "./pages/Students/AddStudent";
 import EditStudent from "./pages/Students/EditStudent";
 
-import ClassListing from "./pages/class/Class";
+import ClassListing from "./pages/class/ClassListing";
+import AddClass from "./pages/class/AddClass";
+import EditClass from "./pages/class/editClass";
 
 import UserListing from "./pages/users/Index";
 import ShowUser from "./pages/users/Show";
@@ -46,6 +48,16 @@ import SectionListing from "./pages/section/Index";
 import AddSection from "./pages/section/AddSection";
 import EditSection from "./pages/section/EditSection";
 
+import TermsAndConditions from "./pages/Terms";
+import PrivacyPolicy from "./pages/Privacy";
+
+import Payment from "./pages/payment/Payment";
+
+import Attendance from "./pages/attendance/Attendance";
+
+import FeeStucture from "./pages/fee-structure/Index";
+import CreateFee from "./pages/fee-structure/CreateFee";
+
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("token");
@@ -76,6 +88,8 @@ export default function App() {
                 <Route path="/teachers/:id/edit" element={<EditTeacher />} />
 
                 <Route path="/classes" element={<ClassListing />} />
+                <Route path="/classes/add" element={<AddClass />} />
+                <Route path="/classes/edit/:id" element={<EditClass />} />
 
                 <Route path="/parents" element={<ParentListing />} />
                 <Route path="/parents/create" element={<AddParent />} />
@@ -100,9 +114,21 @@ export default function App() {
                 <Route path="/admin/roles/:id/edit" element={<EditRole />} />
 
                 <Route path="/admin/permissions" element={<Permissions />} />
+                <Route path="/admin/permissions" element={<Permissions />} />
                 <Route path="/admin/permissions/create" element={<CreatePermissions />} />
                 <Route path="/admin/permissions/:id/edit" element={<EditPermissions />} />
 
+                <Route path="/payment" element={<Payment />} />
+
+                <Route path="/terms-of-use" element={<TermsAndConditions />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+
+                <Route path="/attendance" element={<Attendance />} />
+
+                <Route path="/fee-structure" element={<FeeStucture />} />
+                <Route path="/fee-structure/create" element={<CreateFee />} />
+
+                
 
             </Routes>
         </BrowserRouter>

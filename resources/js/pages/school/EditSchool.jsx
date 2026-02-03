@@ -9,6 +9,7 @@ import CustomSelect from '../../components/form/CustomSelect';
 import CustomButton from '../../components/form/CustomButton';
 import { Api_url } from '../../helpers/api';
 import PageHeader from '../../components/common/PageHeader';
+import EditPreloader from '../../components/common/EditPreloader';
 
 
 const EditSchool = () => {
@@ -20,6 +21,7 @@ const EditSchool = () => {
   const [errors, setErrors] = useState({}); // Track validation errors
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [imgError, setImgError] = useState(false);
 
   const [formData, setFormData] = useState({
     school_name: '', email: '', phone: '', alternate_phone: '',
@@ -60,10 +62,10 @@ const EditSchool = () => {
   useEffect(() => {
     const fetchSchool = async () => {
       try {
-        const response = await axios.get(`${Api_url.name}get-school/${decodedId}`);
+        const response = await axios.get(`${Api_url.name}api/get-school/${decodedId}`);
         if (response.data) {
           setFormData(response.data);
-          if (response.data.logo_url) {
+          if (response.data.logo_url && response.data.logo_url !== '') {
             setPreviewUrl(`/uploads/schools/${response.data.logo_url}`);
           }
         }
@@ -133,13 +135,15 @@ const EditSchool = () => {
     if (selectedFile) dataToSend.append('school_logo', selectedFile);
 
     try {
-      const { data: csrf } = await axios.get(`${Api_url.name}csrf-token`);
-      const response = await axios.post(`${Api_url.name}update-school/${decodedId}`, dataToSend, {
+      const { data: csrf } = await axios.get(`${Api_url.name}api/csrf-token`);
+      const response = await axios.post(`${Api_url.name}api/update-school/${decodedId}`, dataToSend, {
         headers: { 'X-CSRF-TOKEN': csrf.token, 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
       if (response.data.status === 200) {
-        navigate('/school');
+        navigate('/school', {
+          state: { status: 'success', message: 'School updated successfully!' }
+        });
       }
     } catch (error) {
       if (error.response?.data?.errors) setErrors(error.response.data.errors);
@@ -149,27 +153,25 @@ const EditSchool = () => {
 
   return (
     <AdminLayout>
+
+      {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
+      {loading && (
+        <EditPreloader />
+      )}
+
       <div className="bg-[#F8FAFC] min-h-screen font-sans p-6">
         <form onSubmit={handleSubmit}>
 
           {/* --- FIXED HEADER (Always Visible) --- */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/school" className="cursor-pointer">
-                  <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 cursor-pointer">
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/school" className="hover:text-blue-800 transition-colors"> Schools </Link>
-                    <span className="text-gray-400 mx-2">/</span>
-                    <button className="uppercase font-bold cursor-pointer"> Edit </button>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight"> Edit School </h1>
-                </div>
-              </div>
+
+              <PageHeader
+                prevRoute="/school"
+                breadcrumbParent="Schools"
+                breadcrumbCurrent="Edit"
+                title="Edit School"
+              />
 
               <div className="flex items-center gap-3">
                 <button
@@ -187,18 +189,6 @@ const EditSchool = () => {
           {/* --- LOWER CONTENT AREA --- */}
           <div className="relative min-h-[calc(100vh-100px)]">
 
-            {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
-            {loading && (
-              <div className="fixed top-[97px] left-0 right-0 bottom-0 z-50 flex flex-col items-center justify-center bg-[#F8FAFC]/90 backdrop-blur-md">
-                <div className="flex flex-col items-center gap-4 -mt-32"> {/* -mt-32 pulls the spinner up slightly for better visual balance */}
-                  <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-                  <p className="text-sm font-bold text-gray-600 uppercase tracking-widest animate-pulse">
-                    Loading Data...
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Form Content */}
             <div className="p-0 sm:p-8 max-w-[1600px] mx-auto">
               <div className="sm:grid sm:grid-cols-12 sm:gap-8">
@@ -208,40 +198,31 @@ const EditSchool = () => {
                   <div className="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm">
                     <div className="relative w-40 h-40 mx-auto mb-4">
                       <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                        {previewUrl ? (
-                          <img 
-                            src={previewUrl} 
-                            alt="Teacher Preview" 
-                            className="w-full h-full object-cover" 
+                        {previewUrl && !imgError ? (
+                          <img
+                            src={previewUrl}
+                            alt={formData.school_name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              setImgError(true)
+                            }}
                           />
                         ) : (
                           <AvatarLetter text={`${formData.school_name?.charAt(0) || 'T'}`} />
                         )}
                       </div>
-                      
+
                       {/* Camera Icon */}
                       <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition">
                         <Camera size={20} />
-                        <input 
-                          type="file" 
-                          hidden 
-                          accept="image/*" 
-                          onChange={handleFileChange} 
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          onChange={handleFileChange}
                         />
                       </label>
-                      
-                      {/* Remove Icon (only show if there's a photo) */}
-                      {previewUrl && (
-                        <button
-                          type="button"
-                          onClick={removePhoto}
-                          className="absolute -bottom-2 -left-2 p-3 bg-red-500 text-white rounded-xl cursor-pointer hover:bg-red-600 transition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      )}
+
                     </div>
                   </div>
                 </div>

@@ -29,6 +29,16 @@ class AcademicModel
 			$query->where('ay.is_active', $filters['status']);
 		}
 
+		// 4. Add Status filter if it exists
+		if (isset($filters['start_date']) && $filters['start_date'] !== '') {
+			$query->where('ay.start_date', $filters['start_date']);
+		}
+
+		// 5. Add Status filter if it exists
+		if (isset($filters['end_date']) && $filters['end_date'] !== '') {
+			$query->where('ay.end_date', $filters['end_date']);
+		}
+
 		// 4. Finalize with Order and Pagination
 		return $query->orderBy('ay.start_date', 'desc')->paginate($perpage);
 	}

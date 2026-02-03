@@ -59,32 +59,35 @@ class SchoolModel
 	}
 	
 	
-	/* ====== INSERT NEW SCHOOL ========= */
-	public function insertSchool($data,$logoName) {
-		// 1. Generate School Code
+	
+	/* ====== CHECK FOR DUPLICATES ========= */
+	public function checkExistingSchool($email, $phone) {
+		return DB::table($this->table)
+			->where('email', $email)
+			->orWhere('phone', $phone)
+			->first();
+	}
+
+	/* ====== INSERT NEW SCHOOL (Updated) ========= */
+	public function insertSchool($data, $logoName = null) {
 		$prefix = 'SCH-';
-		/* Generate random code */
 		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 		$code = substr(str_shuffle($chars), 0, 4);
-		
-		$generatedCode = $prefix.$code ;
-		
-		// 2. Insert with data casting
+		$generatedCode = $prefix . $code;
+
 		return DB::table($this->table)->insertGetId([
-			'school_id'            => null,
 			'school_code'          => $generatedCode,
 			'school_name'          => $data['school_name'],
 			'email'                => $data['email'],
 			'phone'                => $data['phone'],
 			'alternate_phone'      => $data['alternate_phone'] ?? null,
 			'address_line1'        => $data['address_line1'],
-			'address_line2'        => $data['address_line2'] ?? null,
 			'city'                 => $data['city'],
 			'state'                => $data['state'],
 			'country'              => $data['country'] ?? 'India',
 			'pincode'              => $data['pincode'],
 			'board'                => $data['board'],
-			'logo_url'             => $logoName ?? null,
+			'logo_url'             => $logoName, // Can be null now
 			'academic_start_month' => (int)$data['academic_start_month'],
 			'status'               => $data['status'],
 			'created_at'           => now(),
@@ -92,6 +95,7 @@ class SchoolModel
 		]);
 	}
 	
+
 	/* ====== INSERT NEW SCHOOL As User ========= */
 	public function insertUserData($data,$school_id) {
 		

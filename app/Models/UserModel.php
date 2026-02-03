@@ -27,6 +27,7 @@ class UserModel
                 'u.status'
             )
             ->where('u.role_id', '!=', 1) // Exclude role_id = 1
+			->orderBy('u.user_id', 'desc')
             ->get();
     }
 
@@ -41,6 +42,7 @@ class UserModel
             ->leftJoin('tb_parents as p', 'p.user_id', '=', 'u.user_id')
             ->select(
                 'u.user_id',
+                'u.name',
                 'u.role_id',
                 'u.username',
                 'u.email',
@@ -52,11 +54,20 @@ class UserModel
                 's.school_name',
                 's.board',
                 's.phone as school_phone',
-                's.address_line1 as address',
+                's.address_line1 as school_address',
+                's.country as school_country',
+                's.state as school_state',
+                's.city as school_city',
+                's.pincode as school_pincode',
 
                 // teacher
                 't.qualification',
                 't.mobile as teacher_mobile',
+                't.address as teacher_address',
+                't.country as teacher_country',
+                't.state as teacher_state',
+                't.city as teacher_city',
+                't.pincode as teacher_pincode',
 
                 // parent
                 'p.mobile as parent_mobile'
@@ -69,8 +80,18 @@ class UserModel
         // normalize phone
         if ($user->role_id == 2) {
             $user->phone = $user->school_phone;
+            $user->address = $user->school_address;
+            $user->country = $user->school_country;
+            $user->state = $user->school_state;
+            $user->city = $user->school_city;
+            $user->pincode = $user->school_pincode;
         } elseif ($user->role_id == 3) {
             $user->phone = $user->teacher_mobile;
+            $user->address = $user->teacher_address;
+            $user->country = $user->teacher_country;
+            $user->state = $user->teacher_state;
+            $user->city = $user->teacher_city;
+            $user->pincode = $user->teacher_pincode;
         } elseif ($user->role_id == 4) {
             $user->phone = $user->parent_mobile;
         }
@@ -137,7 +158,7 @@ class UserModel
             'password'   => Hash::make($data['password']),
             'role_id'    => $data['role_id'], // numeric ID
             'mobile'     => $data['phone'] ?? null,
-            'school_id'  => $schoolId,
+            'school_id'  => '123',//$schoolId,
             'status'     => $data['status'],
             'created_at' => now(),
         ]);
@@ -152,7 +173,7 @@ class UserModel
             'email'      => $data['email'] ?? null,
             'password'   => Hash::make($data['password']),
             'role_id'    => $data['role_id'],
-            'school_id'  => $data['school_id'],
+            'school_id'  => 12, //$data['school_id'],
             'mobile'     => $data['phone'] ?? null,
             'status'     => $data['status'],
             'created_at' => now(),
@@ -163,7 +184,7 @@ class UserModel
             'user_id'       => $userId,
             'first_name'    => $data['name'] ?? null,
             'email'         => $data['email'] ?? null,
-            'school_id'     => $data['school_id'],
+            'school_id'     => 12, //$data['school_id'],
             'qualification' => $data['qualification'] ?? null,
             'mobile'         => $data['phone'] ?? null,
             'created_at'    => now(),

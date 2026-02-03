@@ -6,6 +6,8 @@ import { ArrowLeft, Save, ShieldPlus } from "lucide-react";
 import Input from "@/components/form/Input";
 import CustomButton from "@/components/form/CustomButton";
 import CustomSelect from "@/components/form/CustomSelect";
+import PageHeader from "../../components/common/PageHeader";
+
 
 export default function CreatePermissions() {
     const navigate = useNavigate();
@@ -21,7 +23,7 @@ export default function CreatePermissions() {
 
     function submit(e) {
         e.preventDefault();
-        axios.post("/permissions", form)
+        axios.post("/api/permissions", form)
             .then(() => navigate("/admin/permissions"))
             .catch(err => {
                 if (err.response?.status === 422) {
@@ -38,34 +40,21 @@ export default function CreatePermissions() {
                 <div className="bg-white border-b border-gray-200 px-8 py-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-                        <div className="flex items-center gap-4">
-                        <Link to="/admin/permissions">
-                            <button
-                            type="button"
-                            className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                            >
-                            <ArrowLeft size={20} />
-                            </button>
-                        </Link>
-
-                        <div>
-                            <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                            <Link to="/admin/permissions">Permissions</Link> / <Link>Add</Link>
-                            </nav>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                            Add Permissions
-                            </h1>
-                        </div>
-                        </div>
+                        <PageHeader
+                            prevRoute="/admin/permissions"
+                            breadcrumbParent="Permissions"
+                            breadcrumbCurrent="Add"
+                            title="Add Permissions"
+                        />
 
                         <CustomButton
-                        text="Save Permission"
-                        Icon={Save}
-                        onClick={submit}
-                        className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+                            text="Save Permission"
+                            Icon={Save}
+                            onClick={submit}
+                            className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
                         />
                     </div>
-                    </div>
+                </div>
 
                 {/* ===== CONTENT ===== */}
                 <div className="py-8 sm:p-8 max-w-6xl mx-auto">

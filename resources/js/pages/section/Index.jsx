@@ -1,15 +1,21 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
 import { Link } from "react-router-dom";
-import {Search, Plus, Filter, Pencil, Trash2, UserCheck, Users, UserMinus, BookOpen, User} from 'lucide-react';
+import { Search, Plus, Filter, Pencil, Trash2, UserCheck, Users, UserMinus, BookOpen, User } from 'lucide-react';
 import CustomButton from '../../components/form/CustomButton';
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
-import AvatarLetter from "@/components/AvatarLetter";
+import AvatarLetter from "@/components/common/AvatarLetter";
 import { Api_url } from '../../helpers/api';
-import Stat from '../../components/StatCard';
+import Stat from '../../components/common/StatCard';
 
 const SectionListing = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [message, setMessage] = useState('');
+    const [messageClass, setMessageClass] = useState('');
+
     /* ================= STATES ================= */
     const [allSections, setAllSections] = useState([]);
     const [filteredSections, setFilteredSections] = useState([]);
@@ -39,11 +45,11 @@ const SectionListing = () => {
     const fetchSections = () => {
         setLoading(true);
         // CHANGED FROM sections TO section
-        axios.get(`${Api_url.name}section`)
+        axios.get(`${Api_url.name}api/section`)
             .then(res => {
                 const data = Array.isArray(res.data) ? res.data : [];
                 console.log('Section data:', data);
-                
+
                 setAllSections(data);
 
                 // Stats
@@ -89,7 +95,32 @@ const SectionListing = () => {
     useEffect(() => {
         fetchSections();
     }, [currentPage, appliedSearch]);
+    /* Add/edit success message */
+    useEffect(() => {
+        if (location.state?.message) {
+            if(location.state.status && location.state.status=='success'){
+                setMessageClass('text-green-700 border-green-600 bg-green-50');
 
+            }else if(location.state.status && location.state.status=='failed'){
+                setMessageClass('text-red-700 border-red-600 bg-red-50');
+
+            }else{
+                setMessageClass('');
+            }
+        setMessage(location.state.message);
+
+        const timer = setTimeout(() => {
+            setMessage('');
+            setMessageClass('');
+        }, 5000);
+
+        setTimeout(() => {
+            navigate(location.pathname, { replace: true });
+        }, 0);
+
+        return () => clearTimeout(timer);
+        }
+    }, []);
     /* ================= SEARCH ================= */
     const applySearch = () => {
         setAppliedSearch(searchInput);
@@ -98,10 +129,12 @@ const SectionListing = () => {
 
     /* ================= DELETE ================= */
     const handleDelete = (id) => {
-        axios.post(`/delete-section/${id}`)
+        axios.post(`api/delete-section/${id}`)
             .then(() => {
                 fetchSections();
                 setOpen(false);
+                setMessage('Deleted Successfully');
+                setMessageClass('text-red-700 border-red-600 bg-red-50');
             })
             .catch(err => {
                 console.error("Delete failed", err);
@@ -170,12 +203,17 @@ const SectionListing = () => {
                         </button>
                     </div>
                 </div>
-
+                {/* ---- Success Messages ---- */}
+                {message && (
+                    <div className={`flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] ${messageClass} px-4 py-3 text-sm font-medium mb-3`}>
+                    {message}
+                    </div>
+                )}
                 {/* TABLE */}
                 <div className="bg-white rounded-xl border border-gray-300 overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50 border-gray-300 text-gray-600 text-xs uppercase font-bold">
-                            <tr>
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
                                 <th className="p-4">Section Name</th>
                                 <th className="p-4">Class</th>
                                 <th className="p-4">Class Teacher</th>
@@ -192,10 +230,10 @@ const SectionListing = () => {
                                             <div className="flex flex-col items-center gap-4">
                                                 <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
                                                 <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
-                                                    Loading Section... {/* Changed from Sections */}
+                                                    Loading Data...
                                                 </p>
                                             </div>
-                                        </div>
+                                        </div> 
                                     </td>
                                 </tr>
                             )}
@@ -214,9 +252,8 @@ const SectionListing = () => {
                                     <td className="px-6 py-4 text-sm text-gray-600">{s.class_name || 'N/A'}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600">{s.class_teacher_name || 'Not Assigned'}</td>
                                     <td className="px-6 py-4 text-sm">
-                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                                            s.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                        }`}>{s.status}</span>
+                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${s.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                            }`}>{s.status}</span>
                                     </td>
                                     <td className="px-6 py-4 flex justify-center items-center gap-2">
                                         {/* CHANGED FROM /sections/ TO /section/ */}
@@ -231,8 +268,8 @@ const SectionListing = () => {
 
                             {!loading && displayedSections.length === 0 && (
                                 <tr>
-                                    <td colSpan="5" className="p-6 text-center text-gray-500">
-                                        {appliedSearch ? "No section found matching your search" : "No section found"} {/* Changed */}
+                                    <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                        <p className="text-lg font-semibold">No section found</p>
                                     </td>
                                 </tr>
                             )}

@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import {
-  ArrowLeft,
-  Save,
-  User,
-  CheckCircle2,
-} from "lucide-react";
+import { Save, User, Home } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
 import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
+import PageHeader from "../../components/common/PageHeader";
+import EditPreloader from '../../components/common/EditPreloader';
 
 export default function EditParent() {
   const navigate = useNavigate();
@@ -20,9 +17,9 @@ export default function EditParent() {
   const submittingRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState({});
 
+  /* FORM STATE */
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -30,6 +27,13 @@ export default function EditParent() {
     mobile: "",
     alternate_mobile: "",
     status: "active",
+    address_line1: "",
+    address_line2: "",
+    country: "India",
+    state: "",
+    district: "",
+    city: "",
+    pincode: "",
   });
 
   const statusOptions = [
@@ -37,18 +41,17 @@ export default function EditParent() {
     { label: "Inactive", value: "inactive" },
   ];
 
+  /* UPDATE FIELD */
   const updateField = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  /* ================= FETCH PARENT ================= */
+  /* FETCH DATA */
   useEffect(() => {
     const fetchParent = async () => {
       try {
-        const res = await axios.get(`${Api_url.name}parents/${id}`);
+        const res = await axios.get(`${Api_url.name}api/parents/${id}`);
         if (res.data?.parent) {
           const data = res.data.parent;
           setForm({
@@ -58,11 +61,17 @@ export default function EditParent() {
             mobile: data.mobile || "",
             alternate_mobile: data.alternate_mobile || "",
             status: data.status || "active",
+            address_line1: data.address_line1 || "",
+            address_line2: data.address_line2 || "",
+            country: data.country || "India",
+            state: data.state || "",
+            district: data.district || "",
+            city: data.city || "",
+            pincode: data.pincode || "",
           });
         }
       } catch (err) {
-        console.error("Fetch parent failed:", err.response?.data || err.message);
-        alert("Failed to fetch parent details. Please check the server.");
+        console.error("Fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -70,213 +79,112 @@ export default function EditParent() {
     fetchParent();
   }, [id]);
 
-  /* ================= VALIDATION ================= */
-  const validate = () => {
-    const err = {};
-    if (!form.first_name.trim()) err.first_name = "First name is required";
-    if (!form.email.trim()) err.email = "Email is required";
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) err.email = "Invalid email address";
-    if (!form.mobile.trim()) err.mobile = "Mobile number is required";
-    else if (!/^[0-9]{10}$/.test(form.mobile)) err.mobile = "Mobile must be 10 digits";
-    if (form.alternate_mobile && !/^[0-9]{10}$/.test(form.alternate_mobile))
-      err.alternate_mobile = "Alternate mobile must be 10 digits";
-    setErrors(err);
-    return Object.keys(err).length === 0;
-  };
-
-  /* ================= SUBMIT ================= */
+  /* SUBMIT */
   const submit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (submittingRef.current) return;
-    if (!validate()) return;
 
     submittingRef.current = true;
     setLoading(true);
 
     try {
-      // === FIXED: Use POST + _method to simulate PUT (Laravel safe) ===
-      const res = await axios.post(
-        `${Api_url.name}update-parent/${id}`,
-        {
-          ...form,
-          _method: "POST", // <-- key change here
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            "X-CSRF-TOKEN": document
-              .querySelector('meta[name="csrf-token"]')
-              ?.getAttribute("content"), // optional if CSRF is enabled
-          },
-        }
-      );
+      // Submitting as JSON since image upload is removed
+      const res = await axios.post(`${Api_url.name}api/update-parent/${id}`, form);
 
       if (res.data.status === 200) {
-        setSuccess(true);
+        navigate("/parents");
       } else {
         alert(res.data.message || "Update failed");
       }
     } catch (err) {
-      console.error("Update error:", err.response?.data || err.message);
-      if (err.response?.status === 422) {
-        const validationErrors = err.response.data.errors;
-        setErrors(validationErrors);
-      } else {
-        alert(err.response?.data?.message || "Failed to update parent. Please try again.");
-      }
+      if (err.response?.status === 422) setErrors(err.response.data.errors);
+      else alert("Update failed. Please try again.");
     } finally {
       submittingRef.current = false;
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-            <p className="text-sm font-medium text-gray-600">Loading parent details...</p>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
   return (
     <AdminLayout>
+       {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
+        {loading && (
+          <EditPreloader />
+        )}
       <div className="bg-[#F8FAFC] min-h-screen">
         <form onSubmit={submit}>
-          {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/parents">
-                  <button
-                    type="button"
-                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link to="/parents">Parents</Link> / <Link>Edit</Link>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    Edit Parent
-                  </h1>
-                </div>
-              </div>
-
+              <PageHeader prevRoute="/parents" breadcrumbParent="Parents" breadcrumbCurrent="Edit" title="Edit Parent" />
               <CustomButton
                 text={loading ? "Updating..." : "Update Parent"}
                 Icon={Save}
                 onClick={submit}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading || submittingRef.current}
+                className="bg-[#faae1c] text-white"
+                disabled={loading}
               />
             </div>
           </div>
 
-          {/* BODY */}
           <div className="p-8 max-w-[1600px] mx-auto grid grid-cols-12 gap-8">
             {/* LEFT - AVATAR SECTION */}
             <div className="col-span-12 lg:col-span-3">
-              <div className="bg-white rounded-3xl p-8 text-center">
-                <div className="relative w-40 h-40 mx-auto mb-4">
-                  <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
-                    <AvatarLetter text={`${form.first_name?.charAt(0) || "P"}`} />
-                  </div>
+              <div className="bg-white rounded-3xl p-8 text-center sticky top-8 shadow-sm">
+                <div className="w-40 h-40 mx-auto mb-6 rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                  <AvatarLetter text={`${form.first_name?.trim().charAt(0).toUpperCase() || "P"}`} />
                 </div>
-                <p className="text-xs text-gray-500">Parent Avatar (Initials)</p>
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Parent Profile</p>
               </div>
             </div>
 
             {/* RIGHT - FORM FIELDS */}
             <div className="col-span-12 lg:col-span-9">
-              <div className="bg-white rounded-[2.5rem] p-10">
+              <div className="bg-white rounded-[2.5rem] p-10 shadow-sm">
                 <section>
-                  <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-                    <User className="text-blue-600" /> Parent Details
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-gray-800">
+                    <User className="text-blue-600" size={24} /> Parent Details
                   </h2>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                      label="First Name *"
-                      value={form.first_name || ""}
-                      onChange={(e) => updateField("first_name", e.target.value)}
-                      error={errors.first_name}
-                      required
-                    />
-                    <Input
-                      label="Last Name"
-                      value={form.last_name || ""}
-                      onChange={(e) => updateField("last_name", e.target.value)}
-                      error={errors.last_name}
-                    />
-                    <Input
-                      label="Email *"
-                      type="email"
-                      value={form.email || ""}
-                      onChange={(e) => updateField("email", e.target.value)}
-                      error={errors.email}
-                      required
-                    />
-                    <Input
-                      label="Mobile Number *"
-                      value={form.mobile || ""}
-                      onChange={(e) => updateField("mobile", e.target.value)}
-                      error={errors.mobile}
-                      required
-                    />
-                    <Input
-                      label="Alternate Mobile"
-                      value={form.alternate_mobile || ""}
-                      onChange={(e) => updateField("alternate_mobile", e.target.value)}
-                      error={errors.alternate_mobile}
-                    />
-                    <CustomSelect
-                      label="Status"
-                      options={statusOptions}
-                      value={form.status || ""}
-                      onChange={(val) => updateField("status", val)}
-                    />
+                    <Input label="First Name *" value={form.first_name} onChange={(e) => updateField("first_name", e.target.value)} error={errors.first_name} />
+                    <Input label="Last Name" value={form.last_name} onChange={(e) => updateField("last_name", e.target.value)} />
+                    <Input label="Email *" value={form.email} onChange={(e) => updateField("email", e.target.value)} error={errors.email} />
+                    <Input label="Mobile Number *" value={form.mobile} onChange={(e) => updateField("mobile", e.target.value)} error={errors.mobile} />
+                    <Input label="Alternate Mobile" value={form.alternate_mobile} onChange={(e) => updateField("alternate_mobile", e.target.value)} />
+                    <CustomSelect label="Status" options={statusOptions} value={form.status} onChange={(val) => updateField("status", val)} />
+                  </div>
+                </section>
+
+                <section className="mt-12 pt-10 border-t border-gray-100">
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-gray-800">
+                    <Home className="text-green-600" size={24} /> Family Address
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Input label="Address Line 1 *" value={form.address_line1} onChange={(e) => updateField("address_line1", e.target.value)} error={errors.address_line1} />
+                    </div>
+                    
+                    {/* UPDATED ORDER: Country, State, District, City */}
+                    <Input label="Country *" value={form.country} onChange={(e) => updateField("country", e.target.value)} />
+                    <Input label="State *" value={form.state} onChange={(e) => updateField("state", e.target.value)} error={errors.state} />
+                    <Input label="District *" value={form.district} onChange={(e) => updateField("district", e.target.value)} error={errors.district} />
+                    <Input label="City *" value={form.city} onChange={(e) => updateField("city", e.target.value)} error={errors.city} />
+                    
+                    <Input label="Pincode *" value={form.pincode} onChange={(e) => updateField("pincode", e.target.value)} error={errors.pincode} />
                   </div>
                 </section>
               </div>
             </div>
           </div>
-
-          {/* SUCCESS MODAL */}
-          {success && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-8 max-w-md text-center">
-                <CheckCircle2 className="mx-auto text-[#faae1c]" size={48} />
-                <h3 className="text-xl font-bold mt-4">Parent Updated Successfully</h3>
-                <button
-                  type="button"
-                  onClick={() => navigate("/parents")}
-                  className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          )}
         </form>
       </div>
     </AdminLayout>
   );
 }
 
-/* ================= AVATAR ================= */
 function AvatarLetter({ text }) {
   return (
     <div
-      className="w-32 h-32 rounded-3xl flex items-center justify-center text-white text-5xl font-black"
+      className="w-full h-full flex items-center justify-center text-white text-5xl font-black shadow-inner"
       style={{ backgroundColor: "#FAAE1C" }}
     >
       {text}

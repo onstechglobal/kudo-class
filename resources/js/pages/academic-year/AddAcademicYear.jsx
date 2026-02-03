@@ -1,26 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   CalendarDays,
   Save,
-  ArrowLeft,
   Clock,
   Loader2,
   School,
-  Info
+  XCircle
 } from 'lucide-react';
 
 import AdminLayout from '../../layouts/AdminLayout';
 import Input from '../../components/form/Input';
 import CustomSelect from '../../components/form/CustomSelect';
 import { Api_url } from '../../helpers/api';
+import PageHeader from '../../components/common/PageHeader';
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
 
 const AddAcademicYear = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [serverWarning, setServerWarning] = useState(""); // State for "Try again" msg
   const [schools, setSchools] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -41,7 +45,7 @@ const AddAcademicYear = () => {
   useEffect(() => {
     const fetchSchools = async () => {
       try {
-        const response = await axios.get(`${Api_url.name}school_data?all=1`);
+        const response = await axios.get(`${Api_url.name}api/school_data?all=1`);
         const schoolOptions = response.data.data.map(school => ({
           label: school.school_name,
           value: school.school_id
@@ -53,7 +57,6 @@ const AddAcademicYear = () => {
     };
     fetchSchools();
   }, []);
-
 
   /* ---------------- VALIDATION ---------------- */
   const validateForm = () => {
@@ -86,6 +89,28 @@ const AddAcademicYear = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
 
+  // Helper to format date to YYYY-MM-DD
+  const formatDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleStartDate = (date) => {
+    const formatted = formatDate(date);
+    setFormData((prev) => ({ ...prev, start_date: formatted }));
+    if (errors.start_date) setErrors((prev) => ({ ...prev, start_date: null }));
+  };
+
+  const handleEndDate = (date) => {
+    const formatted = formatDate(date);
+    setFormData((prev) => ({ ...prev, end_date: formatted }));
+    if (errors.end_date) setErrors((prev) => ({ ...prev, end_date: null }));
+  };
+
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
@@ -93,18 +118,20 @@ const AddAcademicYear = () => {
 
   /* ---------------- SUBMIT ---------------- */
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!validateForm()) return;
 
     setLoading(true);
+    setServerWarning(""); // Reset warning on new attempt
+
     try {
       const { data: tokenData } = await axios.get(
-        `${Api_url.name}csrf-token`,
+        `${Api_url.name}api/csrf-token`,
         { withCredentials: true }
       );
 
       const response = await axios.post(
-        `${Api_url.name}save-academic-year`,
+        `${Api_url.name}api/save-academic-year`,
         formData,
         {
           headers: { 'X-CSRF-TOKEN': tokenData.token },
@@ -112,10 +139,18 @@ const AddAcademicYear = () => {
         }
       );
 
-      if (response.data.status === 200) {
-        navigate('/academic-year');
+      if (response.data && response.data.status === 200) {
+        navigate('/academic-year', {
+          state: { status: 'success', message: 'Academic Year inserted successfully!' }
+        });
+      } else {
+        // Handle PHP returning an error status
+        setServerWarning(response.data.message || "Failed to save. Please try again.");
       }
     } catch (error) {
+      // Handle Network/Server errors
+      console.error("Submission error:", error);
+      setServerWarning("Something went wrong. Please try again.");
       if (error.response?.data?.errors) {
         setErrors(error.response.data.errors);
       }
@@ -131,34 +166,12 @@ const AddAcademicYear = () => {
           {/* ---------- HEADER ---------- */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Link to="/academic-year">
-                  <button
-                    type="button"
-                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                </Link>
-
-                <div>
-                  <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                    <Link
-                      to="/academic-year"
-                      className="hover:text-blue-800 transition-colors"
-                    >
-                      Academic Years
-                    </Link>
-                    <span className="text-gray-400 mx-2">/</span>
-                    <button className="cursor-pointer uppercase font-bold">
-                      New
-                    </button>
-                  </nav>
-                  <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    New Academic Year
-                  </h1>
-                </div>
-              </div>
+              <PageHeader
+                prevRoute="/academic-year"
+                breadcrumbParent="Academic Years"
+                breadcrumbCurrent="New"
+                title="New Academic Year"
+              />
 
               <div className="flex items-center gap-3">
                 <button
@@ -178,28 +191,22 @@ const AddAcademicYear = () => {
           </div>
 
           {/* ---------- BODY ---------- */}
-          <div className="p-0 sm:p-8 max-w-[1600px] mx-auto">
-            <div className="sm:grid sm:grid-cols-12 sm:gap-8">
-              {/* LEFT CARD */}
-              <div className="py-8 sm:py-0 col-span-12 lg:col-span-3">
-                <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center sticky top-8">
-                  <div className="w-32 h-32 mx-auto mb-6 bg-blue-50 rounded-3xl flex items-center justify-center">
-                    <CalendarDays size={48} className="text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-black text-gray-900 mb-2">
-                    Academic Session
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Define the academic cycle used for attendance, exams and
-                    fees.
-                  </p>
+          <div className="p-8 max-w-[1600px] mx-auto">
 
+            {/* Server Error Message */}
+            {serverWarning && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-xl flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <XCircle size={20} />
+                  <span className="font-medium">{serverWarning}</span>
                 </div>
+                <button type="button" onClick={() => setServerWarning("")} className="text-red-400 hover:text-red-600">×</button>
               </div>
+            )}
 
-              {/* RIGHT FORM */}
-              <div className="col-span-12 lg:col-span-9">
-                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
+            <div className="grid grid-cols-12">
+              <div className="col-span-12">
+                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm space-y-12">
                   {/* BASIC */}
                   <section>
                     <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
@@ -221,15 +228,13 @@ const AddAcademicYear = () => {
                         label="Status"
                         options={statusOptions}
                         value={formData.status}
-                        onChange={(val) =>
-                          handleSelectChange('status', val)
-                        }
+                        onChange={(val) => handleSelectChange('status', val)}
                       />
 
                       <Input
                         label="Academic Year Name"
                         name="year_name"
-                        placeholder="2025-26"
+                        placeholder="2026-27"
                         value={formData.year_name}
                         onChange={handleChange}
                         error={errors.year_name}
@@ -243,29 +248,51 @@ const AddAcademicYear = () => {
                       <Clock className="text-blue-600" size={24} />
                       Session Duration
                     </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input
-                        type="date"
-                        label="Start Date"
-                        name="start_date"
-                        value={formData.start_date}
-                        onChange={handleChange}
-                        error={errors.start_date}
-                        className="cursor-pointer"
-                      />
+                      {/* START DATE */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-gray-700 ml-1">Start Date</label>
+                        <div className="relative">
+                          <DatePicker
+                            selected={formData.start_date ? new Date(formData.start_date) : null}
+                            onChange={handleStartDate}
+                            dateFormat="yyyy-MM-dd"
+                            placeholderText="Select Start Date"
+                            // This prevents keyboard input but allows the click to open the calendar
+                            onKeyDown={(e) => e.preventDefault()}
+                            autoComplete="off"
+                            className={`w-full px-4 py-3 rounded-xl outline-none bg-gray-50 border cursor-pointer ${errors.start_date ? 'border-red-500' : 'border-transparent'
+                              } focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all`}
+                            wrapperClassName="w-full"
+                          />
+                        </div>
+                        {errors.start_date && <p className="text-red-500 text-xs mt-1 ml-1">{errors.start_date}</p>}
+                      </div>
 
-                      <Input
-                        type="date"
-                        label="End Date"
-                        name="end_date"
-                        value={formData.end_date}
-                        onChange={handleChange}
-                        error={errors.end_date}
-                        className="cursor-pointer"
-                      />
+                      {/* END DATE */}
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-gray-700 ml-1">End Date</label>
+                        <div className="relative">
+                          <DatePicker
+                            selected={formData.end_date ? new Date(formData.end_date) : null}
+                            onChange={handleEndDate}
+                            dateFormat="yyyy-MM-dd"
+                            placeholderText="Select End Date"
+                            // This prevents keyboard input but allows the click to open the calendar
+                            onKeyDown={(e) => e.preventDefault()}
+                            autoComplete="off"
+                            className={`w-full px-4 py-3 rounded-xl outline-none bg-gray-50 border cursor-pointer ${errors.end_date ? 'border-red-500' : 'border-transparent'
+                              } focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all`}
+                            wrapperClassName="w-full"
+                          />
+                        </div>
+                        {errors.end_date && <p className="text-red-500 text-xs mt-1 ml-1">{errors.end_date}</p>}
+                      </div>
+
                     </div>
                   </section>
+
                 </div>
               </div>
             </div>

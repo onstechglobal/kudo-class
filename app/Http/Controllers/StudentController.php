@@ -37,32 +37,29 @@ class StudentController extends Controller
 	}
 		
 	
+	
 	public function saveStudentData(Request $request) {
 		$data = $request->all();
 		$photoName = null;
 
 		if ($request->hasFile('photo_url')) {
 			$file = $request->file('photo_url');
-			
-			// Generate unique name for student photo
 			$photoName = 'std_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
 			$destination = public_path('uploads/students');
 			if (!file_exists($destination)) {
 				mkdir($destination, 0777, true);
 			}
-
 			$file->move($destination, $photoName);
 		}
 
-		// Call Model to insert student record
-		$result = $this->model->insertStudent($data, $photoName);
+		// The Model now handles the complex multi-table logic
+		$result = $this->model->insertStudentWithParent($data, $photoName);
 		
 		return response()->json([
 			'status' => $result ? 200 : 500,
 			'message' => $result ? 'Student Registered Successfully' : 'Failed to register student'
 		]);
-	} 
+	}
 	
 	
 	
@@ -96,7 +93,7 @@ class StudentController extends Controller
 	
 	
 	
-	public function updateStudent(Request $request, $id) {
+	/* public function updateStudent1(Request $request, $id) {
 		// 1. Validation
 		$request->validate([
 			'first_name'   => 'required|string|max:50',
@@ -124,6 +121,38 @@ class StudentController extends Controller
 
 		// 4. Update via Model
 		$update = $this->model->updateStudentData($id, $data);
+
+		if ($update) {
+			return response()->json(['status' => 200, 'message' => 'Student updated successfully']);
+		}
+
+		return response()->json(['status' => 500, 'message' => 'Failed to update student']);
+	}
+	 */
+	
+	public function updateStudent(Request $request, $id) {
+		// 1. Validation
+		$request->validate([
+			'first_name'   => 'required|string|max:50',
+			'admission_no' => 'required|unique:tb_students,admission_no,' . $id . ',student_id',
+			'school_id'    => 'required',
+			'parent_id'    => 'required', // Ensure we have a parent link
+			'photo_url'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+		]);
+
+		$data = $request->all();
+		$photoName = null;
+
+		// 2. Handle Image Upload
+		if ($request->hasFile('photo_url')) {
+			$file = $request->file('photo_url');
+			$photoName = 'std_' . time() . '.' . $file->getClientOriginalExtension();
+			$file->move(public_path('uploads/students'), $photoName);
+			$data['photo_url'] = $photoName;
+		}
+
+		// 3. Update via Model
+		$update = $this->model->updateStudentWithParent($id, $data);
 
 		if ($update) {
 			return response()->json(['status' => 200, 'message' => 'Student updated successfully']);

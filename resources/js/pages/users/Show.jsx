@@ -8,7 +8,7 @@ export default function ShowUser() {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        axios.get(`/users/${id}`)
+        axios.get(`api/users/${id}`)
             .then(res => setUser(res.data))
             .catch(err => console.error(err));
     }, [id]);

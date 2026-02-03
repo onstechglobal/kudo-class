@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'; // Added useEffect
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-    UserCircle, Save, Camera, ArrowLeft, 
-    Shield, Mail, Phone, Lock, School, 
-    CheckCircle2, Loader2, UserPlus 
+import {
+    UserCircle, Save, Camera, ArrowLeft,
+    Shield, Mail, Phone, Lock, School,
+    CheckCircle2, Loader2, UserPlus
 } from 'lucide-react';
 import AdminLayout from '../../layouts/AdminLayout';
 import Input from '../../components/form/Input';
 import CustomSelect from '../../components/form/CustomSelect';
 import { Api_url } from '../../helpers/api';
+import PageHeader from '../../components/common/PageHeader';
 
 function generatePassword(length = 10) {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$!";
@@ -22,7 +23,7 @@ const AddStaff = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
-    
+
     // --- ADDED SCHOOLS STATE ---
     const [schoolOptions, setSchoolOptions] = useState([]);
 
@@ -55,7 +56,7 @@ const AddStaff = () => {
     useEffect(() => {
         const fetchSchools = async () => {
             try {
-                const response = await axios.get(`${Api_url.name}school_data?all=1`);
+                const response = await axios.get(`${Api_url.name}api/school_data?all=1`);
                 // Mapping the API response to the format CustomSelect needs
                 const formattedSchools = response.data.data.map(school => ({
                     label: school.school_name,
@@ -115,8 +116,8 @@ const AddStaff = () => {
         if (selectedFile) dataToSend.append('staff_photo', selectedFile);
 
         try {
-            const { data: tokenData } = await axios.get(`${Api_url.name}csrf-token`);
-            const response = await axios.post(`${Api_url.name}staffdata`, dataToSend, {
+            const { data: tokenData } = await axios.get(`${Api_url.name}api/csrf-token`);
+            const response = await axios.post(`${Api_url.name}api/staffdata`, dataToSend, {
                 headers: {
                     'X-CSRF-TOKEN': tokenData.token,
                     'Content-Type': 'multipart/form-data',
@@ -126,7 +127,9 @@ const AddStaff = () => {
 
             if (response.data.status === 200) {
                 setTimeout(() => {
-                    navigate('/staff');
+                    navigate('/staff', {
+                      state: { message: 'Data inserted successfully!' }
+                    });
                 }, 100);
             }
         } catch (error) {
@@ -138,32 +141,24 @@ const AddStaff = () => {
 
     return (
         <AdminLayout>
-            <div className="bg-[#F8FAFC] min-h-screen">
+            <div className="bg-[#F8FAFC] min-h-screen p-6">
                 <form id="staff-reg-form" onSubmit={handleSubmit}>
-                    
+
                     {/* --- HEADER --- */}
                     <div className="bg-white border-b border-gray-200 px-8 py-5">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <Link to="/staff">
-                                    <button type="button" className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors cursor-pointer">
-                                        <ArrowLeft size={20} />
-                                    </button>
-                                </Link>
-                                <div>
-                                    <nav className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
-                                        <Link to="/staff" className="hover:text-blue-800 transition-colors"> Staff Directory </Link>
-                                        <span className="text-gray-400 mx-2">/</span>
-                                        <button type="button" className="uppercase font-bold cursor-pointer hover:text-blue-800 transition-colors"> New Staff </button>
-                                    </nav>
-                                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Add New Staff Member</h1>
-                                </div>
-                            </div>
+                            
+                            <PageHeader
+                                prevRoute="/staff"
+                                breadcrumbParent="Staff Directory"
+                                breadcrumbCurrent="New Staff"
+                                title="Add New Staff Member"
+                            />
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c]/90 text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-yellow-100 transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
+                                className="flex items-center gap-2 bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold shadow-lg active:scale-95 disabled:opacity-70 cursor-pointer"
                             >
                                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 Save Staff Record
@@ -172,12 +167,12 @@ const AddStaff = () => {
                     </div>
 
                     {/* --- FORM BODY --- */}
-                    <div className="p-8 max-w-[1600px] mx-auto">
-                        <div className="grid grid-cols-12 gap-8">
-                            
+                    <div className="p-0 sm:p-8 max-w-[1600px] mx-auto">
+                        <div className="sm:grid sm:grid-cols-12 sm:gap-8">
+
                             {/* Left Column: Avatar Upload */}
-                            <div className="col-span-12 lg:col-span-4 xl:col-span-3">
-                                <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center sticky top-8">
+                            <div className="col-span-12 md:col-span-4 xl:col-span-3">
+                                <div className="bg-white rounded-3xl px-4 py-6 border border-gray-200 shadow-sm text-center">
                                     <div className="relative w-40 h-40 mx-auto mb-6">
                                         <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
                                             {previewUrl ? (
@@ -186,7 +181,7 @@ const AddStaff = () => {
                                                 <UserCircle size={64} className="text-gray-200" />
                                             )}
                                         </div>
-                                        <label className="absolute bottom-0 right-0 p-3 bg-blue-600 text-white rounded-full shadow-lg border-4 border-white cursor-pointer hover:bg-blue-700 transition-colors">
+                                        <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition">
                                             <Camera size={20} />
                                             <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                                         </label>
@@ -197,9 +192,9 @@ const AddStaff = () => {
                             </div>
 
                             {/* Right Column: Fields */}
-                            <div className="col-span-12 lg:col-span-8 xl:col-span-9">
+                            <div className="col-span-12 md:col-span-8 xl:col-span-9">
                                 <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
-                                    
+
                                     {/* Section 1: Identity */}
                                     <section>
                                         <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
@@ -220,13 +215,13 @@ const AddStaff = () => {
                                         </h2>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* Dynamic school options applied here */}
-                                            <CustomSelect 
-                                                label="Select School" 
-                                                options={schoolOptions} 
-                                                value={formData.school_id} 
-                                                onChange={(val) => handleSelectChange('school_id', val)} 
+                                            <CustomSelect
+                                                label="Select School"
+                                                options={schoolOptions}
+                                                value={formData.school_id}
+                                                onChange={(val) => handleSelectChange('school_id', val)}
                                                 error={errors.school_id}
-                                                placeholder="" 
+                                                placeholder=""
                                             />
                                             <CustomSelect label="Account Status" options={statusOptions} value={formData.status} onChange={(val) => handleSelectChange('status', val)} />
                                             <div className="hidden">

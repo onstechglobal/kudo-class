@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
@@ -7,20 +8,25 @@ import {
     ShieldCheck, Mail, Phone, SlidersHorizontal
 } from 'lucide-react';
 import { Api_url } from '../../helpers/api';
-import CustomButton from '../../components/form/CustomButton';
-import Input from "@/components/form/Input";
+import CustomButton from '../../components/form/CustomButton'; 
+import Input from '../../components/form/Input';
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
 import CustomSelect from '../../components/form/CustomSelect';
-import AvatarLetter from '../../components/AvatarLetter';
-import Stat from '../../components/StatCard';
+import AvatarLetter from '../../components/common/AvatarLetter';
+import Stat from '../../components/common/StatCard';
+
 
 const StaffListing = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [message, setMessage] = useState('');
+
     const [loading, setLoading] = useState(true);
     const [staff_data, setStaff] = useState([]);
     const [total_staff, setTotalStaff] = useState(0);
     const [active_staff, setActiveStaff] = useState(0);
     const [inactive_staff, setInactiveStaff] = useState(0);
-    const [imgError, setImgError] = useState(false);
+    const [imgError, setImgError] = useState({});
 
     // PAGINATION STATES
     const [currentPage, setCurrentPage] = useState(1);
@@ -31,7 +37,7 @@ const StaffListing = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchInput, setSearchInput] = useState("");
     const [appliedSearch, setAppliedSearch] = useState('');
-    
+
     /* Filter Drawer States */
     const [filterOpen, setFilterOpen] = useState(false);
     const [filterEmail, setFilterEmail] = useState("");
@@ -54,7 +60,7 @@ const StaffListing = () => {
 
     const fetchStaff = (page) => {
         setLoading(true);
-        axios.get(`${Api_url.name}get_staff_data`, {
+        axios.get(`${Api_url.name}api/get_staff_data`, {
             params: {
                 page: page,
                 search: appliedSearch,
@@ -63,31 +69,48 @@ const StaffListing = () => {
                 phone: filterPhone, // Added
             }
         })
-        .then(res => {
-            // ... existing logic ...
-            setStaff(res.data.data || []);
-            setTotalStaff(res.data.total || 0);
-            setActiveStaff(res.data.active || 0);
-            setInactiveStaff(res.data.inactive || 0);
-            setCurrentPage(res.data.current_page || 1);
-            setLastPage(res.data.last_page || 1);
-            setPaginationInfo({
-                from: res.data.from || 0,
-                to: res.data.to || 0
+            .then(res => {
+                // ... existing logic ...
+                setStaff(res.data.data || []);
+                setTotalStaff(res.data.total || 0);
+                setActiveStaff(res.data.active || 0);
+                setInactiveStaff(res.data.inactive || 0);
+                setCurrentPage(res.data.current_page || 1);
+                setLastPage(res.data.last_page || 1);
+                setPaginationInfo({
+                    from: res.data.from || 0,
+                    to: res.data.to || 0
+                });
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Fetch Error:", err);
+                setStaff([]);
+                setLoading(false);
             });
-            setLoading(false);
-        })
-        .catch(err => {
-            console.error("Fetch Error:", err);
-            setStaff([]);
-            setLoading(false);
-        });
     };
 
     // TRIGGER FETCH ON FILTER CHANGE
     useEffect(() => {
         fetchStaff(currentPage);
     }, [currentPage, appliedSearch, roleFilter, filterEmail, filterPhone]);
+
+    /* Add/edit success message */
+    useEffect(() => {
+        if (location.state?.message) {
+        setMessage(location.state.message);
+
+        const timer = setTimeout(() => {
+            setMessage('');
+        }, 5000);
+
+        setTimeout(() => {
+            navigate(location.pathname, { replace: true });
+        }, 0);
+
+        return () => clearTimeout(timer);
+        }
+    }, []);
 
     const handleSearchClick = () => {
         setAppliedSearch(searchQuery);
@@ -101,44 +124,37 @@ const StaffListing = () => {
 
     /* ================= ACTIONS ================= */
     const applySearch = () => {
-        
+
         setAppliedSearch(searchInput);
         setCurrentPage(1);
     };
 
+   
     const handleDelete = async (id) => {
-        // 1. Confirm before deleting
-
         try {
             setLoading(true);
-
-            // 2. Get CSRF (Only if using web.php routes)
-            const { data: csrfData } = await axios.get(`${Api_url.name}csrf-token`);
-
-            // 3. Perform Delete Request
-            const response = await axios.post(`${Api_url.name}delete-staff/${id}`, {}, {
+            const { data: csrfData } = await axios.get(`${Api_url.name}api/csrf-token`);
+            const response = await axios.post(`${Api_url.name}api/delete-staff/${id}`, {}, {
                 headers: { 'X-CSRF-TOKEN': csrfData.token },
                 withCredentials: true
             });
 
             if (response.data.status === 200) {
-                // 4. Logic to refresh the list without a full browser reload
-                // If it was the last item on the page, go back one page
-                if (staffList.length === 1 && currentPage > 1) {
-                    setCurrentPage(prev => prev - 1);
-                } else {
-                    // Otherwise, just re-fetch the current page
-                    fetchStaffData(currentPage);
-                }
-                alert("Staff deleted successfully");
+                fetchStaff(currentPage);
+                setMessage('Deleted Successfully');
+                setMessageClass('text-red-700 border-red-600 bg-red-50');
+
+                const timer = setTimeout(() => {
+                    setMessage('');
+                    setMessageClass('');
+                }, 5000);
             }
         } catch (error) {
             console.error("Delete Error:", error);
-            alert("Failed to delete record");
-        } finally {
             setLoading(false);
         }
-    };
+    
+};
 
 
     const scrambleId = (id) => {
@@ -155,7 +171,7 @@ const StaffListing = () => {
         setSelectedStaff(staff);
         setOpen(true);
     };
-    
+
     return (
         <AdminLayout>
             <DeleteConfirmModal
@@ -172,7 +188,7 @@ const StaffListing = () => {
                 }}
             />
 
-            
+
             {/* OVERLAY */}
             {filterOpen && (
                 <div
@@ -231,7 +247,7 @@ const StaffListing = () => {
                         onClick={() => {
                             setCurrentPage(1);
                             // This manually triggers fetchStaff if page was already 1
-                            if(currentPage === 1) {
+                            if (currentPage === 1) {
                                 fetchStaff(1);
                             }
                             setFilterOpen(false);
@@ -297,9 +313,15 @@ const StaffListing = () => {
                     </div>
 
                     <div className="flex gap-2">
-                        test
                     </div>
                 </div>
+
+                {/* ---- Success Messages ---- */}
+                {message && (
+                    <div className="flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] border-green-600 bg-green-50 px-4 py-3 text-sm font-medium text-green-700 mb-3">
+                    {message}
+                    </div>
+                )}
 
                 {/* --- DATA TABLE --- */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -319,9 +341,13 @@ const StaffListing = () => {
                                 {loading ? (
                                     <tr>
                                         <td colSpan="6" className="p-6 text-center text-gray-500">
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-                                                <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">Loading Data...</p>
+                                            <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+                                                    <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
+                                                        Loading Data...
+                                                    </p>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -330,9 +356,9 @@ const StaffListing = () => {
                                         const hasError = imgError[staff.staff_id];
                                         const hasUrl = staff.photo_url && staff.photo_url !== '';
 
-                                        return(
+                                        return (
                                             <tr key={staff.staff_id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4">
+                                                <td className="p-4 min-w-[150px] sm:min-w-[300px]">
                                                     <div className="flex items-center gap-3">
                                                         {/* IMAGE LOGIC - Laravel now returns full URLs */}
                                                         {hasUrl && !hasError ? (
@@ -349,7 +375,7 @@ const StaffListing = () => {
                                                         ) : (
                                                             <AvatarLetter text={staff.name} size={40} />
                                                         )}
-                                                        
+
                                                         <div className="text-sm font-bold text-gray-800">{staff.name}</div>
                                                     </div>
                                                 </td>
@@ -389,7 +415,7 @@ const StaffListing = () => {
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                                             <p className="text-lg font-semibold">No staff found</p>
                                         </td>
                                     </tr>
@@ -404,7 +430,7 @@ const StaffListing = () => {
                             <span className="text-sm text-gray-500">
                                 Showing {paginationInfo.from} to {paginationInfo.to} of {total_staff} staff members
                             </span>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 mt-2 sm:mt-0">
                                 <button
                                     disabled={currentPage === 1}
                                     onClick={() => setCurrentPage(prev => prev - 1)}

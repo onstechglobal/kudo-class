@@ -5,11 +5,11 @@ import { Link } from "react-router-dom";
 import { Search, Filter, Pencil, Trash2, UserCheck, Users, UserX } from 'lucide-react';
 
 import CustomButton from '../../components/form/CustomButton';
-import Input from "@/components/form/Input";
-import CustomSelect from "@/components/form/CustomSelect";
+import Input from '../../components/form/Input';
+import CustomSelect from '../../components/form/CustomSelect';
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
-import AvatarLetter from "@/components/AvatarLetter";
-import Stat from '../../components/StatCard';
+import AvatarLetter from '../../components/common/AvatarLetter';
+import Stat from '../../components/common/StatCard';
 import { Api_url } from '../../helpers/api';
 
 const ParentListing = () => {
@@ -49,7 +49,7 @@ const ParentListing = () => {
     const fetchParents = () => {
         setLoading(true);
 
-        axios.get(`${Api_url.name}parent`)
+        axios.get(`${Api_url.name}api/parent`)
             .then(res => {
                 const data = Array.isArray(res.data) ? res.data : [];
                 setAllParents(data);
@@ -125,7 +125,7 @@ const ParentListing = () => {
     };
 
     const handleDelete = (id) => {
-        axios.post(`${Api_url.name}delete-parent/${id}`)
+        axios.post(`${Api_url.name}api/delete-parent/${id}`)
             .then(() => {
                 fetchParents();
                 setOpen(false);
@@ -268,83 +268,87 @@ const ParentListing = () => {
 
                 {/* TABLE */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 text-xs font-bold uppercase">
-                            <tr>
-                                <th className="p-4">Parent</th>
-                                <th className="p-4">Email</th>
-                                <th className="p-4">Phone</th>
+                    <table className="w-full text-left border-collapse">
+                        {/* Updated Table Header */}
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
+                                <th className="p-4">Parent Details</th>
+                                <th className="p-4">Contact Info</th>
+                                <th className="p-4">Location</th>
                                 <th className="p-4">Status</th>
                                 <th className="p-4 text-center">Actions</th>
                             </tr>
                         </thead>
 
+                        {/* Updated Table Body */}
                         <tbody className="divide-y divide-gray-200">
-                            {loading && (
-                                <tr>
-                                    <td colSpan="5" className="p-6 text-center text-gray-500">
-                                        Loading Parents...
-                                    </td>
-                                </tr>
-                            )}
-
                             {!loading && displayedParents.map(p => (
-                                <tr key={p.parent_id}>
-                                    <td className="p-4 flex gap-3 items-center">
-                                        <AvatarLetter text={`${p.first_name} ${p.last_name}`} />
-                                        <div>
-                                            <div className="font-bold">{p.first_name} {p.last_name}</div>
-                                            <div className="text-xs text-gray-500">{p.email}</div>
+                                <tr key={p.parent_id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="p-4 min-w-[150px] sm:min-w-[300px]">
+                                        <div className="flex gap-3 items-center">
+                                            <AvatarLetter text={`${p.first_name} ${p.last_name}`} />
+                                            <div>
+                                                <div className="font-bold text-gray-800">{p.first_name} {p.last_name}</div>
+                                                <div className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded w-fit font-mono mt-1">
+                                                    ID: {p.username}
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="p-4">{p.email}</td>
-                                    <td className="p-4">{p.mobile}</td>
                                     <td className="p-4">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${
-                                            p.status === "active"
+                                        <div className="text-sm text-gray-700 font-medium">{p.email}</div>
+                                        <div className="text-xs text-gray-500">{p.mobile}</div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="text-sm text-gray-700">{p.city || "N/A"}</div>
+                                        <div className="text-[11px] text-gray-400 truncate max-w-[150px]">
+                                            {p.address_line1}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full uppercase tracking-wider ${p.status === "active"
                                                 ? "bg-green-100 text-green-700"
                                                 : "bg-red-100 text-red-700"
-                                        }`}>
+                                            }`}>
                                             {p.status}
                                         </span>
                                     </td>
-                                    <td className="p-4 flex justify-center gap-3">
-                                        <Link to={`/parents/${p.parent_id}/edit`}>
-                                            <Pencil size={16} />
-                                        </Link>
-                                        <button onClick={() => handleOpenModal(p)}>
-                                            <Trash2 size={16} />
-                                        </button>
+                                    <td className="p-4">
+                                        <div className="flex justify-center gap-2">
+                                            <Link
+                                                to={`/parents/${p.parent_id}/edit`}
+                                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            >
+                                                <Pencil size={18} />
+                                            </Link>
+                                            <button
+                                                onClick={() => handleOpenModal(p)}
+                                                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 size={18}/>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
-
-                            {!loading && displayedParents.length === 0 && (
-                                <tr>
-                                    <td colSpan="5" className="p-6 text-center text-gray-500">
-                                        {appliedSearch ? "No parents found matching your search" : "No parents found"}
-                                    </td>
-                                </tr>
-                            )}
                         </tbody>
                     </table>
 
                     {/* PAGINATION */}
                     {filteredParents.length > 0 && (
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 sm:flex items-center justify-between">
                             <span className="text-sm text-gray-500">
                                 Showing {paginationInfo.from} to {paginationInfo.to} of {filteredParents.length}
                             </span>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 mt-2 sm:mt-0">
                                 <button
                                     disabled={currentPage === 1}
                                     onClick={() => setCurrentPage(p => p - 1)}
-                                    className={`px-3 py-1 border border-gray-200 rounded text-sm ${
-                                        currentPage === 1
-                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                            : "bg-white hover:bg-gray-50"
-                                    }`}
+                                    className={`px-3 py-1 border border-gray-200 rounded text-sm ${currentPage === 1
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-white hover:bg-gray-50"
+                                        }`}
                                 >
                                     Prev
                                 </button>
@@ -356,11 +360,10 @@ const ParentListing = () => {
                                 <button
                                     disabled={currentPage === lastPage}
                                     onClick={() => setCurrentPage(p => p + 1)}
-                                    className={`px-3 py-1 border border-gray-200 rounded text-sm ${
-                                        currentPage === lastPage
-                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                            : "bg-white hover:bg-gray-50"
-                                    }`}
+                                    className={`px-3 py-1 border border-gray-200 rounded text-sm ${currentPage === lastPage
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-white hover:bg-gray-50"
+                                        }`}
                                 >
                                     Next
                                 </button>

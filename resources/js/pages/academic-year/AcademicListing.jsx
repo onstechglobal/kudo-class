@@ -1,21 +1,28 @@
+import { useLocation, useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
 import { Link } from "react-router-dom";
 import {
-    Search, Calendar, CheckCircle2, History, Pencil, Trash2, Loader2
+    Search, Filter, Calendar, CheckCircle2, History, Pencil, Trash2, Loader2
 } from 'lucide-react';
 import { Api_url } from '../../helpers/api';
 import CustomButton from '../../components/form/CustomButton';
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
 import CustomSelect from '../../components/form/CustomSelect';
-import AvatarLetter from '../../components/AvatarLetter';
-import Stat from '../../components/StatCard';
+import AvatarLetter from '../../components/common/AvatarLetter';
+import Stat from '../../components/common/StatCard';
 import FilterDrawer from '../../components/common/FilterDrawer';
 import { SlidersHorizontal } from 'lucide-react';
-
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const AcademicListing = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [message, setMessage] = useState('');
+    const [messageClass, setMessageClass] = useState('');
+
     const [loading, setLoading] = useState(true);
     const [academic_data, setAcademicData] = useState([]);
     const [total_years, setTotalYears] = useState(0);
@@ -29,12 +36,14 @@ const AcademicListing = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [appliedSearch, setAppliedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [filterOpen, setFilterOpen] = useState(false);
 
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     // Additional Filter States (Matching your HTML structure)
     const [tempStatus, setTempStatus] = useState(statusFilter);
     const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [dept, setDept] = useState('');
 
     const handleApplyFilters = () => {
@@ -46,6 +55,7 @@ const AcademicListing = () => {
         setTempStatus('');
         setStatusFilter('');
         setDateFrom('');
+        setDateTo('');
         setDept('');
         setIsFilterOpen(false);
     };
@@ -58,11 +68,13 @@ const AcademicListing = () => {
 
     const fetchAcademicYears = (page) => {
         setLoading(true);
-        axios.get(`${Api_url.name}academic-data`, {
+        axios.get(`${Api_url.name}api/academic-data`, {
             params: {
                 page: page,
                 search: appliedSearch,
-                status: statusFilter
+                status: statusFilter,
+                start_date: dateFrom,
+                end_date: dateTo,
             }
         }).then(res => {
             const data = res.data?.data || [];
@@ -91,20 +103,54 @@ const AcademicListing = () => {
         if (currentPage !== 1) setCurrentPage(1);
     }, [appliedSearch, statusFilter]);
 
+    /* Add/edit success message */
+    useEffect(() => {
+       if (location.state?.message) {
+            if(location.state.status && location.state.status=='success'){
+                setMessageClass('text-green-700 border-green-600 bg-green-50');
+
+            }else if(location.state.status && location.state.status=='failed'){
+                setMessageClass('text-red-700 border-red-600 bg-red-50');
+
+            }else{
+                setMessageClass('');
+            }
+        setMessage(location.state.message);
+
+        const timer = setTimeout(() => {
+            setMessage('');
+            setMessageClass('');
+        }, 5000);
+
+        setTimeout(() => {
+            navigate(location.pathname, { replace: true });
+        }, 0);
+
+        return () => clearTimeout(timer);
+        }
+    }, []);
+
     const handleSearchClick = () => setAppliedSearch(searchQuery);
     const handleKeyPress = (e) => { if (e.key === 'Enter') handleSearchClick(); };
 
     const handleDelete = async (id) => {
         try {
             setLoading(true);
-            const { data: csrfData } = await axios.get(`${Api_url.name}csrf-token`);
-            const response = await axios.post(`${Api_url.name}delete-academic-year/${id}`, {}, {
+            const { data: csrfData } = await axios.get(`${Api_url.name}api/csrf-token`);
+            const response = await axios.post(`${Api_url.name}api/delete-academic-year/${id}`, {}, {
                 headers: { 'X-CSRF-TOKEN': csrfData.token },
                 withCredentials: true
             });
 
             if (response.data.status === 200) {
                 fetchAcademicYears(currentPage);
+                setMessage('Deleted Successfully');
+                setMessageClass('text-red-700 border-red-600 bg-red-50');
+
+                const timer = setTimeout(() => {
+                    setMessage('');
+                    setMessageClass('');
+                }, 5000);
             }
         } catch (error) {
             console.error("Delete Error:", error);
@@ -126,9 +172,123 @@ const AcademicListing = () => {
         setSelectedYear(data);
         setOpen(true);
     };
+    
+    // Helper to format date to YYYY-MM-DD
+    const formatDate = (date) => {
+        if (!date) return "";
+        const d = new Date(date);
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${year}-${month}-${day}`;
+    };
+
+    const handleStartDate = (date) => {
+        const formatted = formatDate(date);
+        setDateFrom(formatted);
+    };
+
+    const handleEndDate = (date) => {
+        const formatted = formatDate(date);
+        setDateTo(formatted);
+    };
+
 
     return (
         <AdminLayout>
+            
+            {/* OVERLAY */}
+            {filterOpen && (
+                <div
+                    className="fixed inset-0 bg-black/30 z-40"
+                    onClick={() => setFilterOpen(false)}
+                />
+            )}
+
+            {/* FILTER DRAWER */}
+            <div
+                className={`fixed top-0 right-0 h-full w-[360px] bg-white z-50 shadow-xl transform transition-transform duration-300 flex flex-col
+                ${filterOpen ? "translate-x-0" : "translate-x-full"}`}
+            >
+                {/* HEADER */}
+                <div className="flex justify-between items-center p-5 border-b border-gray-200">
+                    <h3 className="font-bold text-lg">Filters</h3>
+                    <button onClick={() => setFilterOpen(false)} className="cursor-pointer">✕</button>
+                </div>
+
+                {/* BODY */}
+                <div className="p-5 space-y-5 overflow-y-auto flex-1">
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-gray-700 ml-1">Start Date</label>
+                        <div className="relative">
+                            <DatePicker
+                            selected={dateFrom ? new Date(dateFrom) : null}
+                            onChange={handleStartDate}
+                            dateFormat="yyyy-MM-dd"
+                            placeholderText="Select Start Date"
+                            // This prevents keyboard input but allows the click to open the calendar
+                            onKeyDown={(e) => e.preventDefault()}
+                            autoComplete="off"
+                            className="w-full px-4 py-3 rounded-xl outline-none bg-gray-50 border cursor-pointer border-transparent focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                            wrapperClassName="w-full"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-gray-700 ml-1">Start Date</label>
+                        <div className="relative">
+                            <DatePicker
+                            selected={dateTo ? new Date(dateTo) : null}
+                            onChange={handleEndDate}
+                            dateFormat="yyyy-MM-dd"
+                            placeholderText="Select Start Date"
+                            // This prevents keyboard input but allows the click to open the calendar
+                            onKeyDown={(e) => e.preventDefault()}
+                            autoComplete="off"
+                            className="w-full px-4 py-3 rounded-xl outline-none bg-gray-50 border cursor-pointer border-transparent focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                            wrapperClassName="w-full"
+                            />
+                        </div>
+                    </div>
+
+                    <CustomSelect
+                        options={statusOptions}
+                        value={statusFilter}
+                        onChange={(val) => setStatusFilter(val)}
+                        placeholder="Status"
+                    />
+                </div>
+
+                {/* FOOTER */}
+                <div className="p-5 border-t border-gray-200 bg-white flex gap-3">
+                    <button
+                        onClick={() => {
+                            setStatusFilter("");
+                            setCurrentPage(1);
+                        }}
+                        className="flex-1 bg-gray-100 rounded-lg py-2 text-sm font-medium cursor-pointer"
+                    >
+                        Reset
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setCurrentPage(1);
+                            // This manually triggers fetchStaff if page was already 1
+                            if (currentPage === 1) {
+                                fetchAcademicYears(1);
+                            }
+                            setFilterOpen(false);
+                        }}
+                        className="flex-1 rounded-lg py-2 text-sm font-medium transition shadow-sm cursor-pointer bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
+
             <DeleteConfirmModal
                 isOpen={open}
                 title="Delete Academic Year"
@@ -161,34 +321,47 @@ const AcademicListing = () => {
                     <Stat label="Inactive" value={past_years} icon={<History />} color="red" />
                 </div>
 
-
-                {/* FILTERS */}
-                <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
-                    <div className="flex-1 min-w-[250px] sm:min-w-[300px] w-full">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={handleKeyPress}
-                                placeholder="Search year name..."
-                                className="w-full pl-10 pr-12 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            />
-                            <button onClick={handleSearchClick} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#faae1c]/20 text-[#faae1c] rounded-md hover:bg-[#faae1c] hover:text-white transition-colors">
-                                <Search size={18} strokeWidth={2.5} />
-                            </button>
+                {/* --- FILTERS SECTION --- */}
+                <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 ">
+                    <div className="sm:flex gap-3">
+                        <div className="mb-4 sm:mb-0 flex-1 min-w-[250px] sm:min-w-[300px] w-full">
+                            <div className="relative group">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyPress}
+                                    placeholder="Search year name..."
+                                    className="w-full pl-10 pr-12 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                />
+                                <button
+                                    onClick={handleSearchClick}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#faae1c] hover:bg-[#faae1c]/90 text-white p-2 rounded-lg cursor-pointer"
+                                >
+                                    <Search size={18} strokeWidth={2.5} />
+                                </button>
+                            </div>
                         </div>
+
+                        <button
+                            onClick={() => setFilterOpen(true)}
+                            className="flex items-center gap-2 px-4 bg-gray-100 rounded-lg"
+                        >
+                            <Filter size={16} /> <span className="font-medium">More Filters</span>
+                        </button>
                     </div>
-                    <div className="w-40">
-                        <CustomSelect
-                            options={statusOptions}
-                            value={statusFilter}
-                            onChange={(val) => setStatusFilter(val)}
-                            placeholder="Status"
-                        />
+
+                    <div className="flex gap-2">
                     </div>
                 </div>
+
+                {/* ---- Success Messages ---- */}
+                {message && (
+                    <div className={`flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] ${messageClass} px-4 py-3 text-sm font-medium mb-3`}>
+                    {message}
+                    </div>
+                )}
 
                 {/* TABLE SECTION */}
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm relative">
@@ -207,10 +380,14 @@ const AcademicListing = () => {
                             <tbody className="divide-y divide-gray-100 min-h-[400px]">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="6" className="py-20">
-                                            <div className="flex flex-col items-center justify-center gap-3">
-                                                <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-100 border-t-blue-600"></div>
-                                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Loading Records...</p>
+                                        <td colSpan="6" className="p-6 text-center text-gray-500">
+                                            <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+                                                    <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
+                                                        Loading Data...
+                                                    </p>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -245,8 +422,8 @@ const AcademicListing = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-12 text-center text-gray-500 font-medium">
-                                            No records found matching your criteria.
+                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                            <p className="text-lg font-semibold">No data found</p>
                                         </td>
                                     </tr>
                                 )}
