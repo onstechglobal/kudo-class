@@ -3,16 +3,13 @@ import { User, Settings, Repeat, Power } from 'lucide-react';
 import api from "../../helpers/api";
 
 const UserPopup = () => {
-  
+
   const logout = async () => {
-    try {
-      await api.post("/logout");
-    } catch (e) {
-      console.error("Logout failed", e);
-    }
+    try { await api.post("api/logout"); } catch (e) { console.error("Logout failed", e); }
     localStorage.removeItem("user");
     window.location.href = "/";
   };
+
 
   return (
     <div className="fixed right-4 top-[90px] z-[100] w-64 rounded-xl bg-white p-3 shadow-xl border border-gray-100">
@@ -22,7 +19,7 @@ const UserPopup = () => {
           Arjun Sharma
         </h4>
         <p className="text-xs text-gray-500 mt-1">
-          Administrator 
+          Administrator
         </p>
       </div>
 

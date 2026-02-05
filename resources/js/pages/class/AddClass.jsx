@@ -122,20 +122,9 @@ const AddClass = () => {
           {/* ---------- BODY ---------- */}
           <div className="p-0 sm:p-8 max-w-[1600px] mx-auto">
             <div className="sm:grid sm:grid-cols-12 sm:gap-8">
-              {/* LEFT INFO CARD */}
-              <div className="py-8 sm:py-0 col-span-12 lg:col-span-3">
-                <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm text-center sticky top-8">
-                  <div className="w-32 h-32 mx-auto mb-6 bg-indigo-50 rounded-3xl flex items-center justify-center">
-                    <LayoutGrid size={48} className="text-indigo-600" />
-                  </div>
-                  <h3 className="text-lg font-black text-gray-900 mb-2">
-                    Class Configuration
-                  </h3>
-                </div>
-              </div>
-
-              {/* RIGHT FORM */}
-              <div className="col-span-12 lg:col-span-9">
+             
+              {/* FORM */}
+              <div className="col-span-12 lg:col-span-12">
                 <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
 
                   {/* CLASS DETAILS */}

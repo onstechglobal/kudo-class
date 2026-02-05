@@ -55,8 +55,8 @@ const ClassListing = () => {
 
         try {
             setLoading(true);
-            const response = await axios.post(`${Api_url.name}api/delete-class`, { 
-                class_id: selectedClass.id 
+            const response = await axios.post(`${Api_url.name}api/delete-class`, {
+                class_id: selectedClass.id
             });
 
             if (response.data.status === 200) {
@@ -94,9 +94,10 @@ const ClassListing = () => {
     ];
 
     return (
-        <AdminLayout>
+        /* <AdminLayout> */
+        <>
             {/* DELETE MODAL */}
-            <DeleteConfirmModal
+            < DeleteConfirmModal
                 isOpen={isModalOpen}
                 title="Delete Class"
                 schoolName={selectedClass ? selectedClass.name : ""}
@@ -207,7 +208,7 @@ const ClassListing = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                
+
                                 {!loading && classes.length === 0 && (
                                     <tr>
                                         <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
@@ -220,7 +221,8 @@ const ClassListing = () => {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </>
+        /* </AdminLayout> */
     );
 };
 

@@ -101,27 +101,27 @@ const SectionListing = () => {
     /* Add/edit success message */
     useEffect(() => {
         if (location.state?.message) {
-            if(location.state.status && location.state.status=='success'){
+            if (location.state.status && location.state.status == 'success') {
                 setMessageClass('text-green-700 border-green-600 bg-green-50');
 
-            }else if(location.state.status && location.state.status=='failed'){
+            } else if (location.state.status && location.state.status == 'failed') {
                 setMessageClass('text-red-700 border-red-600 bg-red-50');
 
-            }else{
+            } else {
                 setMessageClass('');
             }
-        setMessage(location.state.message);
+            setMessage(location.state.message);
 
-        const timer = setTimeout(() => {
-            setMessage('');
-            setMessageClass('');
-        }, 5000);
+            const timer = setTimeout(() => {
+                setMessage('');
+                setMessageClass('');
+            }, 5000);
 
-        setTimeout(() => {
-            navigate(location.pathname, { replace: true });
-        }, 0);
+            setTimeout(() => {
+                navigate(location.pathname, { replace: true });
+            }, 0);
 
-        return () => clearTimeout(timer);
+            return () => clearTimeout(timer);
         }
     }, []);
     /* ================= SEARCH ================= */
@@ -152,8 +152,7 @@ const SectionListing = () => {
     };
 
     return (
-        <AdminLayout>
-            
+        <>
             {/* OVERLAY */}
             {filterOpen && (
                 <div
@@ -271,7 +270,7 @@ const SectionListing = () => {
                     {/* ---- Success Messages ---- */}
                     {message && (
                         <div className={`flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] ${messageClass} px-4 py-3 text-sm font-medium mb-3`}>
-                        {message}
+                            {message}
                         </div>
                     )}
                     {/* TABLE */}
@@ -299,7 +298,7 @@ const SectionListing = () => {
                                                             Loading Data...
                                                         </p>
                                                     </div>
-                                                </div> 
+                                                </div>
                                             </td>
                                         </tr>
                                     )}
@@ -372,7 +371,7 @@ const SectionListing = () => {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </>
     );
 };
 

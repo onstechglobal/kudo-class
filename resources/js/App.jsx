@@ -60,6 +60,10 @@ import CreateFee from "./pages/fee-structure/CreateFee";
 
 import EditFee from "./pages/fee-structure/EditFee";
 
+import AdmissionForm from "./pages/admission/AdmissionForm";
+
+import AcademicsManager from "./components/common/AcademicsManager";
+
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("token");
@@ -72,6 +76,8 @@ export default function App() {
             <Routes>
                 <Route path="/" element={<Login />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+
+                <Route path="/new-admission" element={<AdmissionForm />} />
 
                 <Route path="/school" element={<SchoolListing />} />
                 <Route path="/school/add" element={<AddSchool />} />
@@ -89,21 +95,23 @@ export default function App() {
                 <Route path="/teachers/create" element={<AddTeacher />} />
                 <Route path="/teachers/:id/edit" element={<EditTeacher />} />
 
-                <Route path="/classes" element={<ClassListing />} />
+                <Route path="/classes" element={<AcademicsManager />} />
                 <Route path="/classes/add" element={<AddClass />} />
                 <Route path="/classes/edit/:id" element={<EditClass />} />
 
-                <Route path="/parents" element={<ParentListing />} />
-                <Route path="/parents/create" element={<AddParent />} />
-                <Route path="/parents/:id/edit" element={<EditParent />} />
+                <Route path="/classes" element={<AcademicsManager />} />
 
-                <Route path="/sections" element={<SectionListing />} />
+                <Route path="/sections" element={<AcademicsManager />} />
                 <Route path="/sections/create" element={<AddSection />} />
                 <Route path="/sections/:id/edit" element={<EditSection />} />
 
                 <Route path="/students" element={<Students />} />
                 <Route path="/students/add" element={<AddStudent />} />
                 <Route path="/students/edit/:id" element={<EditStudent />} />
+
+                <Route path="/parents" element={<ParentListing />} />
+                <Route path="/parents/create" element={<AddParent />} />
+                <Route path="/parents/:id/edit" element={<EditParent />} />
 
                 <Route path="/admin/users" element={<UserListing />} />
                 <Route path="/admin/users/:id" element={<ShowUser />} />
