@@ -11,7 +11,8 @@ import AvatarLetter from "@/components/common/AvatarLetter";
 import { Api_url } from '../../helpers/api';
 import Stat from '../../components/common/StatCard';
 
-const SectionListing = () => {
+
+const SectionListing = ({ isChildView = false }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [message, setMessage] = useState('');

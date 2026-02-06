@@ -36,15 +36,6 @@ export const SIDEBAR_MENU = {
     // 2: SCHOOL ADMIN (Role 2 - Full Management Access)
     2: [
 
-        /*
-        { type: 'dropdown', title: 'CORE', key: 'core',
-        items: [
-            { title: 'Dashboard', path: '/dashboard' },
-            { title: 'New Admission ', path: '/new-admission' },
-        ] 
-            },
-        */
-
         { type: 'link', title: 'DASHBOARD', path: '/dashboard' },
         { type: 'link', title: 'NEW ADMISSION', path: '/new-admission' },
 
@@ -52,7 +43,7 @@ export const SIDEBAR_MENU = {
             type: 'dropdown', title: 'MANAGEMENT', key: 'management',
             items: [
                 { title: 'Families', path: '/families' },
-                { title: 'Parents & Guardians', path: '/parents', permission: 'Parents' },
+                { title: 'Parents / Guardians', path: '/parents', permission: 'Parents' },
                 { title: 'Students', path: '/students', permission: 'Students' },
 
             ]

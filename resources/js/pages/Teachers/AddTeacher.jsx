@@ -50,12 +50,29 @@ export default function AddTeacher() {
   }, [autoGenerate]);
 
 
+  React.useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setForm(prev => ({
+          ...prev,
+          school_id: user.school_id // Ensure this matches the key in your login response
+        }));
+      }
+    } catch (err) {
+      console.error("Error parsing user data", err);
+    }
+  }, []);
+
+
   /* IMAGE */
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
   /* FORM */
   const [form, setForm] = useState({
+    school_id: "",
     first_name: "",
     last_name: "",
     father_name: "",
@@ -83,15 +100,13 @@ export default function AddTeacher() {
     { label: "Active", value: "active" },
     { label: "Inactive", value: "inactive" },
   ];
-  const handleJoiningDate = (d) => {
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
 
-      const new_joining_date = `${year}-${month}-${day}`;
-      setForm((prev) => ({ ...prev, ["joining_date"]: new_joining_date }));
-      if (errors["joining_date"]) setErrors((prev) => ({ ...prev, ["joining_date"]: null }));
-    };
+
+  const handleJoiningDate = (d) => {
+    setForm((prev) => ({ ...prev, joining_date: d }));
+    if (errors["joining_date"]) setErrors((prev) => ({ ...prev, joining_date: null }));
+  };
+
   /* UPDATE FIELD */
   const updateField = (name, value) => {
     setForm((prev) => {
@@ -157,7 +172,18 @@ export default function AddTeacher() {
 
     try {
       const payload = new FormData();
-      Object.keys(form).forEach((key) => payload.append(key, form[key]));
+
+      Object.keys(form).forEach((key) => {
+        // FIX: Check if the key is joining_date AND it's a valid Date object
+        if (key === "joining_date" && form[key] instanceof Date) {
+          const d = form[key];
+          const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          payload.append(key, formatted);
+        } else {
+          payload.append(key, form[key]);
+        }
+      });
+
 
       if (selectedFile) {
         payload.append("teacher_photo", selectedFile);
@@ -166,11 +192,11 @@ export default function AddTeacher() {
       const res = await axios.post(
         `${Api_url.name}api/saveteacher`,
         payload,
-        { 
-          headers: { 
+        {
+          headers: {
             "Content-Type": "multipart/form-data",
             "Accept": "application/json"
-          } 
+          }
         }
       );
 
@@ -198,7 +224,7 @@ export default function AddTeacher() {
           {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-             
+
               <PageHeader
                 prevRoute="/teachers"
                 breadcrumbParent="Teachers"
@@ -263,18 +289,18 @@ export default function AddTeacher() {
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input 
-                        label="First Name" 
-                        value={form.first_name} 
-                        onChange={(e) => updateField("first_name", e.target.value)} 
-                        error={errors.first_name} 
+                      <Input
+                        label="First Name"
+                        value={form.first_name}
+                        onChange={(e) => updateField("first_name", e.target.value)}
+                        error={errors.first_name}
                         required
                       />
-                      <Input 
-                        label="Last Name" 
-                        value={form.last_name} 
-                        onChange={(e) => updateField("last_name", e.target.value)} 
-                        error={errors.last_name} 
+                      <Input
+                        label="Last Name"
+                        value={form.last_name}
+                        onChange={(e) => updateField("last_name", e.target.value)}
+                        error={errors.last_name}
                       />
                       <Input
                         label="Father Name"
@@ -286,19 +312,19 @@ export default function AddTeacher() {
                         value={form.mother_name}
                         onChange={(e) => updateField("mother_name", e.target.value)}
                       />
-                      <Input 
-                        label="Email" 
+                      <Input
+                        label="Email"
                         type="email"
-                        value={form.email} 
-                        onChange={(e) => updateField("email", e.target.value)} 
-                        error={errors.email} 
+                        value={form.email}
+                        onChange={(e) => updateField("email", e.target.value)}
+                        error={errors.email}
                         required
                       />
-                      <Input 
-                        label="Mobile" 
-                        value={form.mobile} 
-                        onChange={(e) => updateField("mobile", e.target.value)} 
-                        error={errors.mobile} 
+                      <Input
+                        label="Mobile"
+                        value={form.mobile}
+                        onChange={(e) => updateField("mobile", e.target.value)}
+                        error={errors.mobile}
                         required
                       />
 
@@ -369,34 +395,46 @@ export default function AddTeacher() {
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Input 
-                        label="Designation" 
-                        value={form.designation} 
-                        onChange={(e) => updateField("designation", e.target.value)} 
-                        error={errors.designation} 
+                      <Input
+                        label="Designation"
+                        value={form.designation}
+                        onChange={(e) => updateField("designation", e.target.value)}
+                        error={errors.designation}
                         required
                       />
-                      <Input 
-                        label="Qualification" 
-                        value={form.qualification} 
-                        onChange={(e) => updateField("qualification", e.target.value)} 
+                      <Input
+                        label="Qualification"
+                        value={form.qualification}
+                        onChange={(e) => updateField("qualification", e.target.value)}
                       />
-                      <Input 
-                        label="Experience (Years)" 
+                      <Input
+                        label="Experience (Years)"
                         type="number"
-                        value={form.experience_years} 
-                        onChange={(e) => updateField("experience_years", e.target.value)} 
+                        value={form.experience_years}
+                        onChange={(e) => updateField("experience_years", e.target.value)}
                       />
                       <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Joining Date</label>
-                      <DatePicker
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                          Joining Date
+                        </label>
+                        <DatePicker
                           name="joining_date"
-                          selected={form.joining_date|| ""}
+                          // Ensure we pass a Date object or null, never an empty string
+                          selected={form.joining_date instanceof Date ? form.joining_date : null}
                           onChange={handleJoiningDate}
-                          dateFormat="yyyy-mm-dd"
+                          dateFormat="yyyy-MM-dd"
+                          // RESTRICTIONS:
+                          maxDate={new Date()} // Cannot select future dates
+                          showYearDropdown   // Better UX for professional dates
+                          scrollableYearDropdown
+                          yearDropdownItemNumber={15}
                           className="w-full px-4 py-3 rounded-lg outline-none bg-gray-50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                           wrapperClassName="w-full"
+                          placeholderText="Select Joining Date"
                         />
+                        {errors.joining_date && (
+                          <p className="text-red-500 text-xs mt-1">{errors.joining_date}</p>
+                        )}
                       </div>
                     </div>
                   </section>
@@ -477,8 +515,8 @@ export default function AddTeacher() {
                 <button
                   type="button"
                   onClick={() => navigate("/teachers", {
-                    state: { status: 'success', message: 'Teacher added successfully!' } 
-                    })
+                    state: { status: 'success', message: 'Teacher added successfully!' }
+                  })
                   }
                   className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
                 >

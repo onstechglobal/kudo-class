@@ -44,10 +44,10 @@ export default function Sidebar({ open, onClose }) {
     `block px-3 py-3 rounded-xl font-medium text-[16px] transition-all duration-200 leading-none focus-visible:outline-none ${isActive ? "bg-white text-[#0468c3] shadow-md active" : "text-slate-200 hover:bg-white/10"}`;
 
   const subLinkClass = ({ isActive }) =>
-    `block px-3 py-3 rounded-xl font-medium text-[16px] transition-all duration-200 leading-none focus-visible:outline-none ${isActive ? "bg-white text-[#0468c3] shadow-md active" : "text-slate-200 hover:bg-white/10"}`;
+    `block px-3 py-3 rounded-xl font-medium text-[16px] transition-all duration-200 leading-none focus-visible:outline-none ${isActive ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/10"}`;
 
   const dropdownBtnClass = (isOpen) =>
-    `w-full flex items-center justify-between px-3 py-3 text-[16px] rounded-xl transition cursor-pointer font-medium mt-1 ${isOpen ? "bg-white/10 text-white" : "text-slate-200 hover:bg-white/10"}`;
+    `w-full flex items-center justify-between px-3 py-3 text-[16px] rounded-xl transition cursor-pointer font-medium mt-1 ${isOpen ? "bg-white text-[#0468c3] shadow-md" : "text-slate-200 hover:bg-white/10"}`;
 
   const logout = async () => {
     try { await api.post("api/logout"); } catch (e) { console.error("Logout failed", e); }
