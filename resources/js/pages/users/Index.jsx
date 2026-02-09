@@ -4,8 +4,11 @@ import axios from "axios";
 import AdminLayout from "@/layouts/AdminLayout";
 import Stat from "../../components/common/StatCard";
 import CustomButton from "../../components/form/CustomButton";
+import CustomSelect from "../../components/form/CustomSelect";
+import Input from "../../components/form/Input";
 import AvatarLetter from "../../components/common/AvatarLetter";
 import DeleteConfirmModal from "../../components/common/DeleteConfirmModal";
+import { Api_url } from "@/helpers/api";
 
 import {
   Search,
@@ -23,12 +26,15 @@ export default function UserListing() {
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [messageClass, setMessageClass] = useState('');
+  const [filterOpen, setFilterOpen] = useState('');
 
   /* ================= STATES ================= */
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Search
+  const [statusFilter, setStatusFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
 
@@ -140,25 +146,121 @@ export default function UserListing() {
     setSelectedUserID(user.id);
     setOpen(true);
   };
+  
+  const statusOptions = [
+      { label: "Status (All)", value: "" },
+      { label: "Active", value: "active" },
+      { label: "Inactive", value: "inactive" },
+  ];
+
+  /* ================= FETCH ROLES ================= */
+  const [roleOptions, setRoleOptions] = useState([]);
+  
+  useEffect(() => {
+    axios
+      .get('/api/roles')
+      .then(res => {
+        const response = res.data;
+
+        const list =
+          Array.isArray(response)
+            ? response
+            : Array.isArray(response.data)
+              ? response.data
+              : [];
+        console.log(list)
+
+        const formattedRoles = list
+          // ❌ hide admin role
+          .filter(r => r.role_name?.toLowerCase() !== "admin")
+
+          // ✅ sort by role_id ASC
+          .sort((a, b) => Number(a.role_id) - Number(b.role_id))
+
+          // ✅ format for select + Capitalize
+          .map(r => ({
+            value: String(r.role_id),
+            label: r.role_name
+              .toLowerCase()
+              .replace(/\b\w/g, char => char.toUpperCase()),
+          }));
+
+        setRoleOptions(formattedRoles);
+      })
+      .catch(() => setRoleOptions([]));
+  }, []);
+console.log(roleOptions);
+
 
   return (
     <AdminLayout>
 
-      <DeleteConfirmModal
-        isOpen={open}
-        schoolName={selectedUser ? selectedUser.name : ""}
-        onClose={() => {
-          setOpen(false);
-          setSelectedUser(null);
-        }}
-        onDelete={() => {
-          handleDelete(selectedUserID);
-          setOpen(false);
-          setSelectedUser(null);
-        }}
-      />
+      {/* OVERLAY */}
+      {filterOpen && (
+          <div
+              className="fixed inset-0 bg-black/30 z-40"
+              onClick={() => setFilterOpen(false)}
+          />
+      )}
+
+      {/* FILTER DRAWER */}
+      <div
+          className={`fixed top-0 right-0 h-full w-[360px] bg-white z-50 shadow-xl transform transition-transform duration-300 flex flex-col
+          ${filterOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+          {/* HEADER */}
+          <div className="flex justify-between items-center p-5 border-b border-gray-200">
+              <h3 className="font-bold text-lg">Filters</h3>
+              <button onClick={() => setFilterOpen(false)} className="cursor-pointer">✕</button>
+          </div>
+
+          {/* BODY */}
+          <div className="p-5 space-y-5 overflow-y-auto flex-1">
+              <CustomSelect label="User Status" options={roleOptions} value={roleFilter} onChange={setRoleFilter} placeholder="All Roles" />
+              <CustomSelect label="User Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} placeholder="Status" />
+          </div>
+
+          {/* FOOTER */}
+          <div className="p-5 border-t border-gray-200 bg-white flex gap-3">
+              <button
+                  onClick={() => {
+                  }}
+                  className="flex-1 bg-gray-100 rounded-lg py-2 text-sm font-medium cursor-pointer"
+              >
+                  Reset
+              </button>
+
+              <button
+                  onClick={() => {
+                      setCurrentPage(1);
+                      // This manually triggers fetchStaff if page was already 1
+                      if (currentPage === 1) {
+                          //fetchSchools(1);
+                      }
+                      setFilterOpen(false);
+                  }}
+                  className="flex-1 rounded-lg py-2 text-sm font-medium transition shadow-sm cursor-pointer bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+              >
+                  Apply
+              </button>
+          </div>
+      </div>
 
       <div className="p-6 bg-gray-50 min-h-screen">
+
+        <DeleteConfirmModal
+          isOpen={open}
+          schoolName={selectedUser ? selectedUser.name : ""}
+          onClose={() => {
+            setOpen(false);
+            setSelectedUser(null);
+          }}
+          onDelete={() => {
+            handleDelete(selectedUserID);
+            setOpen(false);
+            setSelectedUser(null);
+          }}
+        />
 
         {/* HEADER */}
         <div className="sm:flex justify-between items-center mb-6">
@@ -182,44 +284,38 @@ export default function UserListing() {
         </div>
 
         {/* SEARCH */}
-        <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6">
-          <div className="flex gap-3 items-center flex-wrap">
+        <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 ">
+            <div className="sm:flex gap-3">
+                <div className="mb-4 sm:mb-0 flex-1 min-w-[200px] sm:min-w-[300px] w-full">
+                    <div className="relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={e => setSearchInput(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && applySearch()}
+                            placeholder="Search by username..."
+                            className="w-full pl-10 pr-12 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        />
+                        <button
+                            onClick={applySearch}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#faae1c] hover:bg-[#faae1c]/90 text-white p-2 rounded-lg cursor-pointer"
+                        >
+                            <Search size={18} strokeWidth={2.5} />
+                        </button>
+                    </div>
+                </div>
 
-            <div className="relative sm:flex-1 min-w-[250px] sm:min-w-[300px] w-full">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applySearch()}
-                placeholder="Search by username..."
-                className="
-                  w-full pl-12 pr-14 py-3 rounded-lg
-                  border border-gray-200
-                  focus:outline-none focus:ring-2 focus:ring-blue-500
-                "
-              />
-
-              <button
-                onClick={applySearch}
-                className="
-                  absolute right-2 top-1/2 -translate-y-1/2
-                  bg-[#faae1c] hover:bg-[#faae1c]/90
-                  text-white p-2 rounded-lg transition cursor-pointer
-                "
-              >
-                <Search size={18} strokeWidth={2.5} />
-              </button>
+                <button
+                    onClick={() => setFilterOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"
+                >
+                    <Filter size={16} /> <span className="font-medium">More Filters</span>
+                </button>
             </div>
-
-            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 cursor-pointer">
-              <Filter size={16} /> More Filters
-            </button>
-
-          </div>
         </div>
+
+        
         {/* ---- Success Messages ---- */}
           {message && (
               <div className={`flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] ${messageClass} px-4 py-3 text-sm font-medium mb-3`}>
@@ -228,7 +324,7 @@ export default function UserListing() {
           )}
         {/* TABLE */}
         <div className="bg-white rounded-xl border border-gray-300 overflow-x-auto">
-          <div class="overflow-x-auto">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead className="bg-gray-50 border-gray-300 text-gray-600 text-xs uppercase font-bold">
                 <tr>

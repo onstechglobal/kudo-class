@@ -19,8 +19,12 @@ class TeacherController extends Controller
     public function index()
     {
         $teachers = $this->model->getAllTeachers();
-        return response()->json($teachers);
+        // return response()->json($teachers);
+		
+		echo '<pre> --- '; print_r($teachers->toArray()); die;
+		
     }
+	
 
     public function store(Request $request)
     {

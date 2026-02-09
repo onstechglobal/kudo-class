@@ -20,6 +20,7 @@ use App\Http\Controllers\ClassController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\FeeStructureController;
 use App\Http\Controllers\TransportRouteController;
+use App\Http\Controllers\DiscountController;
 
 
 
@@ -128,6 +129,12 @@ Route::middleware('auth.check')->group(function () {
 
 	Route::post('/razorpay/create-order', [RazorpayController::class, 'createOrder']);
 	Route::post('/razorpay/verify-payment', [RazorpayController::class, 'verifyPayment']);
+	
+	Route::get('/discounts', [DiscountController::class, 'index']);
+    Route::post('/discounts', [DiscountController::class, 'store']);
+    Route::get('/discounts/{id}', [DiscountController::class, 'show']);
+    Route::put('/discounts/{id}', [DiscountController::class, 'update']);
+    Route::delete('/discounts/{id}', [DiscountController::class, 'destroy']);
 	
 	// ==================== FEE STRUCTURE ROUTES ====================
 	// Fee Structures

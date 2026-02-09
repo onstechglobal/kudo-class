@@ -11,7 +11,7 @@ class TeacherModel{
     public function create(array $data, int $userId)
     {
         return DB::table($this->table)->insert([
-            'school_id'       => $data['school_id'] ?? 1,
+            'school_id'       => $data['school_id'] ?? '',
             'user_id'         => $userId,
             'employee_code'   => $data['employee_code'] ?? null,
             'first_name'      => $data['first_name'],
@@ -42,25 +42,7 @@ class TeacherModel{
         $teachers = DB::table('tb_teachers as t')
             ->join('tb_users as u', 'u.user_id', '=', 't.user_id')
             ->select(
-                't.teacher_id',
-                't.employee_code',
-                't.first_name',
-                't.last_name',
-                't.father_name',
-                't.mother_name',
-                't.designation',
-                't.joining_date',
-                't.status',
-                't.email',
-                't.address',
-                't.country',
-                't.state',
-                't.district',
-                't.city',
-                't.pincode',
-                't.qualification',
-                't.experience_years',
-                't.photo_url',
+                't.*',
                 'u.username',
                 'u.mobile'
             )
@@ -74,6 +56,7 @@ class TeacherModel{
             }
             return $teacher;
         });
+		
 
         return $teachers;
     }

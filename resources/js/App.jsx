@@ -64,6 +64,12 @@ import AdmissionForm from "./pages/admission/AdmissionForm";
 
 import AcademicsManager from "./components/common/AcademicsManager";
 
+import FamilyListing from "./pages/family/FamilyListing";
+
+import Discounts from "./pages/discounts/Index"
+import AddDiscount from "./pages/discounts/AddDiscount"
+import EditDiscount from "./pages/discounts/EditDiscount"
+
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("token");
@@ -128,6 +134,10 @@ export default function App() {
                 <Route path="/admin/permissions/create" element={<CreatePermissions />} />
                 <Route path="/admin/permissions/:id/edit" element={<EditPermissions />} />
 
+                <Route path="/discounts" element={<Discounts />} />
+                <Route path="/discounts/add" element={<AddDiscount />} />
+                <Route path="/discounts/edit/:id" element={<EditDiscount />} />
+
                 <Route path="/payment" element={<Payment />} />
 
                 <Route path="/terms-of-use" element={<TermsAndConditions />} />
@@ -138,6 +148,8 @@ export default function App() {
                 <Route path="/fee-structure" element={<FeeStucture />} />
                 <Route path="/fee-structure/create" element={<CreateFee />} />
                 <Route path="/fee-structure/edit/:id" element={<EditFee />} />
+
+                <Route path="/families" element={<FamilyListing />} />
 
 
             </Routes>

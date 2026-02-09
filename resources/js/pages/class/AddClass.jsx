@@ -149,7 +149,7 @@ const AddClass = () => {
                   <CustomSelect
                     label="Select School"
                     options={schools}
-                    value={formData.school_id}
+                    value={formData.school_id} 
                     onChange={(val) => handleSelectChange('school_id', val)}
                     error={errors.school_id}
                   />

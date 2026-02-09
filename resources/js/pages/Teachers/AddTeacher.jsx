@@ -55,9 +55,10 @@ export default function AddTeacher() {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const user = JSON.parse(storedUser);
+        console.log(user);
         setForm(prev => ({
           ...prev,
-          school_id: user.school_id // Ensure this matches the key in your login response
+          school_id: user.school_id
         }));
       }
     } catch (err) {
@@ -136,6 +137,9 @@ export default function AddTeacher() {
   /* VALIDATION */
   const validate = () => {
     const err = {};
+
+    console.log('form---- ');
+    console.log(form);
 
     if (!form.first_name.trim()) err.first_name = "First name is required";
     if (!form.last_name.trim()) err.last_name = "Last name is required";
@@ -289,6 +293,10 @@ export default function AddTeacher() {
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                      {/* Hidden School ID Field */}
+                      <input type="hidden" name="school_id" value={form.school_id} />
+
                       <Input
                         label="First Name"
                         value={form.first_name}

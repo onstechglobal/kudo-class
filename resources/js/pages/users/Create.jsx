@@ -1,11 +1,12 @@
 import AdminLayout from "@/layouts/AdminLayout";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, Eye, EyeOff, Camera } from "lucide-react";
 import axios from "axios";
 import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
+import StaticButtons from "../../components/common/StaticButtons";
 import { Api_url } from "@/helpers/api";
 import PageHeader from "../../components/common/PageHeader";
 
@@ -32,6 +33,10 @@ export default function CreateUser() {
   const [showPassword, setShowPassword] = useState(false);
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [roles, setRoles] = useState([]);
+  const [userRole, setUserRole] = useState("User");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
 
   /* ================= FETCH ROLES ================= */
   useEffect(() => {
@@ -167,6 +172,12 @@ export default function CreateUser() {
       qualification: "",
     });
     setErrors({});
+
+    roles.map((r)=>{
+      if(r.value==val){
+        setUserRole(r.label);
+      }
+    })
   }
 
   /* ================= VALIDATION ================= */
@@ -216,26 +227,45 @@ export default function CreateUser() {
   }
 
 
+  /* ================= File Upload ================= */
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+
   /* ================= SUBMIT ================= */
   async function submit(e) {
     e.preventDefault();
     if (!validate()) return;
-
+    
+    const formData = new FormData();
+    
+    // append normal form fields
+    Object.keys(form).forEach((key) => {
+      if (key === "password" && !form.password) return; // keep old password
+      formData.append(key, form[key]);
+    });
+    formData.append('role', userRole);
+    if (selectedFile) formData.append('profile', selectedFile);
     try {
       const { data } = await axios.get(
         `${Api_url.name}api/csrf-token`,
         { withCredentials: true }
       );
 
-      const response = await axios.post(`${Api_url.name}api/users`, form, {
+      const response = await axios.post(`${Api_url.name}api/users`, formData, {
         headers: {
           "X-CSRF-TOKEN": data.csrfToken,
         },
         withCredentials: true,
       });
-      navigate('/admin/users', {
+      /* navigate('/admin/users', {
         state: { status: 'success', message: 'User created successfully!' } 
-      });
+      }); */
     } catch (err) {
       console.error("Create user failed", err);
     }
@@ -256,14 +286,6 @@ export default function CreateUser() {
               breadcrumbCurrent="Add"
               title="Add User"
             />
-
-            <CustomButton
-              text="Save User"
-              Icon={Save}
-              className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-              to="#"
-              onClick={submit}
-            />
           </div>
         </div>
 
@@ -273,11 +295,32 @@ export default function CreateUser() {
 
             {/* LEFT CARD */}
             <div className="py-8 sm:py-0 col-span-12 md:col-span-4 xl:col-span-3">
-              <div className="bg-white rounded-3xl p-6 border border-gray-200 text-center">
-                <AvatarLetter text={form.username} />
-                <p className="mt-4 text-s text-gray-400 uppercase">
-                  {roles.find(r => r.value === form.role_id)?.label || "Role"}
-                </p>
+              <div className="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm text-center">
+
+                <div className="relative w-40 h-40 mx-auto mb-6">
+                  <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <AvatarLetter text={userRole} />
+                    )}
+                  </div>
+
+                  <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition">
+                    <Camera size={20} />
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mt-2">{userRole}</h3>
               </div>
             </div>
 
@@ -464,6 +507,7 @@ export default function CreateUser() {
             </div>
           </div>
         </div>
+        <StaticButtons saveText="Save User" saveClick={submit} />
       </div>
     </AdminLayout>
   );

@@ -52,17 +52,18 @@ class UserModel{
 
                 'u.school_id',
 
-                // school
-                's.school_name',
-                's.board',
-                's.phone as school_phone',
-                's.address_line1 as address',
-
                 // teacher
                 't.qualification',
                 't.mobile as teacher_mobile',
                 't.photo_url',
 				
+                // school
+                's.school_name',
+                's.board',
+                's.phone as school_phone',
+                's.address_line1 as address',
+                's.logo_url as photo_url',
+
 				// role
 				'r.role_name',
 			
@@ -98,18 +99,18 @@ class UserModel{
     }
 
     /* ===== CREATE USER ===== */
-    public function createUserByRole(array $data)
+    public function createUserByRole(array $data, $profile_img="")
     {
         DB::beginTransaction();
         try {
             if ($data['role_id'] === "2") { // School
-                $this->createSchoolUser($data);
+                $this->createSchoolUser($data, $profile_img);
             } elseif ($data['role_id'] === "3") { // Teacher
-                $this->createTeacherUser($data);
+                $this->createTeacherUser($data, $profile_img);
             } elseif ($data['role_id'] === "4") { // Parent
-                $this->createParentUser($data);
+                $this->createParentUser($data, $profile_img);
             } else { // Staff or other roles
-                $this->createStaffUser($data);
+                $this->createStaffUser($data, $profile_img);
             }
 
             DB::commit();
@@ -120,7 +121,7 @@ class UserModel{
     }
 
     /* ===== SCHOOL FLOW ===== */
-    private function createSchoolUser(array $data)
+    private function createSchoolUser(array $data, $profile_img="")
     {
         // 1️⃣ Create School
         $schoolId = DB::table('tb_schools')->insertGetId([
@@ -135,6 +136,7 @@ class UserModel{
             'country'       => $data['country'] ?? null,
             'pincode'       => $data['pincode'] ?? null,
             'status'        => $data['status'],
+            'logo_url'      => $profile_img,
             'created_at'    => now(),
         ]);
 
@@ -152,7 +154,7 @@ class UserModel{
     }
 
     /* ===== TEACHER FLOW ===== */
-    private function createTeacherUser(array $data)
+    private function createTeacherUser(array $data, $profile_img="")
     {
         // 1️⃣ Create User
         $userId = DB::table($this->table)->insertGetId([
@@ -174,6 +176,7 @@ class UserModel{
             'school_id'     => $data['school_id'],
             'qualification' => $data['qualification'] ?? null,
             'mobile'         => $data['phone'] ?? null,
+            'photo_url'     => $profile_img,
             'created_at'    => now(),
         ]);
     }
@@ -220,7 +223,7 @@ class UserModel{
 
     /* ===== UPDATE USER ===== */
     /* ================= UPDATE USER (ACS FLOW) ================= */
-    public function updateUserByRole(int $userId, array $data){
+    public function updateUserByRole(int $userId, array $data, $profile=''){
         DB::beginTransaction();
 		if(!empty($data['profile'])){
 			$profile = $data['profile'];
@@ -231,7 +234,7 @@ class UserModel{
 		}
 		
         try {
-            DB::table($this->table)->where('user_id', $userId)->update([
+            $update_user = DB::table($this->table)->where('user_id', $userId)->update([
                 'username' => $data['username'],
                 'email'    => $data['email'] ?? null,
                 'password' => !empty($data['password'])
@@ -243,14 +246,19 @@ class UserModel{
             $user = DB::table($this->table)->where('user_id', $userId)->first();
 
             if ($user->role_id == 2) {
-                DB::table('tb_schools')->where('school_id', $user->school_id)->update([
+				$schoold_update_data = array(
                     'school_name' => $data['school_name'],
                     'board'       => $data['board'] ?? null,
                     'address_line1' => $data['address'] ?? null,
                     'phone'       => $data['phone'] ?? null,
                     'status'      => $data['status'],
                     'updated_at' => now(),
-                ]);
+                );
+				
+				if(isset($profile) && !empty($profile)){
+					$schoold_update_data['logo_url'] = $profile;
+				}
+                DB::table('tb_schools')->where('school_id', $user->school_id)->update($schoold_update_data);
             }
 
             if ($user->role_id == 3) {
@@ -270,6 +278,7 @@ class UserModel{
             }
 
             DB::commit();
+			return $update_user;
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;

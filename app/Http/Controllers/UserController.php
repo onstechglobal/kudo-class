@@ -29,11 +29,32 @@ class UserController extends Controller
             'status'   => 'required|in:active,inactive',
         ]);
 
-        // $this->model->createUserByRole($request->all());
+		$photoName = '';
+		if ($request->hasFile('profile')) {
+			$file = $request->file('profile');
+			$photoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 
-        // return response()->json(['message' => 'User created successfully']);
+			if ($request->role === 'Teacher') {
+				$folder = 'teachers';
+			} elseif ($request->role === 'Parent') {
+				$folder = 'parent';
+			} elseif ($request->role === 'School') {
+				$folder = 'school';
+			} else {
+				$folder = 'others';
+			}
+
+			$destination = public_path('uploads/' . $folder);
+			if (!file_exists($destination)) {
+				mkdir($destination, 0777, true);
+			}
+
+			$file->move($destination, $photoName);
+
+		}
+		
 		try {
-			$this->model->createUserByRole($request->all());
+			$this->model->createUserByRole($request->all(), $photoName);
 			return response()->json(['message' => 'User created successfully']);
 		} catch (\Exception $e) {
 			return response()->json(['error' => $e->getMessage()], 500);
@@ -55,6 +76,7 @@ class UserController extends Controller
     public function update(Request $request, $id){
 		$data = $request->all();
 		
+		$photoName = '';
 		if ($request->hasFile('profile')) {
 			$file = $request->file('profile');
 			$photoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -84,8 +106,13 @@ class UserController extends Controller
 		
 		
 		try {
-			$this->model->updateUserByRole($id, $data);
-			return response()->json(['status' => true, 'message' => 'User updated successfully']);
+			$response = $this->model->updateUserByRole($id, $data, $photoName);
+			if(isset($response) && !empty($response) && $response!=="0"){
+				return response()->json(['status' => 'success', 'message' => 'User updated successfully']);
+			}else{
+				return response()->json(['status' => 'failed', 'message' => 'User update failed']);
+			}
+			
 		} catch (\Exception $e) {
 			return response()->json(['error' => $e->getMessage()], 500);
 		}

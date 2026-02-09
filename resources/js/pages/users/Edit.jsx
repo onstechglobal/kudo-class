@@ -2,10 +2,11 @@ import AdminLayout from "@/layouts/AdminLayout";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { ArrowLeft, Save, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, Eye, EyeOff, Camera } from "lucide-react";
 import CustomButton from "@/components/form/CustomButton"; 
 import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
+import StaticButtons from "../../components/common/StaticButtons";
 import { Api_url } from "@/helpers/api";
 import PageHeader from "../../components/common/PageHeader";
 import EditPreloader from '../../components/common/EditPreloader';
@@ -20,6 +21,10 @@ export default function EditUser() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [roles, setRoles] = useState([]);
+  const [imgError, setImgError] = useState(false);
+  const [userRole, setUserRole] = useState("User");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   
   /* ================= FETCH ROLES ================= */
@@ -80,8 +85,8 @@ export default function EditUser() {
       axios.get(`${Api_url.name}api/school`, { withCredentials: true }),
     ])
       .then(([userRes, schoolRes]) => {
-        const u = userRes.data;
-        console.log(u);
+        const u = userRes.data.user;
+        
         setForm({
           role_id: String(u.role_id),
           status: u.status || "active",
@@ -104,6 +109,20 @@ export default function EditUser() {
           school_id: String(u.school_id || ""),
           qualification: u.qualification || "",
         });
+        
+        if (u.photo_url && u.photo_url !== '') {
+          var folderName = "";
+          if(u.role_name=="Teacher"){
+            folderName = "teachers";
+          }else if(u.role_name=="Parent"){
+            folderName = "parent";
+          }else{
+            folderName = "school";
+          }
+          setPreviewUrl(`/uploads/${folderName}/${u.photo_url}`);
+          console.log(`/uploads/${folderName}/${u.photo_url}`);
+        }
+        setUserRole(u.role_name);
 
         const list = Array.isArray(schoolRes.data)
           ? schoolRes.data
@@ -120,6 +139,14 @@ export default function EditUser() {
   function updateField(name, value) {
     setForm(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: "" }));
+    if(name=="role_id"){
+      roles.map((r) => {
+        if(r.value==value){
+          setUserRole(r.label);
+        }
+      })
+    }
+
   }
 
   /* ================= VALIDATION ================= */
@@ -170,6 +197,15 @@ export default function EditUser() {
     return Object.keys(err).length === 0;
   }
 
+  /* ================= File Upload ================= */
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   /* ================= SUBMIT ================= */
   async function submit(e) {
     e.preventDefault();
@@ -182,32 +218,47 @@ export default function EditUser() {
 
       const payload = { ...form };
 
+      const formData = new FormData();
+
+      formData.append('_method', 'PUT');
+
+      // append normal form fields
+      Object.keys(form).forEach((key) => {
+        if (key === "password" && !form.password) return; // keep old password
+        formData.append(key, form[key]);
+      });
+
+      // append file if selected
+      if (selectedFile) {
+        formData.append("profile", selectedFile); // "file" should match backend field name
+      }
+
       // ✅ KEEP OLD PASSWORD IF EMPTY
       if (!payload.password) delete payload.password;
 
-      const response = await axios.put(`${Api_url.name}api/users/${id}`, payload, {
+      const response = await axios.post(`${Api_url.name}api/users/${id}`, formData, {
         headers: { "X-CSRF-TOKEN": data.csrfToken },
         withCredentials: true,
       });
-      navigate('/admin/users', {
-        state: { status: 'success', message: 'User updated successfully!' }
-      });
+      if(response.status==200){
+        navigate('/admin/users', {
+          state: { status: response.data.status, message: response.data.message }
+        });
+      }
     } catch (err) {
       console.error("Update failed", err);
     }
   }
-
-  if (loading) {
-    return (
-      <AdminLayout>
-        <EditPreloader />
-      </AdminLayout>
-    );
-  }
-
+  
   /* ================= UI ================= */
   return (
     <AdminLayout>
+
+      {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
+      {loading && (
+        <EditPreloader />
+      )}
+
       <div className="bg-[#F8FAFC] min-h-screen p-6">
 
         {/* HEADER */}
@@ -220,26 +271,43 @@ export default function EditUser() {
               breadcrumbCurrent="Edit"
               title="Edit User"
             />
-
-            <CustomButton
-              text="Update User"
-              Icon={Save}
-              onClick={submit}
-              className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-            />
           </div>
         </div>
 
         {/* CONTENT */}
         <div className="sm:p-8 max-w-[1600px] mx-auto sm:grid sm:grid-cols-12 sm:gap-8">
 
-          {/* LEFT */}
+          {/* LEFT CARD */}
           <div className="py-8 sm:py-0 col-span-12 md:col-span-4 xl:col-span-3">
-            <div className="bg-white rounded-3xl p-6 border border-gray-200 text-center">
-              <AvatarLetter text={form.username} />
-              <p className="mt-4 text-gray-400 uppercase">
-                {roles.find(r => r.value === form.role_id)?.label}
-              </p>
+            <div className="bg-white rounded-3xl p-4 border border-gray-200 shadow-sm text-center">
+
+              <div className="relative w-40 h-40 mx-auto mb-6">
+                <div className="w-full h-full rounded-3xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden">
+                  {previewUrl && !imgError ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        setImgError(true)
+                      }}
+                    />
+                  ) : (
+                    <AvatarLetter text={userRole} />
+                  )}
+                </div>
+
+                <label className="absolute -bottom-2 -right-2 p-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition">
+                  <Camera size={20} />
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mt-2">{userRole}</h3>
             </div>
           </div>
 
@@ -355,6 +423,7 @@ export default function EditUser() {
 
           </div>
         </div>
+        <StaticButtons saveText="Update User" saveClick={submit} />
       </div>
     </AdminLayout>
   );
