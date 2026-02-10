@@ -7,8 +7,7 @@ class SectionModel
 {
     protected string $table = 'tb_sections';
 
-    public function create(array $data)
-    {
+   /*  public function create1(array $data){
         return DB::table($this->table)->insert([
             'school_id'         => $data['school_id'] ?? 1,
             'class_id'          => $data['class_id'],
@@ -17,7 +16,22 @@ class SectionModel
             'status'            => $data['status'] ?? 'active',
             'created_at'        => now(),
         ]);
-    }
+    } */
+	
+	
+	public function create(array $data){
+		return DB::table($this->table)->insert([
+			'school_id'         => $data['school_id'], 
+			'class_id'          => $data['class_id'],
+			'section_name'      => $data['section_name'],
+			// Handle the "Select Teacher" empty string by converting it to null
+			'class_teacher_id'  => (!empty($data['class_teacher_id'])) ? $data['class_teacher_id'] : null,
+			'status'            => $data['status'] ?? 'active',
+			'created_at'        => now(),
+		]);
+	}
+	
+	
 
     public function getAllSections()
     {
@@ -36,20 +50,4 @@ class SectionModel
             ->get();
     }
 
-    public function getAllClasses()
-    {
-        return DB::table('tb_classes')
-            ->where('status', 'active')
-            ->orderBy('class_id', 'asc')
-            ->get();
-    }
-
-    public function getAllTeachers()
-    {
-        return DB::table('tb_teachers')
-            ->where('status', 'active')
-            ->select('teacher_id', DB::raw('CONCAT(first_name, " ", last_name) as name'))
-            ->orderBy('first_name', 'asc')
-            ->get();
-    }
 }

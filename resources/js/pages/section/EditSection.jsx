@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import {
-  ArrowLeft,
-  Save,
-  BookOpen, 
-  CheckCircle2,
-} from "lucide-react";
+import { Save, BookOpen, Loader2 } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
 import Input from "@/components/form/Input";
@@ -14,7 +9,7 @@ import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
 import PageHeader from "../../components/common/PageHeader";
-
+import StaticButtons from "../../components/common/StaticButtons";
 
 export default function EditSection() {
   const navigate = useNavigate();
@@ -22,12 +17,13 @@ export default function EditSection() {
   const submittingRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [schoolId, setSchoolId] = useState(null);
 
-  /* FORM */
+  /* FORM STATE */
   const [form, setForm] = useState({
+    school_id: "",
     class_id: "",
     section_name: "",
     class_teacher_id: "",
@@ -41,43 +37,49 @@ export default function EditSection() {
     { label: "Inactive", value: "inactive" },
   ];
 
-  /* FETCH CLASSES AND TEACHERS */
+  /* INITIAL FETCH */
   useEffect(() => {
-    // CHANGED FROM sections/classes TO section/classes
-    axios.get(`${Api_url.name}api/section/classes`)
-      .then(res => {
-        const classOptions = Array.isArray(res.data) ? res.data.map(c => ({
-          label: c.class_name,
-          value: c.class_id
-        })) : [];
-        setClasses(classOptions);
-      })
-      .catch(err => console.error("Error fetching classes:", err));
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setSchoolId(user.school_id);
 
-    // CHANGED FROM sections/teachers TO section/teachers
-    axios.get(`${Api_url.name}api/section/teachers`)
-      .then(res => {
-        const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
-          label: t.name,
-          value: t.teacher_id
-        })) : [];
-        teacherOptions.unshift({ label: "Select Teacher (Optional)", value: "" });
-        setTeachers(teacherOptions);
-      })
-      .catch(err => console.error("Error fetching teachers:", err));
+      // 1. Fetch Classes for this school
+      axios.get(`${Api_url.name}api/get-classes`, { params: { school_id: user.school_id } })
+        .then(res => {
+          const classOptions = Array.isArray(res.data.data) ? res.data.data.map(c => ({
+            label: c.class_name,
+            value: c.class_id
+          })) : [];
+          setClasses(classOptions);
+        })
+        .catch(err => console.error("Error fetching classes:", err));
 
-    // Fetch section data
-    fetchSection();
+      // 2. Fetch Teachers for this school
+      axios.get(`${Api_url.name}api/teacher`, { params: { school_id: user.school_id } })
+        .then(res => {
+          const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
+            label: `${t.first_name} ${t.last_name || ''}`,
+            value: t.teacher_id,
+            designation: t.designation
+          })) : [];
+          teacherOptions.unshift({ label: "Select Teacher", value: "", designation: null });
+          setTeachers(teacherOptions);
+        })
+        .catch(err => console.error("Error fetching teachers:", err));
+
+      // 3. Fetch specific section data
+      fetchSection(user.school_id);
+    }
   }, [id]);
 
-  /* FETCH SECTION */
-  const fetchSection = async () => {
+  const fetchSection = async (sId) => {
     try {
-      // CHANGED FROM sections TO section
       const res = await axios.get(`${Api_url.name}api/section/${id}`);
       if (res.data.section) {
         const data = res.data.section;
         setForm({
+          school_id: sId,
           class_id: data.class_id || "",
           section_name: data.section_name || "",
           class_teacher_id: data.class_teacher_id || "",
@@ -85,76 +87,54 @@ export default function EditSection() {
         });
       }
     } catch (err) {
-      console.error("Fetch section failed:", err.response?.data || err.message);
-      alert("Failed to fetch section details. Please check the server.");
+      console.error("Fetch failed:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  /* UPDATE FIELD */
   const updateField = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  /* VALIDATION */
   const validate = () => {
     const err = {};
-
     if (!form.class_id) err.class_id = "Class is required";
     if (!form.section_name.trim()) err.section_name = "Section name is required";
-
     setErrors(err);
     return Object.keys(err).length === 0;
   };
 
-  /* SUBMIT */
   const submit = async (e) => {
     e.preventDefault();
-    if (submittingRef.current) return;
-    if (!validate()) return;
+    if (submittingRef.current || !validate()) return;
 
     submittingRef.current = true;
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${Api_url.name}api/update-section/${id}`,
-        form,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          }
-        }
-      );
+      // Note: Endpoint changed to update-section/id
+      const res = await axios.post(`${Api_url.name}api/update-section/${id}`, form);
 
       if (res.data.status === 200) {
-        setSuccess(true);
         navigate('/sections', {
-          state: { status: 'success', message: 'Session updated successfully!' } 
+          state: { status: 'success', message: 'Section updated successfully!', activeTab: 'sections' } 
         });
-      } else {
-        alert(res.data.message || "Update failed");
       }
     } catch (err) {
-      console.error("Update error:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Failed to update section. Please try again.");
-    } finally {
+      alert(err.response?.data?.message || "Failed to update section.");
       submittingRef.current = false;
       setLoading(false);
     }
   };
 
-  if (loading) {
+  if (loading && !form.section_name) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-            <p className="text-sm font-medium text-gray-600">Loading section details...</p>
-          </div>
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <Loader2 className="animate-spin text-blue-600" size={40} />
+          <p className="text-gray-500 font-medium">Loading details...</p>
         </div>
       </AdminLayout>
     );
@@ -164,89 +144,62 @@ export default function EditSection() {
     <AdminLayout>
       <div className="bg-[#F8FAFC] min-h-screen p-6">
         <form onSubmit={submit}>
-          {/* HEADER */}
-          <div className="bg-white border-b border-gray-200 px-8 py-5">
+          <div className="bg-white border-b border-gray-200 px-8 py-5 rounded-t-[2.5rem]">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              
               <PageHeader
                 prevRoute="/sections"
-                breadcrumbParent="Section"
-                breadcrumbCurrent="Edit"
+                breadcrumbParent="Academics"
+                breadcrumbCurrent="Edit Section"
                 title="Edit Section"
               />
-
-              <CustomButton
-                text={loading ? "Updating..." : "Update Section"}
-                Icon={Save}
-                onClick={submit}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading || submittingRef.current}
-              />
             </div>
           </div>
 
-          {/* BODY */}
-          <div className="p-8 max-w-[1600px] mx-auto grid grid-cols-12 gap-8">
-            <div className="col-span-12">
-              <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
-                {/* BASIC DETAILS */}
-                <section>
-                  <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-                    <BookOpen className="text-blue-600" /> Section Details
-                  </h2>
+          <div className="p-8 max-w-[1200px] mx-auto">
+            <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm">
+              <section>
+                <h2 className="text-xl font-black mb-8 flex items-center gap-2">
+                  <BookOpen className="text-blue-600" />
+                  Section Configuration
+                </h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CustomSelect 
-                      label="Class *" 
-                      options={classes} 
-                      value={form.class_id || ""} 
-                      onChange={(val) => updateField("class_id", val)} 
-                      error={errors.class_id} 
-                      required
-                    />
-                    
-                    <Input 
-                      label="Section Name *" 
-                      value={form.section_name || ""} 
-                      onChange={(e) => updateField("section_name", e.target.value)} 
-                      error={errors.section_name} 
-                      required
-                      placeholder="e.g., A, B, C or Section 1"
-                    />
-                    
-                    <CustomSelect 
-                      label="Class Teacher" 
-                      options={teachers} 
-                      value={form.class_teacher_id || ""} 
-                      onChange={(val) => updateField("class_teacher_id", val)} 
-                    />
-                    
-                    <CustomSelect 
-                      label="Status" 
-                      options={statusOptions} 
-                      value={form.status || ""} 
-                      onChange={(val) => updateField("status", val)} 
-                    />
-                  </div>
-                </section>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                  <CustomSelect 
+                    label="Class *" 
+                    options={classes} 
+                    value={form.class_id} 
+                    onChange={(val) => updateField("class_id", val)} 
+                    error={errors.class_id} 
+                  />
+                  
+                  <Input 
+                    label="Section Name *" 
+                    value={form.section_name} 
+                    onChange={(e) => updateField("section_name", e.target.value)} 
+                    error={errors.section_name} 
+                    placeholder="e.g., A or Blue"
+                  />
+                  
+                  <CustomSelect 
+                    label="Class Teacher" 
+                    options={teachers} 
+                    value={form.class_teacher_id} 
+                    onChange={(val) => updateField("class_teacher_id", val)} 
+                  />
+                  
+                  <CustomSelect 
+                    label="Status" 
+                    options={statusOptions} 
+                    value={form.status} 
+                    onChange={(val) => updateField("status", val)} 
+                  />
+                </div>
+              </section>
             </div>
           </div>
-
-         
+          <StaticButtons saveText="Update Section" saveClick={submit} dataLoading={submittingRef.current} />
         </form>
       </div>
     </AdminLayout>
-  );
-}
-
-function AvatarLetter({ text }) {
-  return (
-    <div
-      className="w-32 h-32 rounded-3xl flex items-center justify-center text-white text-5xl font-black"
-      style={{ backgroundColor: "#FAAE1C" }}
-    >
-      {text}
-    </div>
   );
 }

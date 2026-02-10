@@ -15,10 +15,14 @@ class RoleController extends Controller
     }
 
     /* ========= GET ALL ROLES ========= */
-    public function index()
-    {
+    public function index(Request $request){
+		$filters = [
+			'search' => $request->query('search'),
+			'status'  => $request->query('status'),
+			'permission_id' => $request->query('permission_id'),
+		];
         return response()->json(
-            $this->model->getAllRolesWithPermissions()
+            $this->model->getAllRolesWithPermissions($filters)
         );
     }
 

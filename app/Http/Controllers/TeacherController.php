@@ -19,63 +19,46 @@ class TeacherController extends Controller
     public function index()
     {
         $teachers = $this->model->getAllTeachers();
-        // return response()->json($teachers);
-		
-		echo '<pre> --- '; print_r($teachers->toArray()); die;
-		
+        return response()->json($teachers);
+		//echo '<pre> --- '; print_r($teachers->toArray()); die;
     }
 	
+	
+	public function store(Request $request){
+		$request->validate([
+			'first_name' => 'required',
+			'email' => 'required|email',
+			'username' => 'required|unique:tb_users,username',
+			'password' => 'required|min:6',
+			'mobile' => 'required|digits:10',
+			'teacher_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048'
+		]);
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'first_name' => 'required',
-            'email' => 'required|email',
-            'username' => 'required|unique:tb_users,username',
-            'password' => 'required|min:6',
-            'mobile' => 'required|digits:10',
-            'teacher_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048'
-        ]);
+		// Prepare credentials
+		$username = $request->username ?? ('tr_' . $request->mobile);
+		$password = $request->password ?? $this->generatePassword();
 
-        return DB::transaction(function () use ($request) {
+		// Handle File Upload
+		$photoPath = null;
+		if ($request->hasFile('teacher_photo')) {
+			$photoPath = $request->file('teacher_photo')->store('teachers', 'uploads');
+		}
 
-            //$username = 'tr_' . $request->mobile;
-            //$password = $this->generatePassword();
+		// Merge data and send to Model
+		$teacherData = $request->all();
+		$teacherData['photo'] = $photoPath;
+		// echo '<pre>'; print_r($teacherData);  die;
 
-            $username = $request->username ?? ('tr_' . $request->mobile);
-            $password = $request->password ?? $this->generatePassword();
+		$this->model->createTeacherWithUser($teacherData, $username, $password);
 
-            $userId = DB::table('tb_users')->insertGetId([
-                'username' => $username,
-                'name' => $request->first_name,
-                'email' => $request->email,
-                'mobile' => $request->mobile,
-                'password' => Hash::make($password),
-                'role_id' => 3,
-                'status' => 'active',
-                'created_at' => now()
-            ]);
-
-            $photoPath = null;
-            if ($request->hasFile('teacher_photo')) {
-                // Store in public/uploads/teachers directory
-                $photoPath = $request->file('teacher_photo')
-                    ->store('teachers', 'uploads'); // Using 'uploads' disk
-            }
-
-            $teacherData = $request->all();
-            $teacherData['photo'] = $photoPath;
-
-            $this->model->create($teacherData, $userId);
-
-            return response()->json([
-                'status' => 200,
-                'message' => 'Teacher added successfully',
-                'username' => $username,
-                'password' => $password
-            ]);
-        });
-    }
+		return response()->json([
+			'status' => 200,
+			'message' => 'Teacher added successfully',
+			'username' => $username,
+			'password' => $password
+		]);
+	}
+		
 
     public function show($id)
     {

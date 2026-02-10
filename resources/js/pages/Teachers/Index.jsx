@@ -45,85 +45,90 @@ const TeacherListing = () => {
     const [selectedTeacherID, setSelectedTeacherID] = useState(null);
 
     /* ================= FETCH TEACHERS ================= */
-    const fetchTeachers = () => {
+    const fetchTeachers = (page) => {
         setLoading(true);
-        axios.get(`${Api_url.name}api/teacher`)
-            .then(res => {
-                const data = Array.isArray(res.data) ? res.data : [];
-                console.log('Teachers with full URLs:', data); // Debug log
+        axios.get(`${Api_url.name}api/teacher`, {
+            params: {
+                page: page,
+                search: appliedSearch,
+            }
+        })
+        .then(res => {
+            const data = Array.isArray(res.data) ? res.data : [];
+            console.log('Teachers with full URLs:', data); // Debug log
 
-                setAllTeachers(data);
+            setAllTeachers(data);
 
-                // Stats
-                setTotalTeachers(data.length);
-                setActiveTeachers(data.filter(t => t.status === "active").length);
-                setInactiveTeachers(data.filter(t => t.status !== "active").length);
+            // Stats
+            setTotalTeachers(data.length);
+            setActiveTeachers(data.filter(t => t.status === "active").length);
+            setInactiveTeachers(data.filter(t => t.status !== "active").length);
 
-                // Apply search filter first
-                let filtered = data;
-                if (appliedSearch) {
-                    filtered = data.filter(t =>
-                        t.first_name?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-                        t.last_name?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-                        t.email?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-                        t.mobile?.includes(appliedSearch)
-                    );
-                }
-                setFilteredTeachers(filtered);
+            // Apply search filter first
+            let filtered = data;
+            if (appliedSearch) {
+                filtered = data.filter(t =>
+                    t.first_name?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
+                    t.last_name?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
+                    t.email?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
+                    t.mobile?.includes(appliedSearch)
+                );
+            }
+            setFilteredTeachers(filtered);
 
-                // Then apply pagination
-                const perPage = 10;
-                const start = (currentPage - 1) * perPage;
-                const end = start + perPage;
-                const paginated = filtered.slice(start, end);
-                setDisplayedTeachers(paginated);
+            // Then apply pagination
+            const perPage = 10;
+            const start = (currentPage - 1) * perPage;
+            const end = start + perPage;
+            const paginated = filtered.slice(start, end);
+            setDisplayedTeachers(paginated);
 
-                setLastPage(Math.ceil(filtered.length / perPage));
-                setPaginationInfo({
-                    from: filtered.length > 0 ? start + 1 : 0,
-                    to: Math.min(end, filtered.length)
-                });
-
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error("Fetch Teachers Error:", err);
-                setAllTeachers([]);
-                setFilteredTeachers([]);
-                setDisplayedTeachers([]);
-                setLoading(false);
+            setLastPage(Math.ceil(filtered.length / perPage));
+            setPaginationInfo({
+                from: filtered.length > 0 ? start + 1 : 0,
+                to: Math.min(end, filtered.length)
             });
+
+            setLoading(false);
+        })
+        .catch(err => {
+            console.error("Fetch Teachers Error:", err);
+            setAllTeachers([]);
+            setFilteredTeachers([]);
+            setDisplayedTeachers([]);
+            setLoading(false);
+        });
     };
 
     useEffect(() => {
-        fetchTeachers();
+        fetchTeachers(currentPage);
     }, [currentPage, appliedSearch]);
-     /* Add/edit success message */
-        useEffect(() => {
-           if (location.state?.message) {
-                if(location.state.status && location.state.status=='success'){
-                    setMessageClass('text-green-700 border-green-600 bg-green-50');
-    
-                }else if(location.state.status && location.state.status=='failed'){
-                    setMessageClass('text-red-700 border-red-600 bg-red-50');
-    
-                }else{
-                    setMessageClass('');
-                }
+    /* Add/edit success message */
+    useEffect(() => {
+        if (location.state?.message) {
+            if (location.state.status && location.state.status == 'success') {
+                setMessageClass('text-green-700 border-green-600 bg-green-50');
+
+            } else if (location.state.status && location.state.status == 'failed') {
+                setMessageClass('text-red-700 border-red-600 bg-red-50');
+
+            } else {
+                setMessageClass('');
+            }
             setMessage(location.state.message);
-    
+
             const timer = setTimeout(() => {
                 setMessage('');
                 setMessageClass('');
             }, 5000);
-    
+
             setTimeout(() => {
                 navigate(location.pathname, { replace: true });
             }, 0);
-    
+
             return () => clearTimeout(timer);
-            }
-        }, []);
+        }
+    }, []);
     /* ================= SEARCH ================= */
     const applySearch = () => {
         setAppliedSearch(searchInput);
@@ -131,12 +136,13 @@ const TeacherListing = () => {
     };
     // Function to trigger search
     const handleSearchClick = () => {
-        setAppliedSearch(searchQuery);
+        setAppliedSearch(searchInput);
+        setCurrentPage(1);
     };
 
     /* ================= DELETE ================= */
-    const handleDelete =async (id) => {
-         try {
+    const handleDelete = async (id) => {
+        try {
             setLoading(true);
             const { data: csrfData } = await axios.get(`${Api_url.name}api/csrf-token`);
             const response = await axios.post(`${Api_url.name}api/delete-teacher/${id}`, {}, {
@@ -145,7 +151,7 @@ const TeacherListing = () => {
             });
 
             if (response.data.status === 200) {
-                fetchTeachers();
+                fetchTeachers(1);
                 setMessage('Deleted Successfully');
                 setMessageClass('text-red-700 border-red-600 bg-red-50');
 
@@ -166,9 +172,15 @@ const TeacherListing = () => {
         setOpen(true);
     };
 
+    const statusOptions = [
+        { label: "Status (All)", value: "" },
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+    ];
+
     return (
         <AdminLayout>
-            
+
             {/* OVERLAY */}
             {filterOpen && (
                 <div
@@ -207,7 +219,7 @@ const TeacherListing = () => {
                             setCurrentPage(1);
                             // This manually triggers fetchStaff if page was already 1
                             if (currentPage === 1) {
-                               /* fetchSchools(1); */
+                                /* fetchSchools(1); */
                             }
                             setFilterOpen(false);
                         }}
@@ -281,7 +293,7 @@ const TeacherListing = () => {
                     {/* ---- Success Messages ---- */}
                     {message && (
                         <div className={`flex items-center gap-2 rounded-lg border border-l-[3px] border-r-[3px] ${messageClass} px-4 py-3 text-sm font-medium mb-3`}>
-                        {message}
+                            {message}
                         </div>
                     )}
                     {/* TABLE */}
@@ -291,8 +303,8 @@ const TeacherListing = () => {
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
                                         <th className="p-4">Teacher Name</th>
-                                        <th className="p-4">Email</th>
-                                        <th className="p-4">Phone</th>
+                                        <th className="p-4">Contact</th>
+                                        <th className="p-4">School</th>
                                         <th className="p-4">Status</th>
                                         <th className="p-4 text-center">Actions</th>
                                     </tr>
@@ -318,7 +330,7 @@ const TeacherListing = () => {
                                         const hasError = imgError[t.teacher_id];
                                         const hasUrl = t.photo_url && t.photo_url !== '';
 
-                                        return(
+                                        return (
                                             <tr key={t.teacher_id} className="border border-gray-200 hover:bg-gray-50">
                                                 <td className="p-4 min-w-[150px] sm:min-w-[200px]">
                                                     <div className="flex items-center gap-3">
@@ -343,8 +355,12 @@ const TeacherListing = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{t.email}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{t.mobile}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">
+                                                    <p> {t.email} </p> <p className="mt-2"> {t.mobile} </p></td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">
+                                                    {t.school_name || '—'}
+                                                </td>
+
                                                 <td className="px-6 py-4 text-sm">
                                                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${t.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                                         }`}>{t.status}</span>
@@ -357,7 +373,8 @@ const TeacherListing = () => {
                                                     ><Trash2 size={16} /></button>
                                                 </td>
                                             </tr>
-                                        )}
+                                        )
+                                    }
                                     )}
 
                                     {!loading && displayedTeachers.length === 0 && (

@@ -12,7 +12,7 @@ class UserModel{
     /* =======================
        GET ALL USERS
     ======================= */
-    public function getAllUsers(){
+    public function getAllUsers($filters=[]){
         return DB::table($this->table . ' as u')
             ->leftJoin('tb_roles as r', 'r.role_id', '=', 'u.role_id')
             ->select(
@@ -26,6 +26,23 @@ class UserModel{
                 'u.status'
             )
             ->where('u.role_id', '!=', 1) // Exclude role_id = 1
+			->when(!empty($filters['search']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('u.user_name', 'like', '%' . $filters['search'] . '%')
+					  ->orWhere('u.name', 'like', '%' . $filters['search'] . '%')
+					  ->orWhere('u.email', 'like', '%' . $filters['search'] . '%');
+				});
+			})
+			->when(!empty($filters['status']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('u.status', $filters['status']);
+				});
+			})
+			->when(!empty($filters['role']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('u.role_id', $filters['role']);
+				});
+			})
 			->orderBy('u.user_id', 'desc')
             ->get();
     }

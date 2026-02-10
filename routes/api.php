@@ -102,8 +102,8 @@ Route::middleware('auth.check')->group(function () {
 
 
 	Route::get('/section', [SectionController::class, 'index']);
-	Route::get('/section/classes', [SectionController::class, 'getClasses']);
-	Route::get('/section/teachers', [SectionController::class, 'getTeachers']);
+	// Route::get('/section/classes', [SectionController::class, 'getClasses']);
+	// Route::get('/section/teachers', [SectionController::class, 'getTeachers']);
 	Route::post('/section', [SectionController::class, 'store']);
 	Route::get('/section/{id}', [SectionController::class, 'show']);
 	Route::post('/update-section/{id}', [SectionController::class, 'update']);

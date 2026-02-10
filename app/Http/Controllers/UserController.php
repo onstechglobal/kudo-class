@@ -14,9 +14,15 @@ class UserController extends Controller
     }
 
     /* ====== GET ALL USERS ========= */
-    public function index(){
+    public function index(Request $request){
+		
+		$filters = [
+			'search' => $request->query('search'),
+			'status'  => $request->query('status'),
+			'role' => $request->query('role'),
+		];
         return response()->json(
-            $this->model->getAllUsers()
+            $this->model->getAllUsers($filters)
         );
     }
 

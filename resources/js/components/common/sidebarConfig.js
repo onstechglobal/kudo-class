@@ -18,7 +18,7 @@ export const SIDEBAR_MENU = {
                 { title: 'Sections', path: '/sections', permission: 'Sections' },
             ]
         },
-        { type: 'link', title: 'Attendance', path: '/attendance', permission: 'Attendance' },
+       // { type: 'link', title: 'Attendance', path: '/attendance', permission: 'Attendance' },
         { type: 'link', title: 'Payment', path: '/payment', permission: 'Payment' },
         {
             type: 'dropdown',
@@ -53,7 +53,7 @@ export const SIDEBAR_MENU = {
             items: [
                 { title: 'Teachers', path: '/teachers', permission: 'Teachers' },
                 { title: 'Classes & Sections', path: '/classes' },
-                { title: 'Attendance', path: '/attendance', permission: 'Attendance' },
+                //{ title: 'Attendance', path: '/attendance', permission: 'Attendance' },
                 { title: 'Examinations', path: '/examinations' },
             ]
         },

@@ -1,17 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  ArrowLeft,
-  Save,
-  User,
-  Briefcase,
-  Camera,
-  CheckCircle2,
-  MapPin,
-  Eye,
-  EyeOff
-} from "lucide-react";
+import { Save, User, Briefcase, Camera, MapPin, Eye, EyeOff } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
 import Input from "@/components/form/Input";
@@ -19,7 +9,7 @@ import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
 import PageHeader from "../../components/common/PageHeader";
-import EditPreloader from '../../components/common/EditPreloader';
+import StaticButtons from "../../components/common/StaticButtons";
 import DatePicker from "react-datepicker";
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -48,7 +38,6 @@ export default function AddTeacher() {
       }));
     }
   }, [autoGenerate]);
-
 
   React.useEffect(() => {
     try {
@@ -80,6 +69,7 @@ export default function AddTeacher() {
     mother_name: "",
     email: "",
     mobile: "",
+    dob: "",
     designation: "",
     joining_date: "",
     qualification: "",
@@ -102,6 +92,11 @@ export default function AddTeacher() {
     { label: "Inactive", value: "inactive" },
   ];
 
+
+  const handleDob = (d) => {
+    setForm((prev) => ({ ...prev, dob: d }));
+    if (errors["dob"]) setErrors((prev) => ({ ...prev, dob: null }));
+  };
 
   const handleJoiningDate = (d) => {
     setForm((prev) => ({ ...prev, joining_date: d }));
@@ -137,10 +132,6 @@ export default function AddTeacher() {
   /* VALIDATION */
   const validate = () => {
     const err = {};
-
-    console.log('form---- ');
-    console.log(form);
-
     if (!form.first_name.trim()) err.first_name = "First name is required";
     if (!form.last_name.trim()) err.last_name = "Last name is required";
 
@@ -164,22 +155,20 @@ export default function AddTeacher() {
     return Object.keys(err).length === 0;
   };
 
+
   /* SUBMIT (LOCKED – NO DOUBLE INSERT) */
   const submit = async (e) => {
     e.preventDefault();
-
     if (submittingRef.current || credentials) return;
     if (!validate()) return;
-
     submittingRef.current = true;
     setLoading(true);
-
     try {
       const payload = new FormData();
 
       Object.keys(form).forEach((key) => {
         // FIX: Check if the key is joining_date AND it's a valid Date object
-        if (key === "joining_date" && form[key] instanceof Date) {
+        if (form[key] instanceof Date) {
           const d = form[key];
           const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           payload.append(key, formatted);
@@ -187,7 +176,6 @@ export default function AddTeacher() {
           payload.append(key, form[key]);
         }
       });
-
 
       if (selectedFile) {
         payload.append("teacher_photo", selectedFile);
@@ -205,6 +193,10 @@ export default function AddTeacher() {
       );
 
       if (res.data.status === 200) {
+        navigate('/teachers', {
+          state: { status: res.data.status, message: res.data.message }
+        });
+
         setCredentials({
           username: res.data.username,
           password: res.data.password,
@@ -234,15 +226,6 @@ export default function AddTeacher() {
                 breadcrumbParent="Teachers"
                 breadcrumbCurrent="Add"
                 title="Add Teacher"
-              />
-
-              <CustomButton
-                text={loading ? "Saving..." : "Save Teacher"}
-                Icon={Save}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 disabled:opacity-50 disabled:cursor-not-allowed"
-                to="#"
-                onClick={submit}
-                disabled={loading || submittingRef.current}
               />
             </div>
           </div>
@@ -320,6 +303,26 @@ export default function AddTeacher() {
                         value={form.mother_name}
                         onChange={(e) => updateField("mother_name", e.target.value)}
                       />
+
+                      {/* 4. DATE OF BIRTH FIELD */}
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                          Date of Birth
+                        </label>
+                        <DatePicker
+                          selected={form.dob instanceof Date ? form.dob : null}
+                          onChange={handleDob}
+                          dateFormat="yyyy-MM-dd"
+                          maxDate={new Date()} // DOB cannot be in the future
+                          showMonthDropdown
+                          showYearDropdown
+                          dropdownMode="select"
+                          className="w-full px-4 py-3 rounded-lg outline-none bg-gray-50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                          wrapperClassName="w-full"
+                          placeholderText="Select Date of Birth"
+                        />
+                      </div>
+
                       <Input
                         label="Email"
                         type="email"
@@ -494,45 +497,7 @@ export default function AddTeacher() {
               </div>
             </div>
           </div>
-
-          {/* SUCCESS MODAL */}
-          {credentials && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-8 max-w-md text-center">
-                <CheckCircle2 className="mx-auto text-[#faae1c]" size={48} />
-                <h3 className="text-xl font-bold mt-4">
-                  Teacher Added Successfully
-                </h3>
-                <p className="text-gray-600 mt-2">
-                  Login credentials have been generated for the teacher.
-                </p>
-
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-left mb-2">
-                    <strong>Username:</strong> <span className="font-mono">{credentials.username}</span>
-                  </p>
-                  <p className="text-left">
-                    <strong>Password:</strong> <span className="font-mono">{credentials.password}</span>
-                  </p>
-                </div>
-
-                <p className="text-sm text-red-500 mt-4">
-                  Please save these credentials. They cannot be retrieved later.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => navigate("/teachers", {
-                    state: { status: 'success', message: 'Teacher added successfully!' }
-                  })
-                  }
-                  className="mt-6 bg-[#faae1c] px-6 py-2 rounded-lg text-white font-bold hover:bg-[#faae1c]/90"
-                >
-                  OK
-                </button>
-              </div>
-            </div>
-          )}
+          <StaticButtons saveText="Save Teacher" saveClick={submit} dataLoading={loading} />
         </form>
       </div>
     </AdminLayout>

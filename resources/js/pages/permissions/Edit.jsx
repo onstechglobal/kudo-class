@@ -6,6 +6,7 @@ import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import Input from "@/components/form/Input";
 import CustomButton from "@/components/form/CustomButton";
 import CustomSelect from "@/components/form/CustomSelect";
+import StaticButtons from "../../components/common/StaticButtons";
 import PageHeader from "../../components/common/PageHeader";
 
 
@@ -13,6 +14,7 @@ export default function EditPermissions() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const [errors, setErrors] = useState({});
 
     const [form, setForm] = useState({
         module: "",
@@ -33,8 +35,17 @@ export default function EditPermissions() {
         setForm({ ...form, [e.target.name]: e.target.value });
     }
 
+    const validateForm = () => {
+        let newErrors = {};
+        if (!form.module.trim()) newErrors.module = "Permission name is required";
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     function submit(e) {
         e.preventDefault();
+        if (!validateForm()) return;
         axios.put(`/api/permissions/${id}`, form)
             .then(() => navigate("/admin/permissions"));
     }
@@ -61,13 +72,6 @@ export default function EditPermissions() {
                             breadcrumbCurrent="Edit"
                             title="Edit Permissions"
                         />
-
-                        <CustomButton
-                            text="Update Permission"
-                            Icon={Save}
-                            onClick={submit}
-                            className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-                        />
                     </div>
                 </div>
 
@@ -79,14 +83,6 @@ export default function EditPermissions() {
                             <h2 className="text-xl font-black text-gray-900">
                                 Permission Details
                             </h2>
-
-                            {/*
-                            <span className="flex items-center gap-2 text-indigo-600
-                            text-xs font-black uppercase bg-indigo-50
-                            px-3 py-1 rounded-full">
-                                <ShieldCheck size={14} /> System Permission
-                            </span>
-                            */}
                         </div>
 
                         <form
@@ -98,6 +94,7 @@ export default function EditPermissions() {
                                 name="module"
                                 value={form.module}
                                 onChange={handleChange}
+                                error={errors.module}
                             />
 
                             <CustomSelect
@@ -115,6 +112,7 @@ export default function EditPermissions() {
                         </form>
                     </div>
                 </div>
+                <StaticButtons saveText="Update Permission" saveClick={submit} />
             </div>
         </AdminLayout>
     );

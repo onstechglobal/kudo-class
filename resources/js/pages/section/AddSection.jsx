@@ -1,13 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  ArrowLeft,
-  Save,
-  BookOpen,
-  User, 
-  CheckCircle2,
-} from "lucide-react";
+import {ArrowLeft, Save, BookOpen, User,  CheckCircle2, } from "lucide-react";
 
 import AdminLayout from "@/layouts/AdminLayout";
 import Input from "@/components/form/Input";
@@ -15,6 +9,7 @@ import CustomSelect from "@/components/form/CustomSelect";
 import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
 import PageHeader from "../../components/common/PageHeader";
+import StaticButtons from "../../components/common/StaticButtons";
 
 export default function AddSection() {
   const navigate = useNavigate();
@@ -24,9 +19,11 @@ export default function AddSection() {
   const [success, setSuccess] = useState(false);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [schoolId, setSchoolId] = useState(null);
 
   /* FORM */
   const [form, setForm] = useState({
+    school_id: "",
     class_id: "",
     section_name: "",
     class_teacher_id: "",
@@ -40,32 +37,43 @@ export default function AddSection() {
     { label: "Inactive", value: "inactive" },
   ];
 
-  /* FETCH CLASSES AND TEACHERS */
-  useEffect(() => {
-    // CHANGED FROM sections/classes TO section/classes
-    axios.get(`${Api_url.name}api/section/classes`)
-      .then(res => {
-        const classOptions = Array.isArray(res.data) ? res.data.map(c => ({
-          label: c.class_name,
-          value: c.class_id
-        })) : [];
-        setClasses(classOptions);
-      })
-      .catch(err => console.error("Error fetching classes:", err));
 
-    // CHANGED FROM sections/teachers TO section/teachers
-    axios.get(`${Api_url.name}api/section/teachers`)
-      .then(res => {
-        const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
-          label: t.name,
-          value: t.teacher_id
-        })) : [];
-        teacherOptions.unshift({ label: "Select Teacher (Optional)", value: "" });
-        setTeachers(teacherOptions);
-      })
-      .catch(err => console.error("Error fetching teachers:", err));
+  /* FETCH DATA BASED ON SCHOOL ID */
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setSchoolId(user.school_id);
+      setForm(prev => ({ ...prev, school_id: user.school_id }));
+
+      // Fetch Classes for this school
+      axios.get(`${Api_url.name}api/get-classes`, { params: { school_id: user.school_id } })
+        .then(res => {
+          const classOptions = Array.isArray(res.data.data) ? res.data.data.map(c => ({
+            label: c.class_name,
+            value: c.class_id
+          })) : [];
+          setClasses(classOptions);
+        })
+        .catch(err => console.error("Error fetching classes:", err));
+
+      // Fetch Teachers for this school
+      axios.get(`${Api_url.name}api/teacher`, { params: { school_id: user.school_id } })
+        .then(res => {
+          const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
+            label: t.first_name,
+            value: t.teacher_id,
+            designation: t.designation
+          })) : [];
+
+          teacherOptions.unshift({ label: "Select Teacher", value: "", designation: null });
+          setTeachers(teacherOptions);
+        })
+        .catch(err => console.error("Error fetching teachers:", err));
+    }
   }, []);
 
+  
   /* UPDATE FIELD */
   const updateField = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -109,7 +117,7 @@ export default function AddSection() {
       if (res.data.status === 200) {
         setSuccess(true);
         navigate('/sections', {
-          state: { status: 'success', message: 'Session inserted successfully!' } 
+          state: { status: 'success', message: 'Session inserted successfully!' , activeTab: 'sections'} 
         });
       } else {
         alert(res.data.message || "Failed to add section");
@@ -160,7 +168,6 @@ export default function AddSection() {
                       <BookOpen className="text-blue-600" />
                       Section Details
                     </h2>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <CustomSelect
                         label="Class *"
@@ -170,7 +177,6 @@ export default function AddSection() {
                         error={errors.class_id}
                         required
                       />
-
                       <Input
                         label="Section Name *"
                         value={form.section_name}
@@ -179,14 +185,12 @@ export default function AddSection() {
                         required
                         placeholder="e.g., A, B, C or Section 1"
                       />
-
                       <CustomSelect
                         label="Class Teacher"
                         options={teachers}
                         value={form.class_teacher_id}
                         onChange={(val) => updateField("class_teacher_id", val)}
                       />
-
                       <CustomSelect
                         label="Status"
                         options={statusOptions}
@@ -200,20 +204,9 @@ export default function AddSection() {
             </div>
           </div>
 
-          
+          <StaticButtons saveText="Save Section" saveClick={submit} dataLoading={loading || submittingRef.current} />
         </form>
       </div>
     </AdminLayout>
-  );
-}
-
-function AvatarLetter({ text }) {
-  return (
-    <div
-      className="w-32 h-32 rounded-3xl flex items-center justify-center text-white text-5xl font-black"
-      style={{ backgroundColor: "#FAAE1C" }}
-    >
-      {text}
-    </div>
   );
 }

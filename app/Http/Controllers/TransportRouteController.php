@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -12,17 +13,17 @@ class TransportRouteController extends Controller
         try {
             $query = TransportRouteModel::query();
 
-            // Apply search filter
-            if ($request->has('search') && !empty($request->search)) {
+            // Search filter
+            if ($request->filled('search')) {
                 $search = $request->search;
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('route_name', 'like', "%{$search}%")
                       ->orWhere('driver_name', 'like', "%{$search}%");
                 });
             }
 
-            // Apply status filter
-            if ($request->has('status') && !empty($request->status)) {
+            // Status filter
+            if ($request->filled('status')) {
                 $query->where('status', $request->status);
             }
 
@@ -37,7 +38,8 @@ class TransportRouteController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch transport routes: ' . $e->getMessage()
+                'message' => 'Failed to fetch transport routes',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -46,18 +48,18 @@ class TransportRouteController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'route_name' => 'required|string|max:150',
-                'monthly_fee' => 'required|numeric|min:0',
-                'academic_year' => 'required|string|max:20',
-                'driver_name' => 'nullable|string|max:100',
-                'status' => 'required|in:active,inactive',
+                'route_name'    => 'required|string|max:150',
+                'monthly_fee'  => 'required|numeric|min:0',
+                'academic_year'=> 'required|string|max:20',
+                'driver_name'  => 'nullable|string|max:100',
+                'status'       => 'required|in:active,inactive',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation error',
-                    'errors' => $validator->errors()
+                    'errors'  => $validator->errors()
                 ], 422);
             }
 
@@ -72,7 +74,8 @@ class TransportRouteController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create transport route: ' . $e->getMessage()
+                'message' => 'Failed to create transport route',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -98,7 +101,8 @@ class TransportRouteController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch transport route: ' . $e->getMessage()
+                'message' => 'Failed to fetch transport route',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -116,17 +120,17 @@ class TransportRouteController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'route_name' => 'sometimes|required|string|max:150',
+                'route_name'   => 'sometimes|required|string|max:150',
                 'monthly_fee' => 'sometimes|required|numeric|min:0',
                 'driver_name' => 'nullable|string|max:100',
-                'status' => 'sometimes|required|in:active,inactive',
+                'status'      => 'sometimes|required|in:active,inactive',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation error',
-                    'errors' => $validator->errors()
+                    'errors'  => $validator->errors()
                 ], 422);
             }
 
@@ -141,7 +145,8 @@ class TransportRouteController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update transport route: ' . $e->getMessage()
+                'message' => 'Failed to update transport route',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -168,7 +173,8 @@ class TransportRouteController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete transport route: ' . $e->getMessage()
+                'message' => 'Failed to delete transport route',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

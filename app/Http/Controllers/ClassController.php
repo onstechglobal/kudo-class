@@ -14,42 +14,46 @@ class ClassController extends Controller
         $this->model = new ClassModel();
     }
 
-    public function saveClass(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'class_name'  => 'required|string|max:255',
-            'class_order' => 'required|numeric',
-            'status'      => 'required|in:active,inactive'
-        ]);
+	
+	public function saveClass(Request $request) {
+		$validator = Validator::make($request->all(), [
+			'school_id'     => 'required',
+			'class_name'    => 'required|string|max:255',
+			'numeric_value' => 'required|numeric', 
+			'status'        => 'required|in:active,inactive'
+		]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 422,
-                'errors' => $validator->errors()
-            ], 422);
-        }
+		if ($validator->fails()) {
+			return response()->json([
+				'status' => 422,
+				'errors' => $validator->errors()
+			], 422);
+		}
 
+		try {
+			$saved = $this->model->saveClass($request->all());
+
+			if ($saved) {
+				return response()->json([
+					'status'  => 200,
+					'message' => 'Class created successfully!'
+				]);
+			}
+		} catch (\Exception $e) {
+			return response()->json([
+				'status'  => 500,
+				'message' => 'Try Again Later',
+				'error'   => $e->getMessage()
+			], 500);
+		}
+	}
+		
+	
+    public function get_classes(Request $request) {
         try {
-            // Correctly calling the instance method
-            $saved = $this->model->saveClass($request->all());
-
-            if ($saved) {
-                return response()->json([
-                    'status'  => 200,
-                    'message' => 'Class created successfully!'
-                ]);
-            }
-        } catch (\Exception $e) {
-            return response()->json([
-                'status'  => 500,
-                'message' => 'Internal Server Error',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-    
-    public function get_classes() {
-        try {
-            $classes = $this->model->getAllClasses();
+			$school_id = $request->query('school_id');
+			
+            $classes = $this->model->getAllClasses($school_id);
             return response()->json([
                 'status' => 200,
                 'data'   => $classes
@@ -132,10 +136,5 @@ class ClassController extends Controller
 			], 500);
 		}
 	}
-	
-	
-	
-	
-	
 	
 }

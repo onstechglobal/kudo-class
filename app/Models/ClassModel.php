@@ -11,36 +11,32 @@ class ClassModel extends Model
     
     /**
      * Save Class - Instance Method
-     */
-    public function saveClass($data) {
-        return DB::table('tb_classes')->insert([
-            'school_id'   => 10, // Hardcoded for now per your code
-            'class_name'  => $data['class_name'],
-            'class_order' => $data['class_order'],
-            'status'      => $data['status'],
-            'created_at'  => now()
+    */
+	
+	public function saveClass($data) {
+        return DB::table($this->table)->insert([
+            'school_id'     => $data['school_id'], // Dynamic from local storage
+            'class_name'    => $data['class_name'],
+            'numeric_value' => $data['numeric_value'],
+            'department'    => $data['department'], 
+            'class_order'   => $data['class_order'],
+            'status'        => $data['status'],
+            'created_at'    => now()
         ]);
     }
+	
     
     /**
      * Get All Classes with Join - Instance Method
      */
-    public function getAllClasses() {
-        return DB::table('tb_classes as c')
-            ->select(
-                'c.class_id',
-                'c.class_name',
-                'c.class_order',
-                'c.status',
-                'c.school_id',
-                's.school_name', 
-                'c.created_at'
-            )
-            ->join('tb_schools as s', 'c.school_id', '=', 's.school_id')
-            ->orderBy('c.class_order', 'asc')
-            ->get();
-    }
-	
+	 
+	public function getAllClasses($school_id) {
+		return DB::table('tb_classes')
+			->where('school_id', $school_id)
+			->orderBy('class_order', 'asc')
+			->get();
+	}
+		
 	
 	/**
      * Fetch class by ID
@@ -54,13 +50,16 @@ class ClassModel extends Model
     /**
      * Update record
      */
-    public function updateClass($data) {
-        return DB::table('tb_classes')
+	public function updateClass($data) {
+        return DB::table($this->table)
             ->where('class_id', $data['class_id'])
             ->update([
-                'class_name'  => $data['class_name'],
-                'class_order' => $data['class_order'],
-                'status'      => $data['status'],
+                'class_name'    => $data['class_name'],
+                'numeric_value' => $data['numeric_value'],
+                'department'    => $data['department'],
+                'class_order'   => $data['class_order'],
+                'status'        => $data['status'],
+                //'updated_at'    => now()
             ]);
     }
 	
@@ -73,7 +72,5 @@ class ClassModel extends Model
 			->where('class_id', $id)
 			->delete();
 	}
-	
-	
 	
 }

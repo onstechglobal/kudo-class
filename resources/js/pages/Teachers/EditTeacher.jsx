@@ -20,6 +20,7 @@ import CustomButton from "@/components/form/CustomButton";
 import { Api_url } from "@/helpers/api";
 import PageHeader from "../../components/common/PageHeader";
 import EditPreloader from '../../components/common/EditPreloader';
+import StaticButtons from '../../components/common/StaticButtons';
 import DatePicker from "react-datepicker";
 
 import "react-datepicker/dist/react-datepicker.css";
@@ -46,6 +47,7 @@ export default function EditTeacher() {
     mother_name: "",
     email: "",
     mobile: "",
+    date_of_birth: null,
     designation: "",
     joining_date: "",
     qualification: "",
@@ -58,7 +60,7 @@ export default function EditTeacher() {
     city: "",
     pincode: "",
     username: "",
-    password: "", 
+    password: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -74,15 +76,21 @@ export default function EditTeacher() {
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
-    const handleJoiningDate = (d) => {
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
+  const handleJoiningDate = (d) => {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
 
-      const new_joining_date = `${year}-${month}-${day}`;
-      setForm((prev) => ({ ...prev, ["joining_date"]: new_joining_date }));
-      if (errors["joining_date"]) setErrors((prev) => ({ ...prev, ["joining_date"]: null }));
-    };
+    const new_joining_date = `${year}-${month}-${day}`;
+    setForm((prev) => ({ ...prev, ["joining_date"]: new_joining_date }));
+    if (errors["joining_date"]) setErrors((prev) => ({ ...prev, ["joining_date"]: null }));
+  };
+
+  const handleDateChange = (name, date) => {
+    setForm(prev => ({ ...prev, [name]: date }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+  };
+
   /* ================= FETCH TEACHER ================= */
   useEffect(() => {
     const fetchTeacher = async () => {
@@ -97,7 +105,8 @@ export default function EditTeacher() {
             email: data.email || "",
             mobile: data.mobile || "",
             designation: data.designation || "",
-            joining_date: data.joining_date  || "",
+            date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
+            joining_date: data.joining_date || "",
             qualification: data.qualification || "",
             experience_years: data.experience_years || "",
             status: data.status || "active",
@@ -111,7 +120,7 @@ export default function EditTeacher() {
             district: data.district || "",
             city: data.city || "",
             pincode: data.pincode || "",
-            username: data.username || "", 
+            username: data.username || "",
             password: "",
           });
 
@@ -183,7 +192,16 @@ export default function EditTeacher() {
       const payload = new FormData();
       Object.keys(form).forEach((key) => {
         if (key === "password" && !form.password.trim()) return;
-        payload.append(key, form[key]);
+
+        if (form[key] instanceof Date) {
+          const d = form[key];
+          const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          payload.append(key, formatted);
+        } else {
+          // 3. Handle regular fields
+          payload.append(key, form[key] ?? "");
+        }
+
       });
       if (selectedFile) {
         payload.append("teacher_photo", selectedFile);
@@ -205,7 +223,7 @@ export default function EditTeacher() {
 
       if (res.data.status === 200) {
         navigate('/teachers', {
-           state: { status: 'success', message: 'Teacher updated successfully!' } 
+          state: { status: 'success', message: 'Teacher updated successfully!' }
         });
       } else {
         alert(res.data.message || "Update failed");
@@ -229,29 +247,21 @@ export default function EditTeacher() {
 
   return (
     <AdminLayout>
-       {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
-        {loading && (
-          <EditPreloader />
-        )}
+      {/* FIXED PRELOADER: Stays at the top of the viewport below the header */}
+      {loading && (
+        <EditPreloader />
+      )}
       <div className="bg-[#F8FAFC] min-h-screen p-6">
         <form onSubmit={submit}>
           {/* HEADER */}
           <div className="bg-white border-b border-gray-200 px-8 py-5">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-             
+
               <PageHeader
                 prevRoute="/teachers"
                 breadcrumbParent="Teachers"
                 breadcrumbCurrent="Edit"
                 title="Edit Teacher"
-              />
-
-              <CustomButton
-                text={loading ? "Updating..." : "Update Teacher"}
-                Icon={Save}
-                onClick={submit}
-                className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading || submittingRef.current}
               />
             </div>
           </div>
@@ -349,6 +359,23 @@ export default function EditTeacher() {
                       required
                     />
 
+                    {/* DOB FIELD */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Date of Birth</label>
+                      <DatePicker
+                        selected={form.date_of_birth}
+                        onChange={(date) => handleDateChange("date_of_birth", date)}
+                        dateFormat="yyyy-MM-dd"
+                        maxDate={new Date()}
+                        showMonthDropdown
+                        showYearDropdown
+                        dropdownMode="select"
+                        className="w-full px-4 py-3 rounded-lg outline-none bg-gray-50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        wrapperClassName="w-full"
+                        placeholderText="Select DOB"
+                      />
+                    </div>
+
                     <CustomSelect
                       label="Status"
                       options={statusOptions}
@@ -431,12 +458,12 @@ export default function EditTeacher() {
                       value={form.experience_years || ""}
                       onChange={(e) => updateField("experience_years", e.target.value)}
                     />
-                    
+
                     <div>
                       <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Joining Date</label>
-                     <DatePicker
+                      <DatePicker
                         name="joining_date"
-                        selected={form.joining_date|| ""}
+                        selected={form.joining_date || ""}
                         onChange={handleJoiningDate}
                         dateFormat="yyyy-mm-dd"
                         className="w-full px-4 py-3 rounded-lg outline-none bg-gray-50 border border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
@@ -476,12 +503,13 @@ export default function EditTeacher() {
                       </button>
                     </div>
                   </div>
-                </section>  
+                </section>
 
               </div>
             </div>
           </div>
 
+          <StaticButtons saveText="Update Teacher" saveClick={submit} dataLoading={loading} />
         </form>
       </div>
     </AdminLayout>

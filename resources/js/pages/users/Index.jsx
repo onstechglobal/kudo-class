@@ -10,15 +10,7 @@ import AvatarLetter from "../../components/common/AvatarLetter";
 import DeleteConfirmModal from "../../components/common/DeleteConfirmModal";
 import { Api_url } from "@/helpers/api";
 
-import {
-  Search,
-  Edit2,
-  Users,
-  UserCheck,
-  UserMinus,
-  Filter,
-  Trash2,
-} from "lucide-react";
+import { Search, Edit2, Users, UserCheck, UserMinus, Filter, Trash2, } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function UserListing() {
@@ -58,7 +50,12 @@ export default function UserListing() {
     setLoading(true);
 
     axios.get("/api/users", {
-      params: { page }
+      params: { 
+          page: page,
+          search: appliedSearch,
+          status: statusFilter,
+          role: roleFilter,
+        }
     }).then(res => {
       const data = res.data.data ?? res.data ?? [];
 
@@ -216,7 +213,7 @@ console.log(roleOptions);
 
           {/* BODY */}
           <div className="p-5 space-y-5 overflow-y-auto flex-1">
-              <CustomSelect label="User Status" options={roleOptions} value={roleFilter} onChange={setRoleFilter} placeholder="All Roles" />
+              <CustomSelect label="User Role" options={roleOptions} value={roleFilter} onChange={setRoleFilter} placeholder="All Roles" />
               <CustomSelect label="User Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} placeholder="Status" />
           </div>
 
@@ -224,6 +221,8 @@ console.log(roleOptions);
           <div className="p-5 border-t border-gray-200 bg-white flex gap-3">
               <button
                   onClick={() => {
+                    setRoleFilter('');
+                    setStatusFilter('');
                   }}
                   className="flex-1 bg-gray-100 rounded-lg py-2 text-sm font-medium cursor-pointer"
               >
@@ -235,7 +234,7 @@ console.log(roleOptions);
                       setCurrentPage(1);
                       // This manually triggers fetchStaff if page was already 1
                       if (currentPage === 1) {
-                          //fetchSchools(1);
+                          fetchUsers(1);
                       }
                       setFilterOpen(false);
                   }}

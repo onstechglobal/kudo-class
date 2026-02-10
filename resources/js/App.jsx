@@ -16,7 +16,7 @@ import EditStudent from "./pages/Students/EditStudent";
 
 import ClassListing from "./pages/class/ClassListing";
 import AddClass from "./pages/class/AddClass";
-import EditClass from "./pages/class/editClass";
+import EditClass from "./pages/class/EditClass";
 
 import UserListing from "./pages/users/Index";
 import ShowUser from "./pages/users/Show";
@@ -55,20 +55,23 @@ import Payment from "./pages/payment/Payment";
 
 import Attendance from "./pages/attendance/Attendance";
 
-import FeeStucture from "./pages/fee-structure/Index";
-import CreateFee from "./pages/fee-structure/CreateFee";
-
-import EditFee from "./pages/fee-structure/EditFee";
-
 import AdmissionForm from "./pages/admission/AdmissionForm";
 
 import AcademicsManager from "./components/common/AcademicsManager";
 
 import FamilyListing from "./pages/family/FamilyListing";
 
-import Discounts from "./pages/discounts/Index"
-import AddDiscount from "./pages/discounts/AddDiscount"
-import EditDiscount from "./pages/discounts/EditDiscount"
+import Discounts from "./pages/discounts/Index";
+import AddDiscount from "./pages/discounts/AddDiscount";
+import EditDiscount from "./pages/discounts/EditDiscount";
+
+import FeeStucture from "./pages/fee-structure/Index";
+import CreateFee from "./pages/fee-structure/CreateFee";
+import EditFee from "./pages/fee-structure/EditFee";
+
+import TransportRouteIndex from "./pages/transport-route/Index";
+import CreateRoute from "./pages/transport-route/CreateRoute";
+import EditRoute from "./pages/transport-route/EditRoute";
 
 
 function ProtectedRoute({ children }) {
@@ -104,8 +107,6 @@ export default function App() {
                 <Route path="/classes" element={<AcademicsManager />} />
                 <Route path="/classes/add" element={<AddClass />} />
                 <Route path="/classes/edit/:id" element={<EditClass />} />
-
-                <Route path="/classes" element={<AcademicsManager />} />
 
                 <Route path="/sections" element={<AcademicsManager />} />
                 <Route path="/sections/create" element={<AddSection />} />
@@ -148,6 +149,10 @@ export default function App() {
                 <Route path="/fee-structure" element={<FeeStucture />} />
                 <Route path="/fee-structure/create" element={<CreateFee />} />
                 <Route path="/fee-structure/edit/:id" element={<EditFee />} />
+
+                <Route path="/transport" element={<TransportRouteIndex />} />
+                <Route path="/transport-routes/create" element={<CreateRoute />} />
+                <Route path="/transport-routes/edit/:id" element={<EditRoute />} />
 
                 <Route path="/families" element={<FamilyListing />} />
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import AdminLayout from '../../layouts/AdminLayout';
 import { Link } from "react-router-dom";
@@ -17,6 +18,7 @@ import PageHeader from '../../components/common/PageHeader';
 
 
 const ClassListing = () => {
+    const location = useLocation();
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -25,12 +27,21 @@ const ClassListing = () => {
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
+    const [successMsg, setSuccessMsg] = useState('');
 
     /* ---------------- FETCH DATA ---------------- */
     const fetchClasses = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${Api_url.name}api/get-classes`);
+            // 1. Get the school_id from localStorage
+            const storedUser = JSON.parse(localStorage.getItem("user"));
+            const schoolId = storedUser?.school_id;
+
+            // 2. Pass it as a query parameter
+            const response = await axios.get(`${Api_url.name}api/get-classes`, {
+                params: { school_id: schoolId }
+            });
+
             if (response.data.status === 200) {
                 setClasses(response.data.data);
             }
@@ -40,6 +51,7 @@ const ClassListing = () => {
             setLoading(false);
         }
     };
+
 
     /* ---------------- DELETE LOGIC ---------------- */
     const handleOpenDeleteModal = (item) => {
@@ -63,6 +75,8 @@ const ClassListing = () => {
                 setClasses(prev => prev.filter(item => item.class_id !== selectedClass.id));
                 setIsModalOpen(false);
                 setSelectedClass(null);
+                setSuccessMsg("Class deleted successfully!");
+                setTimeout(() => setSuccessMsg(''), 3000);
             }
         } catch (error) {
             console.error("Error deleting class:", error);
@@ -71,6 +85,16 @@ const ClassListing = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        // 4. Check if a message was passed from navigation
+        if (location.state?.message) {
+            setSuccessMsg(location.state.message);
+            // Clear the message after 3 seconds
+            const timer = setTimeout(() => setSuccessMsg(''), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [location.state]);
 
     useEffect(() => {
         fetchClasses();
@@ -106,6 +130,16 @@ const ClassListing = () => {
             />
 
             <div className="p-6 bg-gray-50 min-h-screen font-sans">
+
+                {successMsg && (
+                    <div className="mb-4 flex items-center justify-between bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative animate-in fade-in slide-in-from-top-4">
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 size={18} />
+                            <span className="text-sm font-bold">{successMsg}</span>
+                        </div>
+                        <button onClick={() => setSuccessMsg('')} className="text-green-700 font-bold">×</button>
+                    </div>
+                )}
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>

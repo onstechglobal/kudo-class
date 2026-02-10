@@ -8,6 +8,7 @@ export default function CustomSelect({
   onChange,
   error,
   placeholder = "Select option",
+  designation = "",
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef();
@@ -46,7 +47,11 @@ export default function CustomSelect({
               focus:ring-4
             `}
       >
-        <span className={selected ? "text-gray-900 font-medium" : "text-gray-400"}>
+        <span className={
+          (selected && !selected.label.includes("Select"))
+            ? "text-gray-900 font-medium"
+            : "text-gray-400"
+        }>
           {selected?.label || placeholder}
         </span>
         <ChevronDown
@@ -94,7 +99,8 @@ export default function CustomSelect({
                     }
             `}
                 >
-                  {opt.label}
+                  {opt.label} {opt.designation && ` (${opt.designation})`}
+
                 </div>
               ))
             ) : (

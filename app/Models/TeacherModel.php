@@ -8,58 +8,77 @@ class TeacherModel{
     protected string $table = 'tb_teachers';
 
     // CREATE TEACHER
-    public function create(array $data, int $userId)
-    {
-        return DB::table($this->table)->insert([
-            'school_id'       => $data['school_id'] ?? '',
-            'user_id'         => $userId,
-            'employee_code'   => $data['employee_code'] ?? null,
-            'first_name'      => $data['first_name'],
-            'last_name'       => $data['last_name'] ?? null,
-            'father_name'     => $data['father_name'] ?? null,
-            'mother_name'     => $data['mother_name'] ?? null,
-            'email'           => $data['email'],
-            'mobile'          => $data['mobile'] ?? null,
-            'address'         => $data['address'] ?? null,
-            'country'         => $data['country'] ?? null,
-            'state'           => $data['state'] ?? null,
-            'district'        => $data['district'] ?? null,
-            'city'            => $data['city'] ?? null,
-            'pincode'         => $data['pincode'] ?? null,
-            'designation'     => $data['designation'] ?? null,
-            'joining_date'    => $data['joining_date'] ?? null,
-            'qualification'   => $data['qualification'] ?? null,
-            'experience_years'=> $data['experience_years'] ?? null,
-            'photo_url'       => $data['photo'] ?? null,
-            'status'          => $data['status'] ?? 'active',
-            'created_at'      => now(),
-        ]);
-    }
+	public function createTeacherWithUser(array $data, string $username, string $password){
+		return DB::transaction(function () use ($data, $username, $password) {
+			// 1. Create the User Record
+			$userId = DB::table('tb_users')->insertGetId([
+				'username'   => $username,
+				'name'       => $data['first_name'],
+				'email'      => $data['email'],
+				'mobile'     => $data['mobile'],
+				'password'   => Hash::make($password),
+				'role_id'    => 3, // Teacher Role
+				'status'     => 'active',
+				'created_at' => now()
+			]);
+
+			// 2. Create the Teacher Record using the new User ID
+			return DB::table($this->table)->insert([
+				'school_id'       => $data['school_id'] ?? null,
+				'user_id'         => $userId,
+				'employee_code'   => $data['employee_code'] ?? null,
+				'first_name'      => $data['first_name'],
+				'last_name'       => $data['last_name'] ?? null,
+				'father_name'     => $data['father_name'] ?? null,
+				'mother_name'     => $data['mother_name'] ?? null,
+				'email'           => $data['email'],
+				'mobile'          => $data['mobile'] ?? null,
+				'address'         => $data['address'] ?? null,
+				'designation'     => $data['designation'] ?? null,
+				'date_of_birth'   => $data['dob'] ?? null,
+				'country'         => $data['country'] ?? null,
+				'state'           => $data['state'] ?? null,
+				'district'        => $data['district'] ?? null,
+				'city'            => $data['city'] ?? null,
+				'pincode'         => $data['pincode'] ?? null,
+				'joining_date'    => $data['joining_date'] ?? null,
+				'qualification'   => $data['qualification'] ?? null,
+				'experience_years'=> $data['experience_years'] ?? null,
+				'photo_url'       => $data['photo'] ?? null,
+				'status'          => $data['status'] ?? 'active',
+				'created_at'      => now(),
+			]);
+		});
+	}
+	
 
     // GET ALL TEACHERS
     public function getAllTeachers()
-    {
-        $teachers = DB::table('tb_teachers as t')
-            ->join('tb_users as u', 'u.user_id', '=', 't.user_id')
-            ->select(
-                't.*',
-                'u.username',
-                'u.mobile'
-            )
-            ->orderBy('t.teacher_id', 'desc')
-            ->get();
+	{
+		$teachers = DB::table('tb_teachers as t')
+			->join('tb_users as u', 'u.user_id', '=', 't.user_id')
+			->leftJoin('tb_schools as s', 's.school_id', '=', 't.school_id')
+			->select(
+				't.*',
+				'u.username',
+				'u.mobile',
+				's.school_name'
+			)
+			->orderBy('t.teacher_id', 'desc')
+			->get();
 
-        // Transform photo URL to full URL
-        $teachers->transform(function($teacher){
-            if($teacher->photo_url){
-                $teacher->photo_url = url('uploads/'.$teacher->photo_url);
-            }
-            return $teacher;
-        });
+		$teachers->transform(function($teacher){
+			if($teacher->photo_url){
+				$teacher->photo_url = url('uploads/'.$teacher->photo_url);
+			}
+			return $teacher;
+		});
+
+		return $teachers;
+	}
+
 		
-
-        return $teachers;
-    }
+	
 
     // GET SINGLE TEACHER
     public function getTeacherById(int $id)
@@ -124,6 +143,7 @@ class TeacherModel{
                 'city'             => $data['city'] ?? null,
                 'pincode'          => $data['pincode'] ?? null,
                 'designation'      => $data['designation'] ?? null,
+                'date_of_birth'    => $data['date_of_birth'] ?? null,
                 'joining_date'     => $data['joining_date'] ?? null,
                 'qualification'    => $data['qualification'] ?? null,
                 'experience_years' => $data['experience_years'] ?? null,

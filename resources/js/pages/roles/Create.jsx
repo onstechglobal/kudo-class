@@ -7,6 +7,7 @@ import Input from "@/components/form/Input";
 import CustomSelect from "@/components/form/CustomSelect";
 import MultiSelect from "@/components/form/MultiSelect";
 import CustomButton from "@/components/form/CustomButton";
+import StaticButtons from "../../components/common/StaticButtons";
 import PageHeader from "../../components/common/PageHeader";
 
 /* ================= COMPONENT ================= */
@@ -68,13 +69,6 @@ export default function CreateRole() {
               breadcrumbParent="Roles"
               breadcrumbCurrent="Add"
               title="Add Role"
-            />
-
-            <CustomButton
-              text="Save Role"
-              Icon={Save}
-              onClick={submit}
-              className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
             />
           </div>
         </div>
@@ -138,6 +132,7 @@ export default function CreateRole() {
             </form>
           </div>
         </div>
+        <StaticButtons saveText="Save Role" saveClick={submit} />
       </div>
     </AdminLayout>
   );

@@ -21,23 +21,12 @@ class SectionController extends Controller
         return response()->json($sections);
     }
 
-    public function getClasses()
-    {
-        $classes = $this->model->getAllClasses();
-        return response()->json($classes);
-    }
-
-    public function getTeachers()
-    {
-        $teachers = $this->model->getAllTeachers();
-        return response()->json($teachers);
-    }
 
     public function store(Request $request)
     {
         $request->validate([
             'class_id' => 'required|exists:tb_classes,class_id',
-            'section_name' => 'required|string|max:50',
+            'section_name' => 'required|string|max:100',
             'class_teacher_id' => 'nullable|exists:tb_teachers,teacher_id',
             'status' => 'required|in:active,inactive'
         ]);

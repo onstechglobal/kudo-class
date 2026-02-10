@@ -7,6 +7,7 @@ import Input from "@/components/form/Input";
 import MultiSelect from "@/components/form/MultiSelect";
 import CustomButton from "@/components/form/CustomButton";
 import CustomSelect from "@/components/form/CustomSelect";
+import StaticButtons from "../../components/common/StaticButtons";
 import PageHeader from "../../components/common/PageHeader";
 
 
@@ -75,13 +76,6 @@ export default function EditRole() {
                             breadcrumbCurrent="Edit"
                             title="Edit Role"
                         />
-
-                        <CustomButton
-                            text="Update Role"
-                            Icon={Save}
-                            onClick={submit}
-                            className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-                        />
                     </div>
                 </div>
 
@@ -134,6 +128,7 @@ export default function EditRole() {
                         </form>
                     </div>
                 </div>
+                <StaticButtons saveText="Update Role" saveClick={submit} />
             </div>
         </AdminLayout>
     );

@@ -6,15 +6,7 @@ import Stat from "../../components/common/StatCard";
 import DeleteConfirmModal from "../../components/common/DeleteConfirmModal";
 import CustomButton from "../../components/form/CustomButton";
 import AvatarLetter from "../../components/common/AvatarLetter";
-import {
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  Shield,
-  ShieldCheck,
-  ShieldOff,
-} from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Shield, ShieldCheck, ShieldOff } from "lucide-react";
 
 export default function PermissionListing() {
   /* ================= STATES ================= */

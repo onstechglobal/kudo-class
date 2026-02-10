@@ -10,30 +10,74 @@ class RoleModel
 
     /* ========= GET ALL ROLES ========= */
     /* ========= GET ALL ROLES WITH PERMISSIONS ========= */
-    public function getAllRolesWithPermissions()
+    public function getAllRolesWithPermissions($filters=[])
     {
         $roles = DB::table('tb_roles')
+			->when(!empty($filters['search']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('role_name', 'like', '%' . $filters['search'] . '%');
+				});
+			})
+			->when(!empty($filters['status']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('status', $filters['status']);
+				});
+			})
             ->orderBy('role_id', 'desc')
             ->get();
-
+		// echo "<pre>"; print_R($roles); die;
         $roleIds = $roles->pluck('role_id');
 
         $permissions = DB::table('tb_role_permissions as rp')
             ->join('tb_permissions as p', 'p.permission_id', '=', 'rp.permission_id')
             ->whereIn('rp.role_id', $roleIds)
+			->when(!empty($filters['permission_id']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('rp.permission_id', $filters['permission_id']);
+				});
+			})
             ->select(
                 'rp.role_id',
+                'rp.permission_id',
                 'p.module',
                 'p.action'
             )
             ->get()
             ->groupBy('role_id');
-
+			
         // attach permissions to role
-        return $roles->map(function ($role) use ($permissions) {
-            $role->permissions = $permissions[$role->role_id] ?? collect();
-            return $role;
-        });
+		if(isset($filters['permission_id']) && !empty($filters['permission_id'])){
+			$data = $roles->filter(function ($role) use ($permissions) {
+				return isset($permissions[$role->role_id]) && !empty($permissions[$role->role_id]);
+				
+			})->map(function ($role) use ($permissions) {
+				$role->permissions = $permissions[$role->role_id] ?? collect();
+				return $role;
+				
+			})->values();
+		}else{
+			$data = $roles->map(function ($role) use ($permissions) {
+				$role->permissions = $permissions[$role->role_id] ?? collect();
+				return $role;
+			});
+		}
+		return $data;
+		
+        /* return $roles->map(function ($role) use ($permissions) {
+			
+			$role->permissions = $permissions[$role->role_id] ?? collect();
+			
+			if(isset($filters['permission_id']) && !empty($filters['permission_id'])){
+				echo "test1 <br>";
+				if(isset($permissions[$role->role_id]) && !empty($permissions[$role->role_id])){
+				echo "test2 <br>";
+					return $role;
+				}
+			}else{
+				echo "test3 <br>";
+				return $role;
+			}
+        }); */
     }
 
 

@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState } from 'react';
 import AdminLayout from '../../layouts/AdminLayout';
 import ClassListing from '../../pages/class/ClassListing';
 import SectionListing from '../../pages/section/Index';
 import { LayoutGrid, Layers } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 const AcademicsManager = () => {
     // State to track which tab is active
-    const [activeTab, setActiveTab] = useState('classes');
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'classes');
+
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location.state]);
 
     return (
         <AdminLayout>
@@ -16,9 +24,8 @@ const AcademicsManager = () => {
                     <div className="flex items-center gap-8">
                         <button
                             onClick={() => setActiveTab('classes')}
-                            className={`flex items-center gap-2 pb-4 text-sm font-bold transition-all relative cursor-pointer ${
-                                activeTab === 'classes' ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
-                            }`}
+                            className={`flex items-center gap-2 pb-4 text-sm font-bold transition-all relative cursor-pointer ${activeTab === 'classes' ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
+                                }`}
                         >
                             <LayoutGrid size={18} />
                             Classes
@@ -29,9 +36,8 @@ const AcademicsManager = () => {
 
                         <button
                             onClick={() => setActiveTab('sections')}
-                            className={`flex items-center gap-2 pb-4 text-sm font-bold transition-all relative cursor-pointer ${
-                                activeTab === 'sections' ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
-                            }`}
+                            className={`flex items-center gap-2 pb-4 text-sm font-bold transition-all relative cursor-pointer ${activeTab === 'sections' ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
+                                }`}
                         >
                             <Layers size={18} />
                             Sections
