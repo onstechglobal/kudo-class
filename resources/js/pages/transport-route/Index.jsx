@@ -12,7 +12,8 @@ import {
     Bus,
     Loader2,
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    Trash2
 } from "lucide-react";
 
 const TransportRouteIndex = () => {
@@ -28,6 +29,26 @@ const TransportRouteIndex = () => {
         active: 0,
         inactive: 0,
     });
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this transport route?")) {
+            return;
+        }
+        
+        try {
+            const response = await api.delete(`/api/transport-routes/${id}`);
+            
+            if (response.data.success) {
+                // Refresh the list
+                fetchRoutes();
+            } else {
+                alert(response.data.message || "Failed to delete");
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert(err.response?.data?.message || "Failed to delete fee structure");
+        }
+    };
 
     const fetchRoutes = async () => {
         try {
@@ -50,6 +71,7 @@ const TransportRouteIndex = () => {
             setLoading(false);
         }
     };
+
 
     const calculateStats = (data) => {
         setStats({
@@ -81,16 +103,6 @@ const TransportRouteIndex = () => {
         fetchRoutes();
     }, []);
 
-    if (loading) {
-        return (
-            <AdminLayout>
-                <div className="flex items-center justify-center h-screen">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                </div>
-            </AdminLayout>
-        );
-    }
-
     return (
         <AdminLayout>
             <div className="relative p-6 bg-gray-50 min-h-screen font-sans">
@@ -107,7 +119,7 @@ const TransportRouteIndex = () => {
 
                     <CustomButton
                         text="Add Transport Route"
-                        to="/transport-routes/create"
+                        to="/transport/create"
                         className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
                         icon={<Plus size={18} />}
                     />
@@ -126,9 +138,9 @@ const TransportRouteIndex = () => {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Stat label="Total Routes" value={stats.total.toString()} icon={<Bus />} />
+                    <Stat label="Total Routes" value={(stats.total || 0).toString()} icon={<Bus />} />
                     <Stat label="Active Routes" value={stats.active.toString()} icon={<CheckCircle2 />} color="green" />
-                    <Stat label="Inactive Routes" value={stats.inactive.toString()} icon={<Bus />} color="red" />
+                    <Stat label="Inactive Routes" value={stats.inactive.toString()} icon={<AlertCircle />} color="red" />
                 </div>
 
                 {/* Filters */}
@@ -153,7 +165,7 @@ const TransportRouteIndex = () => {
                         }}
                         className="flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-xl text-sm hover:bg-gray-200"
                     >
-                        <Filter size={16} /> Clear Filters
+                        <Filter size={16} /> More Filters
                     </button>
                 </div>
 
@@ -171,15 +183,22 @@ const TransportRouteIndex = () => {
                             </thead>
 
                             <tbody className="divide-y divide-gray-100">
-                                {filteredData.length === 0 ? (
+                                 {loading ? (
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                                            <p className="text-lg font-semibold">No data found</p>
+                                        <td colSpan="4" className="p-6 text-center text-gray-500">
+                                            <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+                                                    <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
+                                                        Loading Data...
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
-                                ) : (
+                                ) : filteredData.length > 0 ? (
                                     filteredData.map(route => (
-                                        <tr key={route.id} className="hover:bg-gray-50">
+                                        <tr key={route.route_id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 text-sm text-gray-600">
                                                 {route.route_name}
                                             </td>
@@ -199,15 +218,30 @@ const TransportRouteIndex = () => {
                                             </td>
 
                                             <td className="px-6 py-4 text-center">
-                                                <Link
-                                                    to={`/transport-routes/edit/${route.id}`}
-                                                    className="text-amber-600 hover:text-amber-800 p-1 hover:bg-amber-50 rounded"
-                                                >
-                                                    <Pencil size={16} />
-                                                </Link>
+                                                <div className="flex justify-center items-center gap-2">
+                                                    <Link
+                                                        to={`/transport/edit/${route.route_id}`}
+                                                        className="text-amber-600 hover:text-amber-800 p-1 hover:bg-amber-50 rounded"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(route.route_id)}
+                                                        className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded cursor-pointer"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                            <p className="text-lg font-semibold">No data found</p>
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>

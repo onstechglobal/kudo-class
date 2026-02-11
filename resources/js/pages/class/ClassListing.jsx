@@ -3,11 +3,9 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import AdminLayout from '../../layouts/AdminLayout';
 import { Link } from "react-router-dom";
-import {
-    Search, LayoutGrid, CheckCircle2, XCircle, Pencil, Trash2,
-    Layers, ArrowUpDown, Loader2
-} from 'lucide-react';
+import { Search, LayoutGrid, CheckCircle2, XCircle, Pencil, Trash2, Layers, ArrowUpDown, Loader2, Filter } from 'lucide-react';
 
+import Input from "@/components/form/Input";
 import CustomButton from '../../components/form/CustomButton';
 import CustomSelect from '../../components/form/CustomSelect';
 import AvatarLetter from '../../components/common/AvatarLetter';
@@ -21,13 +19,17 @@ const ClassListing = () => {
     const location = useLocation();
     const [classes, setClasses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
 
     // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
     const [successMsg, setSuccessMsg] = useState('');
+
+    // Filter search
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('');
 
     /* ---------------- FETCH DATA ---------------- */
     const fetchClasses = async () => {
@@ -39,7 +41,12 @@ const ClassListing = () => {
 
             // 2. Pass it as a query parameter
             const response = await axios.get(`${Api_url.name}api/get-classes`, {
-                params: { school_id: schoolId }
+                params: { 
+                    school_id: schoolId,
+                    search: searchQuery,
+                    status: statusFilter,
+                    category: categoryFilter,
+                }
             });
 
             if (response.data.status === 200) {
@@ -102,10 +109,7 @@ const ClassListing = () => {
 
     /* ---------------- FILTER LOGIC ---------------- */
     const filteredData = classes.filter(item => {
-        const matchesSearch = item.class_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.school_name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === '' || item.status === statusFilter;
-        return matchesSearch && matchesStatus;
+        return true;
     });
 
     const activeCount = classes.filter(c => c.status === 'active').length;
@@ -117,146 +121,205 @@ const ClassListing = () => {
         { label: "Inactive", value: "inactive" },
     ];
 
+    const categoryOptions = [
+        { label: 'Pre-Primary (Playgroup - KG)', value: 'Pre-Primary' },
+        { label: 'Primary (Class 1 - 5)', value: 'Primary' },
+        { label: 'Middle / Secondary (Class 6 - 10)', value: 'Secondary' },
+        { label: 'Higher Secondary (Class 11 - 12)', value: 'Higher Secondary' },
+    ];
+
     return (
-        /* <AdminLayout> */
         <>
-            {/* DELETE MODAL */}
-            < DeleteConfirmModal
-                isOpen={isModalOpen}
-                title="Delete Class"
-                schoolName={selectedClass ? selectedClass.name : ""}
-                onClose={() => { setIsModalOpen(false); setSelectedClass(null); }}
-                onDelete={confirmDelete}
-            />
+            {/* OVERLAY */}
+            {filterOpen && (
+                <div
+                    className="fixed inset-0 bg-black/30 z-40"
+                    onClick={() => setFilterOpen(false)}
+                />
+            )}
 
-            <div className="p-6 bg-gray-50 min-h-screen font-sans">
+            {/* FILTER DRAWER */}
+            <div
+                className={`fixed top-0 right-0 h-full w-[360px] bg-white z-50 shadow-xl transform transition-transform duration-300 flex flex-col
+                ${filterOpen ? "translate-x-0" : "translate-x-full"}`}
+            >
+                {/* HEADER */}
+                <div className="flex justify-between items-center p-5 border-b border-gray-200">
+                    <h3 className="font-bold text-lg">Filters</h3>
+                    <button onClick={() => setFilterOpen(false)} className="cursor-pointer">✕</button>
+                </div>
 
-                {successMsg && (
-                    <div className="mb-4 flex items-center justify-between bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative animate-in fade-in slide-in-from-top-4">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 size={18} />
-                            <span className="text-sm font-bold">{successMsg}</span>
+                {/* BODY */}
+                <div className="p-5 space-y-5 overflow-y-auto flex-1">
+                    <CustomSelect label="Category" options={categoryOptions} value={categoryFilter} onChange={setCategoryFilter} />
+                    <CustomSelect label="Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
+                </div>
+
+                {/* FOOTER */}
+                <div className="p-5 border-t border-gray-200 bg-white flex gap-3">
+                    <button
+                        onClick={() => {
+                        }}
+                        className="flex-1 bg-gray-100 rounded-lg py-2 text-sm font-medium cursor-pointer"
+                    >
+                        Reset
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            // This manually triggers fetchClasses if page was already 1
+                            fetchClasses();
+                            setFilterOpen(false);
+                        }}
+                        className="flex-1 rounded-lg py-2 text-sm font-medium transition shadow-sm cursor-pointer bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
+                    >
+                        Apply
+                    </button>
+                </div>
+            </div>
+
+            <div className={`flex-1 ${open ? 'overflow-hidden' : 'overflow-auto'}`}>
+                {/* DELETE MODAL */}
+                <DeleteConfirmModal
+                    isOpen={isModalOpen}
+                    title="Delete Class"
+                    schoolName={selectedClass ? selectedClass.name : ""}
+                    onClose={() => { setIsModalOpen(false); setSelectedClass(null); }}
+                    onDelete={confirmDelete}
+                />
+
+                <div className="relative p-6 bg-gray-50 min-h-screen font-sans">
+
+                    {successMsg && (
+                        <div className="mb-4 flex items-center justify-between bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative animate-in fade-in slide-in-from-top-4">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 size={18} />
+                                <span className="text-sm font-bold">{successMsg}</span>
+                            </div>
+                            <button onClick={() => setSuccessMsg('')} className="text-green-700 font-bold">×</button>
                         </div>
-                        <button onClick={() => setSuccessMsg('')} className="text-green-700 font-bold">×</button>
-                    </div>
-                )}
+                    )}
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Class Management</h1>
-                        <p className="text-sm text-gray-500">Manage classes and their display order across schools</p>
-                    </div>
-                    <CustomButton
-                        text="Add New Class"
-                        to="/classes/add"
-                        className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 shadow-md"
-                    />
-                </div>
-
-                {/* STATS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Stat label="Total Classes" value={classes.length} icon={<Layers />} />
-                    <Stat label="Active" value={activeCount} icon={<CheckCircle2 />} color="green" />
-                    <Stat label="Inactive" value={inactiveCount} icon={<XCircle />} color="red" />
-                </div>
-
-                {/* FILTERS */}
-                <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 flex flex-wrap gap-4 items-center justify-between shadow-sm">
-                    <div className="flex-1 min-w-[300px] relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search by class or school..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-800 tracking-tight">Class Management</h1>
+                            <p className="text-sm text-gray-500">Manage classes and their display order across schools</p>
+                        </div>
+                        <CustomButton
+                            text="Add New Class"
+                            to="/classes/add"
+                            className="bg-[#faae1c] text-white hover:bg-[#faae1c]/85 shadow-md"
                         />
                     </div>
-                    <div className="w-48">
-                        <CustomSelect
-                            options={statusOptions}
-                            value={statusFilter}
-                            placeholder="Filter Status"
-                            onChange={(val) => setStatusFilter(val)}
-                        />
-                    </div>
-                </div>
 
-                {/* TABLE */}
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
-                                <tr>
-                                    <th className="px-6 py-4">School</th>
-                                    <th className="px-6 py-4">Class Name</th>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {loading && classes.length === 0 && (
+                    {/* STATS */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <Stat label="Total Classes" value={classes.length} icon={<Layers />} />
+                        <Stat label="Active" value={activeCount} icon={<CheckCircle2 />} color="green" />
+                        <Stat label="Inactive" value={inactiveCount} icon={<XCircle />} color="red" />
+                    </div>
+
+                    {/* FILTERS */}
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 mb-6 flex flex-wrap gap-4 items-center justify-between shadow-sm">
+                        <div className="flex-1 min-w-[300px] relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search by class or school..."
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <button
+                                onClick={() => { fetchClasses(); }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#faae1c] hover:bg-[#faae1c]/90 text-white p-2 rounded-lg cursor-pointer"
+                            >
+                                <Search size={18} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setFilterOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg cursor-pointer"
+                        >
+                            <Filter size={16} /> <span className="font-medium">More Filters</span>
+                        </button>
+                    </div>
+
+                    {/* TABLE */}
+                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
                                     <tr>
-                                        <td colSpan="4" className="p-6 text-center text-gray-500">
-                                            <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
-                                                <div className="flex flex-col items-center gap-4">
-                                                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-                                                    <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
-                                                        Loading Data...
-                                                    </p>
+                                        <th className="px-6 py-4">School</th>
+                                        <th className="px-6 py-4">Class Name</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {loading && classes.length === 0 && (
+                                        <tr>
+                                            <td colSpan="4" className="p-6 text-center text-gray-500">
+                                                <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
+                                                    <div className="flex flex-col items-center gap-4">
+                                                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+                                                        <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
+                                                            Loading Data...
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                                {!loading && classes.length !== 0 && filteredData.map(item => (
-                                    <tr key={item.class_id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <AvatarLetter text={item.school_name} size={35} />
-                                                <span className="text-sm font-semibold text-gray-700">{item.school_name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-bold text-gray-900">
-                                            {item.class_name}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                }`}>
-                                                {item.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex justify-center gap-3">
-                                                <Link to={`/classes/edit/${item.class_id}`} className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg">
-                                                    <Pencil size={16} />
-                                                </Link>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {!loading && classes.length !== 0 && filteredData.map(item => (
+                                        <tr key={item.class_id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <AvatarLetter text={item.school_name} size={35} />
+                                                    <span className="text-sm font-semibold text-gray-700">{item.school_name}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-gray-900">
+                                                {item.class_name}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                    }`}>
+                                                    {item.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex justify-center gap-3">
+                                                    <Link to={`/classes/edit/${item.class_id}`} className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg">
+                                                        <Pencil size={16} />
+                                                    </Link>
 
-                                                <button
-                                                    onClick={() => handleOpenDeleteModal(item)}
-                                                    className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    <button
+                                                        onClick={() => handleOpenDeleteModal(item)}
+                                                        className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
 
-                                {!loading && classes.length === 0 && (
-                                    <tr>
-                                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
-                                            <p className="text-lg font-semibold">No class found</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                    {!loading && classes.length === 0 && (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                                <p className="text-lg font-semibold">No class found</p>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </>
-        /* </AdminLayout> */
     );
 };
 

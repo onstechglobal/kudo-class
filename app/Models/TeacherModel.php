@@ -53,7 +53,7 @@ class TeacherModel{
 	
 
     // GET ALL TEACHERS
-    public function getAllTeachers()
+    public function getAllTeachers($filters=[])
 	{
 		$teachers = DB::table('tb_teachers as t')
 			->join('tb_users as u', 'u.user_id', '=', 't.user_id')
@@ -64,6 +64,41 @@ class TeacherModel{
 				'u.mobile',
 				's.school_name'
 			)
+			->when(!empty($filters['search']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('t.first_name', 'like', '%' . $filters['search'] . '%')
+					  ->orWhere('t.last_name', 'like', '%' . $filters['search'] . '%')
+					  ->orWhere('t.email', 'like', '%' . $filters['search'] . '%');
+				});
+			})
+			->when(!empty($filters['status']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('t.status', $filters['status']);
+				});
+			})
+			->when(!empty($filters['state']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('t.state', $filters['state']);
+				});
+			})
+			->when(!empty($filters['address']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('t.address', 'like', '%' . $filters['address'] . '%')
+					  ->orWhere('t.district', 'like', '%' . $filters['address'] . '%')
+					  ->orWhere('t.city', 'like', '%' . $filters['address'] . '%')
+					  ->orWhere('t.pincode', 'like', '%' . $filters['address'] . '%');
+				});
+			})
+			->when(!empty($filters['qualification']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('t.qualification', $filters['qualification']);
+				});
+			})
+			->when(!empty($filters['designation']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('t.designation', $filters['designation']);
+				});
+			})
 			->orderBy('t.teacher_id', 'desc')
 			->get();
 

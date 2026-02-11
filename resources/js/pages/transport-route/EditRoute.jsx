@@ -17,12 +17,11 @@ const EditTransport = () => {
     const [academicYears, setAcademicYears] = useState([]);
 
     const [formData, setFormData] = useState({
-        fee_name: "",
+        route_name: "",
         driver_name: "",
-        amount: "",
+        monthly_fee: "",
         status: "active",
-        academic_year_id: "",
-        fee_type: "transport",
+        academic_year: "",
     });
 
     const statusOptions = [
@@ -32,12 +31,15 @@ const EditTransport = () => {
 
     useEffect(() => {
         Promise.all([
-            api.get(`/api/fee-structures/${id}`),
+            api.get(`/api/transport-routes/${id}`),
             api.get("/api/academic-data"),
         ]).then(([routeRes, yearRes]) => {
             setFormData({
-                ...routeRes.data.data,
-                academic_year_id: routeRes.data.data.academic_year_id.toString(),
+                route_name: routeRes.data.data.route_name,
+                driver_name: routeRes.data.data.driver_name,
+                monthly_fee: routeRes.data.data.monthly_fee,
+                status: routeRes.data.data.status,
+                academic_year: routeRes.data.data.academic_year,
             });
 
             setAcademicYears(
@@ -56,12 +58,12 @@ const EditTransport = () => {
     const submit = async e => {
         e.preventDefault();
         setLoading(true);
-        await api.put(`/api/fee-structures/${id}`, {
+        await api.put(`/api/transport-routes/${id}`, {
             ...formData,
-            amount: parseFloat(formData.amount),
+            monthly_fee: parseFloat(formData.monthly_fee),
         });
         setSuccess(true);
-        setTimeout(() => navigate("/transport-routes"), 1500);
+        setTimeout(() => navigate("/transport"), 1500);
         setLoading(false);
     };
 
@@ -79,49 +81,74 @@ const EditTransport = () => {
         <AdminLayout>
             <div className="bg-[#F8FAFC] min-h-screen p-6">
                 <form onSubmit={submit}>
-                    <PageHeader
-                        prevRoute="/transport-routes"
-                        breadcrumbParent="Transport Routes"
-                        breadcrumbCurrent="Edit"
-                        title="Edit Transport Route"
-                    />
+                    <div className="bg-white border-b border-gray-200 px-8 py-5">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <PageHeader
+                                prevRoute="/transport"
+                                breadcrumbParent="Transport"
+                                breadcrumbCurrent="Edit"
+                                title="Edit Transport Route"
+                            />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
+                                >
+                                    {loading ? (
+                                    <Loader2 className="animate-spin" size={18} />
+                                    ) : (
+                                    <Save size={18} />
+                                    )}
+                                    Update Route
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     {success && (
-                        <div className="mx-6 mt-6 p-4 bg-green-50 border rounded-xl flex gap-2">
+                        <div className="mx-6 mt-6 p-4 bg-green-50 border border-gray-200 rounded-xl flex gap-2">
                             <Check className="text-green-500" />
                             Route updated successfully
                         </div>
                     )}
 
-                    <div className="max-w-[1400px] mx-auto mt-6 bg-white rounded-[2.5rem] p-10 border shadow-sm">
+                    <div className="max-w-[1400px] mx-auto mt-6 bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm">
                         <h2 className="text-xl font-black mb-6 flex gap-2">
                             <Bus className="text-blue-600" /> Transport Route Details
                         </h2>
 
                         <div className="grid md:grid-cols-2 gap-6">
-                            <Input label="Route Name" value={formData.fee_name} onChange={e => handleChange("fee_name", e.target.value)} />
-                            <Input label="Driver Name" value={formData.driver_name} onChange={e => handleChange("driver_name", e.target.value)} />
-                            <Input label="Monthly Amount" type="number" value={formData.amount} onChange={e => handleChange("amount", e.target.value)} />
-                            <CustomSelect label="Status" options={statusOptions} value={formData.status} onChange={v => handleChange("status", v)} />
+                            <Input
+                                label="Route Name"
+                                value={formData.route_name}
+                                onChange={e => handleChange("route_name", e.target.value)}
+                            />
+                            <Input
+                                label="Driver Name"
+                                value={formData.driver_name}
+                                onChange={e => handleChange("driver_name", e.target.value)}
+                            />
+                            <Input
+                                label="Monthly Amount"
+                                type="number"
+                                value={formData.monthly_fee}
+                                onChange={e => handleChange("monthly_fee", e.target.value)}
+                            />
+                            <CustomSelect
+                                label="Status"
+                                options={statusOptions}
+                                value={formData.status}
+                                onChange={v => handleChange("status", v)}
+                            />
                             <div className="md:col-span-2">
                                 <CustomSelect
                                     label="Academic Year"
                                     options={academicYears}
-                                    value={formData.academic_year_id}
+                                    value={formData.academic_year}
                                     disabled
                                 />
                             </div>
-                        </div>
-
-                        <div className="mt-8 flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="bg-[#faae1c] text-white px-8 py-3 rounded-xl font-bold flex gap-2"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <Save />}
-                                Update Route
-                            </button>
                         </div>
                     </div>
                 </form>

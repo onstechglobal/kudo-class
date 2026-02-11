@@ -15,9 +15,15 @@ class SectionController extends Controller
         $this->model = new SectionModel();
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $sections = $this->model->getAllSections();
+		$filter = [
+			'search' => $request->query('search'),
+			'status' => $request->query('status'),
+			'class' => $request->query('class'),
+			'teacher' => $request->query('teacher'),
+		];
+        $sections = $this->model->getAllSections($filter);
         return response()->json($sections);
     }
 

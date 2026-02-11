@@ -16,9 +16,18 @@ class TeacherController extends Controller
         $this->model = new TeacherModel();
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $teachers = $this->model->getAllTeachers();
+		$filters = [
+			'search' => $request->query('search'),
+			'status'  => $request->query('status'),
+			'qualification' => $request->query('qualification'),
+			'designation' => $request->query('designation'),
+			'address' => $request->query('address'),
+			'state' => $request->query('state'),
+		];
+		
+        $teachers = $this->model->getAllTeachers($filters);
         return response()->json($teachers);
 		//echo '<pre> --- '; print_r($teachers->toArray()); die;
     }

@@ -151,8 +151,8 @@ export default function App() {
                 <Route path="/fee-structure/edit/:id" element={<EditFee />} />
 
                 <Route path="/transport" element={<TransportRouteIndex />} />
-                <Route path="/transport-routes/create" element={<CreateRoute />} />
-                <Route path="/transport-routes/edit/:id" element={<EditRoute />} />
+                <Route path="/transport/create" element={<CreateRoute />} />
+                <Route path="/transport/edit/:id" element={<EditRoute />} />
 
                 <Route path="/families" element={<FamilyListing />} />
 

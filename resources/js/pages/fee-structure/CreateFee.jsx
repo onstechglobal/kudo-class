@@ -1,12 +1,13 @@
-// C:\xampp\htdocs\kudoclass\resources\js\pages\fee-structure\CreateFee.jsx
+// resources/js/pages/fee-structure/CreateFee.jsx
 import AdminLayout from "../../layouts/AdminLayout";
 import PageHeader from "../../components/common/PageHeader";
 import Input from "../../components/form/Input";
 import CustomSelect from "../../components/form/CustomSelect";
+import AppMultiSelect from "../../components/form/AppMultiSelect";
 import api from "../../helpers/api";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { School, Save, Bus, Loader2, AlertCircle, Check } from "lucide-react";
+import { School, Save, Loader2, AlertCircle, Check } from "lucide-react";
 
 const CreateFee = () => {
     const navigate = useNavigate();
@@ -14,11 +15,10 @@ const CreateFee = () => {
     const [fetchingData, setFetchingData] = useState(true);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
-    
-    // Dynamic data from API
+
     const [academicYears, setAcademicYears] = useState([]);
     const [classes, setClasses] = useState([]);
-    
+
     const [formData, setFormData] = useState({
         fee_name: "",
         fee_type: "academic",
@@ -26,17 +26,14 @@ const CreateFee = () => {
         frequency: "monthly",
         status: "active",
         academic_year_id: "",
-        driver_name: "",
         class_ids: [],
     });
 
-    // Static options WITHOUT placeholder option
     const feeTypeOptions = [
         { label: "Academic Fee", value: "academic" },
         { label: "Exam Fee", value: "exam" },
         { label: "Sports Fee", value: "sports" },
         { label: "Library Fee", value: "library" },
-        { label: "Transport Fee", value: "transport" },
         { label: "Other", value: "other" },
     ];
 
@@ -52,27 +49,20 @@ const CreateFee = () => {
         { label: "Inactive", value: "inactive" },
     ];
 
-    // Fetch initial data
     useEffect(() => {
         const fetchInitialData = async () => {
             try {
                 setFetchingData(true);
-                
-                // Fetch active academic years
-                const academicResponse = await api.get('/api/academic-data');
-                
-                if (academicResponse.data && academicResponse.data.data) {
+
+                const academicResponse = await api.get("/api/academic-data");
+                if (academicResponse.data?.data) {
                     const activeYears = academicResponse.data.data
                         .filter(year => year.is_active == 1)
                         .map(year => ({
-                            label: year.year_name || "Unknown Year",
-                            value: year.academic_year_id?.toString() || ""
-                        }))
-                        .filter(year => year.value);
-                    
+                            label: year.year_name,
+                            value: year.academic_year_id.toString()
+                        }));
                     setAcademicYears(activeYears);
-                    
-                    // Set default academic year if available
                     if (activeYears.length > 0) {
                         setFormData(prev => ({
                             ...prev,
@@ -80,66 +70,25 @@ const CreateFee = () => {
                         }));
                     }
                 }
-                
-                // Fetch classes
-                const classesResponse = await api.get('/api/get-classes');
-                
-                if (classesResponse.data && classesResponse.data.data) {
-                    const formattedClasses = classesResponse.data.data
-                        .map(cls => ({
-                            label: cls.class_name || "Unknown Class",
-                            value: cls.class_id?.toString() || ""
-                        }))
-                        .filter(cls => cls.value);
-                    
+
+                const classesResponse = await api.get("/api/get-classes", {
+                    params: { school_id: 44 }
+                });
+                if (classesResponse.data?.data) {
+                    const formattedClasses = classesResponse.data.data.map(cls => ({
+                        label: cls.class_name,
+                        value: cls.class_id.toString()
+                    }));
                     setClasses(formattedClasses);
-                    
-                    // Set default class if available
-                    if (formattedClasses.length > 0) {
-                        setFormData(prev => ({
-                            ...prev,
-                            class_ids: [formattedClasses[0].value]
-                        }));
-                    }
                 }
+
             } catch (err) {
-                console.error("Error fetching initial data:", err);
-                // Set static fallback data
-                setAcademicYears([
-                    { label: "2023-2024", value: "1" },
-                    { label: "2024-2025", value: "2" },
-                    { label: "2025-2026", value: "3" },
-                ]);
-                
-                setClasses([
-                    { label: "Nursery", value: "1" },
-                    { label: "LKG", value: "2" },
-                    { label: "UKG", value: "3" },
-                    { label: "Class 1", value: "4" },
-                    { label: "Class 2", value: "5" },
-                    { label: "Class 3", value: "6" },
-                    { label: "Class 4", value: "7" },
-                    { label: "Class 5", value: "8" },
-                    { label: "Class 6", value: "9" },
-                    { label: "Class 7", value: "10" },
-                    { label: "Class 8", value: "11" },
-                    { label: "Class 9", value: "12" },
-                    { label: "Class 10", value: "13" },
-                    { label: "Class 11", value: "14" },
-                    { label: "Class 12", value: "15" },
-                ]);
-                
-                // Set defaults
-                setFormData(prev => ({
-                    ...prev,
-                    academic_year_id: "1",
-                    class_ids: ["1"]
-                }));
+                console.error("Error fetching data:", err);
             } finally {
                 setFetchingData(false);
             }
         };
-        
+
         fetchInitialData();
     }, []);
 
@@ -148,14 +97,6 @@ const CreateFee = () => {
             ...prev,
             [name]: value
         }));
-        
-        // Clear selected classes when switching to transport fee
-        if (name === 'fee_type' && value === 'transport') {
-            setFormData(prev => ({
-                ...prev,
-                class_ids: []
-            }));
-        }
     };
 
     const handleSubmit = async (e) => {
@@ -165,235 +106,47 @@ const CreateFee = () => {
         setSuccess(false);
 
         try {
-            // Validate required fields
             if (!formData.fee_name.trim()) {
                 throw new Error("Fee name is required");
             }
-            
+
             if (!formData.amount || parseFloat(formData.amount) <= 0) {
                 throw new Error("Valid amount is required");
             }
-            
+
             if (!formData.academic_year_id) {
                 throw new Error("Academic year is required");
             }
-            
-            if (formData.fee_type !== 'transport' && (!formData.class_ids || formData.class_ids.length === 0)) {
+
+            if (!formData.class_ids.length) {
                 throw new Error("Please select at least one class");
             }
 
-            // Prepare payload - convert class_ids to integers
             const payload = {
                 fee_name: formData.fee_name,
-                amount: parseFloat(formData.amount),
                 fee_type: formData.fee_type,
+                amount: parseFloat(formData.amount),
+                frequency: formData.frequency,
                 status: formData.status,
                 academic_year_id: formData.academic_year_id,
+                class_ids: formData.class_ids.map(id => parseInt(id)),
             };
 
-            // Add conditional fields
-            if (formData.fee_type !== 'transport') {
-                payload.frequency = formData.frequency;
-                payload.class_ids = formData.class_ids.map(id => parseInt(id));
-            } else {
-                payload.driver_name = formData.driver_name;
-            }
+            const response = await api.post("/api/fee-structures", payload);
 
-            console.log("Submitting payload:", payload);
-            
-            const response = await api.post('/api/fee-structures', payload);
-            
             if (response.data.success) {
                 setSuccess(true);
-                setTimeout(() => {
-                    navigate('/fee-structure');
-                }, 1500);
+                setTimeout(() => navigate("/fee-structure"), 1500);
             } else {
-                throw new Error(response.data.message || "Failed to create fee structure");
+                throw new Error(response.data.message);
             }
+
         } catch (err) {
-            console.error("Submit error:", err);
-            console.error("Submit error details:", err.response?.data);
-            
-            // Display validation errors if available
-            if (err.response?.data?.errors) {
-                const errorMessages = Object.values(err.response.data.errors).flat();
-                setError(errorMessages.join(', ') || "Validation failed");
-            } else {
-                setError(err.response?.data?.message || err.message || "Failed to create fee structure");
-            }
+            setError(err.response?.data?.message || err.message);
         } finally {
             setLoading(false);
         }
     };
-
-    const renderTransportForm = () => (
-        <section>
-            <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                <Bus className="text-blue-600" size={24} />
-                Transport Fee Details
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input
-                    label="Route Name *"
-                    name="route_name"
-                    value={formData.fee_name}
-                    onChange={(e) => handleChange("fee_name", e.target.value)}
-                    placeholder="Enter route name"
-                    required
-                />
-                <Input
-                    label="Driver Name (Optional)"
-                    name="driver_name"
-                    value={formData.driver_name}
-                    onChange={(e) => handleChange("driver_name", e.target.value)}
-                    placeholder="Enter driver name"
-                />
-                <Input
-                    label="Monthly Amount (₹) *"
-                    name="amount"
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => handleChange("amount", e.target.value)}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    required
-                />
-                <CustomSelect
-                    label="Status *"
-                    options={statusOptions}
-                    value={formData.status}
-                    onChange={(value) => handleChange("status", value)}
-                />
-                <div className="col-span-1 md:col-span-2">
-                    <CustomSelect
-                        label="Academic Year *"
-                        options={academicYears}
-                        value={formData.academic_year_id}
-                        onChange={(value) => handleChange("academic_year_id", value)}
-                        required
-                    />
-                </div>
-            </div>
-        </section>
-    );
-
-    const renderAcademicForm = () => (
-        <>
-            <section>
-                <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                    <School className="text-blue-600" size={24} />
-                    Academic Fee Details
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Input
-                        label="Fee Name *"
-                        name="fee_name"
-                        value={formData.fee_name}
-                        onChange={(e) => handleChange("fee_name", e.target.value)}
-                        placeholder="Enter fee name"
-                        required
-                    />
-                    <CustomSelect
-                        label="Fee Type *"
-                        options={feeTypeOptions.filter(opt => opt.value !== 'transport')}
-                        value={formData.fee_type}
-                        onChange={(value) => handleChange("fee_type", value)}
-                    />
-                    <CustomSelect
-                        label="Frequency *"
-                        options={frequencyOptions}
-                        value={formData.frequency}
-                        onChange={(value) => handleChange("frequency", value)}
-                    />
-                    <Input
-                        label="Amount (₹) *"
-                        name="amount"
-                        type="number"
-                        value={formData.amount}
-                        onChange={(e) => handleChange("amount", e.target.value)}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        required
-                    />
-                    <CustomSelect
-                        label="Status *"
-                        options={statusOptions}
-                        value={formData.status}
-                        onChange={(value) => handleChange("status", value)}
-                    />
-                    <CustomSelect
-                        label="Academic Year *"
-                        options={academicYears}
-                        value={formData.academic_year_id}
-                        onChange={(value) => handleChange("academic_year_id", value)}
-                        required
-                    />
-                    <div className="col-span-1 md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Select Classes *
-                        </label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {classes.map(cls => (
-                                <div key={cls.value} className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        id={`class-${cls.value}`}
-                                        checked={formData.class_ids.includes(cls.value)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                handleChange("class_ids", [...formData.class_ids, cls.value]);
-                                            } else {
-                                                handleChange("class_ids", formData.class_ids.filter(id => id !== cls.value));
-                                            }
-                                        }}
-                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                    />
-                                    <label 
-                                        htmlFor={`class-${cls.value}`}
-                                        className="ml-2 text-sm text-gray-700"
-                                    >
-                                        {cls.label}
-                                    </label>
-                                </div>
-                            ))}
-                        </div>
-                        {formData.class_ids.length === 0 && (
-                            <p className="text-sm text-red-600 mt-2">Please select at least one class</p>
-                        )}
-                    </div>
-                </div>
-            </section>
-
-            {/* Selected Classes Info */}
-            {formData.class_ids.length > 0 && (
-                <section>
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                        <p className="text-sm font-medium text-blue-700 mb-2">
-                            Selected Classes ({formData.class_ids.length}):
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                            {formData.class_ids.map(classId => {
-                                const classInfo = classes.find(c => c.value === classId);
-                                return (
-                                    <span 
-                                        key={classId}
-                                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
-                                    >
-                                        {classInfo?.label || `Class ${classId}`}
-                                    </span>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </section>
-            )}
-        </>
-    );
 
     if (fetchingData) {
         return (
@@ -408,121 +161,101 @@ const CreateFee = () => {
     return (
         <AdminLayout>
             <div className="bg-[#F8FAFC] min-h-screen p-6">
-                <form onSubmit={handleSubmit} id="fee-structure-form">
-                    {/* Header */}
+                <form onSubmit={handleSubmit}>
                     <div className="bg-white border-b border-gray-200 px-8 py-5">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex justify-between">
                             <PageHeader
                                 prevRoute="/fee-structure"
                                 breadcrumbParent="Fee Structure"
                                 breadcrumbCurrent="Add"
                                 title="Configure Fee Structure"
                             />
-
-                            <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/fee-structure')}
-                                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={loading || success}
-                                    className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c]/90 text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    {loading ? (
-                                        <>
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : success ? (
-                                        <>
-                                            <Check size={18} />
-                                            Saved!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Save size={18} />
-                                            Save Structure
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
+                            >
+                                {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                Save
+                            </button>
                         </div>
                     </div>
-
-                    {/* Messages */}
-                    {error && (
-                        <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-                            <AlertCircle className="text-red-500" size={20} />
-                            <span className="text-red-700">{error}</span>
-                        </div>
-                    )}
-
-                    {success && (
-                        <div className="mx-6 mt-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-                            <Check className="text-green-500" size={20} />
-                            <span className="text-green-700">
-                                Fee structure created successfully! Redirecting...
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Fee Type Tabs */}
-                    <div className="flex gap-4 mb-8 mt-5 ml-7 bg-white p-2 rounded-2xl border border-gray-200 w-fit">
-                        <button
-                            type="button"
-                            onClick={() => handleChange("fee_type", "academic")}
-                            className={`px-8 py-3 rounded-xl font-black text-sm transition-all
-                                flex items-center gap-2 cursor-pointer
-                                ${
-                                    formData.fee_type !== "transport"
-                                        ? "text-white bg-[#0468C3] hover:bg-[#0468C3]"
-                                        : "text-gray-400 hover:bg-gray-50"
-                                }
-                            `}
-                        >
-                            <School size={24} />
-                            Academic Fee
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => handleChange("fee_type", "transport")}
-                            className={`px-8 py-3 rounded-xl font-black text-sm transition-all
-                                flex items-center gap-2 cursor-pointer
-                                ${
-                                    formData.fee_type === "transport"
-                                        ? "text-white bg-[#0468C3] hover:bg-[#0468C3]"
-                                        : "text-gray-400 hover:bg-gray-50"
-                                }
-                            `}
-                        >
-                            <Bus size={24} />
-                            Transport Fee
-                        </button>
-                    </div>
-
-                    {/* Form Body */}
-                    <div className="py-0 sm:p-8 max-w-[1600px] mx-auto">
-                        <div className="bg-white rounded-[2.5rem] p-10 border border-gray-200 shadow-sm space-y-12">
-                            <div className="mb-8">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                                    {formData.fee_type === "transport" ? "Transport Fee Configuration" : "Academic Fee Configuration"}
-                                </h2>
-                                <p className="text-gray-600">
-                                    {formData.fee_type === "transport" 
-                                        ? "Configure transport route fees for your school"
-                                        : "Configure academic fee structure for selected classes"}
-                                </p>
+                    <div className="p-8 max-w-[1600px] mx-auto">
+                        {error && (
+                            <div className="p-4 bg-red-50 text-red-700 rounded-xl mt-4 flex items-center gap-2">
+                                <AlertCircle size={18} />
+                                {error}
                             </div>
-                            
-                            {formData.fee_type === "transport" 
-                                ? renderTransportForm() 
-                                : renderAcademicForm()
-                            }
+                        )}
+
+                        {success && (
+                            <div className="p-4 bg-green-50 text-green-700 rounded-xl mt-4 flex items-center gap-2">
+                                <Check size={18} />
+                                Fee structure created successfully!
+                            </div>
+                        )}
+                        <div className="grid grid-cols-12">
+                            <div className="col-span-12">
+                                <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-sm space-y-12">
+                                    <section>
+                                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                                            <School className="text-blue-600" size={24} />
+                                            Academic Fee Details
+                                        </h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <Input
+                                                label="Fee Name *"
+                                                value={formData.fee_name}
+                                                onChange={e => handleChange("fee_name", e.target.value)}
+                                            />
+
+                                            <CustomSelect
+                                                label="Fee Type *"
+                                                options={feeTypeOptions}
+                                                value={formData.fee_type}
+                                                onChange={value => handleChange("fee_type", value)}
+                                            />
+
+                                            <CustomSelect
+                                                label="Frequency *"
+                                                options={frequencyOptions}
+                                                value={formData.frequency}
+                                                onChange={value => handleChange("frequency", value)}
+                                            />
+
+                                            <Input
+                                                label="Amount (₹) *"
+                                                type="number"
+                                                value={formData.amount}
+                                                onChange={e => handleChange("amount", e.target.value)}
+                                            />
+
+                                            <CustomSelect
+                                                label="Status *"
+                                                options={statusOptions}
+                                                value={formData.status}
+                                                onChange={value => handleChange("status", value)}
+                                            />
+
+                                            <CustomSelect
+                                                label="Academic Year *"
+                                                options={academicYears}
+                                                value={formData.academic_year_id}
+                                                onChange={value => handleChange("academic_year_id", value)}
+                                            />
+
+                                            <AppMultiSelect
+                                                label="Select Classes"
+                                                options={classes}
+                                                value={formData.class_ids}
+                                                onChange={(val) => handleChange("class_ids", val)}
+                                                placeholder="Choose classes"
+                                                required
+                                            />
+                                        </div>
+                                    </section>
+                                </div>  
+                            </div>
                         </div>
                     </div>
                 </form>

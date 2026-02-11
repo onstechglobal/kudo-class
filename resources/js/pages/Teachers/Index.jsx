@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import AdminLayout from '../../layouts/AdminLayout';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { State, City } from "country-state-city";
 import axios from 'axios';
-import { Link } from "react-router-dom";
 import { Search, Plus, Filter, Pencil, Trash2, UserCheck, Users, UserMinus } from 'lucide-react';
+import AdminLayout from '../../layouts/AdminLayout';
+import Input from "@/components/form/Input";
 import CustomButton from '../../components/form/CustomButton';
+import CustomSelect from '../../components/form/CustomSelect';
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
 import AvatarLetter from '../../components/common/AvatarLetter';
 import { Api_url } from '../../helpers/api';
 import Stat from '../../components/common/StatCard';
 
 const TeacherListing = () => {
+
+    const states = State.getStatesOfCountry("IN");
+    const statesOption = states.map(st => ({
+        value: st.name,
+        label: st.name
+    }));
+
     const location = useLocation();
     const navigate = useNavigate();
     const [message, setMessage] = useState('');
@@ -24,6 +33,11 @@ const TeacherListing = () => {
 
     /* Filter Drawer States */
     const [filterOpen, setFilterOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState("");
+    const [stateFilter, setStateFilter] = useState("");
+    const [searchAddress, setSearchAddress] = useState("");
+    const [searchDesignation, setSearchDesignation] = useState("");
+    const [searchQualification, setSearchQualification] = useState("");
 
     // Search
     const [searchInput, setSearchInput] = useState("");
@@ -51,6 +65,11 @@ const TeacherListing = () => {
             params: {
                 page: page,
                 search: appliedSearch,
+                qualification: searchQualification,
+                designation: searchDesignation,
+                address: searchAddress,
+                state: stateFilter,
+                status: statusFilter,
             }
         })
         .then(res => {
@@ -202,6 +221,11 @@ const TeacherListing = () => {
 
                 {/* BODY */}
                 <div className="p-5 space-y-5 overflow-y-auto flex-1">
+                    <Input type="text" label="Qualification" value={searchQualification} onChange={e => setSearchQualification( e.target.value)} />
+                    <Input type="text" label="Designation" value={searchDesignation} onChange={e => setSearchDesignation( e.target.value)} />
+                    <Input type="text" label="Address" value={searchAddress} onChange={e => setSearchAddress( e.target.value)} />
+                    <CustomSelect label="State" options={statesOption} value={stateFilter} onChange={setStateFilter} />
+                    <CustomSelect label="Status" options={statusOptions} value={statusFilter} onChange={setStatusFilter} />
                 </div>
 
                 {/* FOOTER */}
@@ -219,7 +243,7 @@ const TeacherListing = () => {
                             setCurrentPage(1);
                             // This manually triggers fetchStaff if page was already 1
                             if (currentPage === 1) {
-                                /* fetchSchools(1); */
+                                fetchTeachers(1);
                             }
                             setFilterOpen(false);
                         }}
@@ -284,7 +308,7 @@ const TeacherListing = () => {
                             </div>
                             <button
                                 onClick={() => setFilterOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg cursor-pointer"
                             >
                                 <Filter size={16} /> <span className="font-medium">More Filters</span>
                             </button>

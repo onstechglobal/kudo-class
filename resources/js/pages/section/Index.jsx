@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Link } from "react-router-dom";
 import { Search, Plus, Filter, Pencil, Trash2, UserCheck, Users, UserMinus, BookOpen, User } from 'lucide-react';
 import CustomButton from '../../components/form/CustomButton';
+import CustomSelect from '../../components/form/CustomSelect';
 import Input from '../../components/form/Input';
 import DeleteConfirmModal from '../../components/common/DeleteConfirmModal';
 import AvatarLetter from "@/components/common/AvatarLetter";
@@ -25,10 +26,16 @@ const SectionListing = ({ isChildView = false }) => {
     const [loading, setLoading] = useState(true);
 
     /* Filter Drawer States */
+    const [classesOption, setClassesOption] = useState([]);
+    const [teachersOption, setTeachersOption] = useState([]);
+    const [schoolId, setSchoolId] = useState(null);
     const [filterOpen, setFilterOpen] = useState(false);
     // Search
     const [searchInput, setSearchInput] = useState("");
     const [appliedSearch, setAppliedSearch] = useState("");
+    const [classSearch, setClassSearch] = useState("");
+    const [teacherSearch, setTeacherSearch] = useState("");
+    const [statusSearch, setStatusSearch] = useState("");
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -49,7 +56,14 @@ const SectionListing = ({ isChildView = false }) => {
     const fetchSections = () => {
         setLoading(true);
         // CHANGED FROM sections TO section
-        axios.get(`${Api_url.name}api/section`)
+        axios.get(`${Api_url.name}api/section`, {
+                params: {
+                    search: appliedSearch,
+                    class: classSearch,
+                    teacher: teacherSearch,
+                    status: statusSearch,
+                }
+            })
             .then(res => {
                 const data = Array.isArray(res.data) ? res.data : [];
                 console.log('Section data:', data);
@@ -99,6 +113,7 @@ const SectionListing = ({ isChildView = false }) => {
     useEffect(() => {
         fetchSections();
     }, [currentPage, appliedSearch]);
+
     /* Add/edit success message */
     useEffect(() => {
         if (location.state?.message) {
@@ -125,6 +140,7 @@ const SectionListing = ({ isChildView = false }) => {
             return () => clearTimeout(timer);
         }
     }, []);
+
     /* ================= SEARCH ================= */
     const applySearch = () => {
         setAppliedSearch(searchInput);
@@ -152,6 +168,46 @@ const SectionListing = ({ isChildView = false }) => {
         setOpen(true);
     };
 
+    /* FETCH DATA BASED ON SCHOOL ID */
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setSchoolId(user.school_id);
+        // Fetch Classes for this school
+        axios.get(`${Api_url.name}api/get-classes`, { params: { school_id: user.school_id } })
+            .then(res => {
+            const classOptions = Array.isArray(res.data.data) ? res.data.data.map(c => ({
+                label: c.class_name,
+                value: c.class_id
+            })) : [];
+            setClassesOption(classOptions);
+            })
+            .catch(err => console.error("Error fetching classes:", err));
+
+        // Fetch Teachers for this school
+        axios.get(`${Api_url.name}api/teacher`, { params: { school_id: user.school_id } })
+            .then(res => {
+            const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
+                label: t.first_name,
+                value: t.teacher_id,
+                designation: t.designation
+            })) : [];
+
+            teacherOptions.unshift({ label: "Select Teacher", value: "", designation: null });
+            setTeachersOption(teacherOptions);
+            })
+            .catch(err => console.error("Error fetching teachers:", err));
+        }
+    }, []);
+
+    const statusOptions = [
+        { label: "All Status", value: "" },
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+    ];
+
+
     return (
         <>
             {/* OVERLAY */}
@@ -175,6 +231,24 @@ const SectionListing = ({ isChildView = false }) => {
 
                 {/* BODY */}
                 <div className="p-5 space-y-5 overflow-y-auto flex-1">
+                    <CustomSelect
+                    label="Class"
+                    options={classesOption}
+                    value={classSearch}
+                    onChange={(val) => setClassSearch(val)}
+                    />
+                    <CustomSelect
+                    label="Class Teacher"
+                    options={teachersOption}
+                    value={teacherSearch}
+                    onChange={(val) => setTeacherSearch(val)}
+                    />
+                    <CustomSelect
+                    label="Status"
+                    options={statusOptions}
+                    value={statusSearch}
+                    onChange={(val) => setStatusSearch(val)}
+                    />
                 </div>
 
                 {/* FOOTER */}
@@ -182,7 +256,10 @@ const SectionListing = ({ isChildView = false }) => {
                     <button
                         onClick={() => {
                             setAppliedSearch("");
-                            setSearchQuery("");
+                            setSearchInput("");
+                            setTeacherSearch("");
+                            setStatusSearch("");
+                            setClassSearch("");
                             setCurrentPage(1);
                         }}
                         className="flex-1 bg-gray-100 rounded-lg py-2 text-sm font-medium cursor-pointer"
@@ -261,7 +338,7 @@ const SectionListing = ({ isChildView = false }) => {
                             </div>
                             <button
                                 onClick={() => setFilterOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg cursor-pointer"
                             >
                                 <Filter size={16} /> <span className="font-medium">More Filters</span>
                             </button>

@@ -53,7 +53,13 @@ class ClassController extends Controller
         try {
 			$school_id = $request->query('school_id');
 			
-            $classes = $this->model->getAllClasses($school_id);
+			$filters = [
+				'search' => $request->query('search'),
+				'status'  => $request->query('status'),
+				'category' => $request->query('category'),
+			];
+			
+            $classes = $this->model->getAllClasses($school_id, $filters);
             return response()->json([
                 'status' => 200,
                 'data'   => $classes

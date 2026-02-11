@@ -28,3 +28,4 @@ export const Api_url = {
   //name: `http://127.0.0.1:8000/`,
   name: `https://kudoclass.onstech.in/`,
 };
+  

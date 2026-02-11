@@ -24,7 +24,8 @@ class FeeStructureController extends Controller
             $academicYearsData = DB::table('tb_academic_years')->get();
 
             $classModel = new ClassModel();
-            $allClasses = $classModel->getAllClasses();
+            $school_id = '44';
+            $allClasses = $classModel->getAllClasses($school_id);
 
             $formattedData = $feeStructures->map(function ($fee) use ($academicYearsData, $allClasses) {
 
@@ -178,8 +179,9 @@ class FeeStructureController extends Controller
                 ->where('academic_year_id', $feeStructure->academic_year_id)
                 ->first();
 
+           $school_id = $feeStructure->school_id;
             $classModel = new ClassModel();
-            $allClasses = $classModel->getAllClasses();
+            $allClasses = $classModel->getAllClasses($school_id);
 
             $assignedClasses = [];
             $assignedClassIds = [];

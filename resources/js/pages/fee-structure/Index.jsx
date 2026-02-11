@@ -34,8 +34,8 @@ const Index = () => {
     const [statusFilter, setStatusFilter] = useState("");
     const [stats, setStats] = useState({
         total: 0,
-        academic: 0,
-        transport: 0
+        active: 0,
+        inactive: 0
     });
 
     // Fetch fee structures
@@ -67,34 +67,16 @@ const Index = () => {
         }
     };
 
-    // Fetch stats
-    const fetchStats = async () => {
-        try {
-            const response = await api.get('/api/fee-structures/stats/summary');
-            if (response.data.success && response.data.data) {
-                setStats({
-                    total: response.data.data.total || 0,
-                    academic: response.data.data.academic || 0,
-                    transport: response.data.data.transport || 0
-                });
-            }
-        } catch (err) {
-            console.error("Error fetching stats:", err);
-            // Use calculated stats as fallback
-            calculateStats(feeStructures);
-        }
-    };
-
     // Calculate stats from data (fallback)
     const calculateStats = (data) => {
         const total = data.length;
-        const academic = data.filter(item => item.fee_type !== 'transport').length;
-        const transport = data.filter(item => item.fee_type === 'transport').length;
+        const active = data.filter(item => item.status === "active").length;
+        const inactive = data.filter(item => item.status === "inactive").length;
         
         setStats({
             total,
-            academic,
-            transport
+            active,
+            inactive
         });
     };
 
@@ -110,7 +92,6 @@ const Index = () => {
             if (response.data.success) {
                 // Refresh the list
                 fetchFeeStructures();
-                fetchStats();
             } else {
                 alert(response.data.message || "Failed to delete");
             }
@@ -144,7 +125,6 @@ const Index = () => {
 
     useEffect(() => {
         fetchFeeStructures();
-        fetchStats();
     }, []);
 
     const handleSearch = (e) => {
@@ -165,7 +145,6 @@ const Index = () => {
             return `${item.class_ids.length} class(es) selected`;
         }
         
-        return item.fee_type === 'transport' ? "Transport Route" : "No classes assigned";
     };
 
     // Get fee type display
@@ -186,16 +165,6 @@ const Index = () => {
         if (!frequency) return "-";
         return frequency.replace('_', ' ').toLowerCase();
     };
-
-    if (loading) {
-        return (
-            <AdminLayout>
-                <div className="flex items-center justify-center h-screen">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                </div>
-            </AdminLayout>
-        );
-    }
 
     return (
         <AdminLayout>
@@ -246,23 +215,9 @@ const Index = () => {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Stat 
-                        label="All Fee Structures" 
-                        value={stats.total.toString()} 
-                        icon={<Users />} 
-                    />
-                    <Stat
-                        label="Academic Fees"
-                        value={stats.academic.toString()}
-                        icon={<CheckCircle2 />}
-                        color="green"
-                    />
-                    <Stat
-                        label="Transport Fees"
-                        value={stats.transport.toString()}
-                        icon={<Bus />}
-                        color="red"
-                    />
+                    <Stat label="All Fee Structures" value={stats.total.toString()} icon={<Users />} />
+                    <Stat label="Active Fees" value={stats.active.toString()} icon={<CheckCircle2 />} color="green" />
+                    <Stat label="Inactive Fees" value={stats.inactive.toString()} icon={<AlertCircle />} color="red" />
                 </div>
 
                 {/* Filters Section */}
@@ -275,7 +230,7 @@ const Index = () => {
                             />
                             <input
                                 type="text"
-                                placeholder="Search by fee name, class, or driver..."
+                                placeholder="Search by fee name..."
                                 value={searchTerm}
                                 onChange={handleSearch}
                                 className="w-full pl-10 pr-12 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -283,14 +238,6 @@ const Index = () => {
                         </div>
                     </div>
                     <div className="flex flex-wrap flex-col sm:flex-row gap-3 sm:items-center">
-                        <div className="w-50 sm:w-50">
-                            <CustomSelect
-                                options={statusOptions}
-                                placeholder="Status (All)"
-                                onChange={handleStatusChange}
-                                value={statusOptions.find(opt => opt.value === statusFilter)}
-                            />
-                        </div>
                         <button 
                             className="flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl text-sm hover:bg-gray-200 cursor-pointer transition-colors"
                             onClick={() => {
@@ -299,7 +246,7 @@ const Index = () => {
                             }}
                         >
                             <Filter size={16} />
-                            <span className="font-medium">Clear Filters</span>
+                            <span className="font-medium">More Filters</span>
                         </button>
                     </div>
                 </div>
@@ -311,8 +258,7 @@ const Index = () => {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
                                     <th className="px-6 py-4">Fee Name</th>
-                                    <th className="px-6 py-4">Class/Route</th>
-                                    <th className="px6 py-4">Fee Type</th>
+                                    <th className="px-6 py-4">Fee Type</th>
                                     <th className="px-6 py-4">Frequency</th>
                                     <th className="px-6 py-4">Amount</th>
                                     <th className="px-6 py-4">Status</th>
@@ -320,38 +266,20 @@ const Index = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {filteredData.length === 0 ? (
+                                {loading ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-12 text-center">
-                                            <div className="flex flex-col items-center justify-center text-gray-400">
-                                                {error ? (
-                                                    <>
-                                                        <AlertCircle size={48} className="mb-3" />
-                                                        <p className="text-lg mb-2">Unable to load data</p>
-                                                        <p className="text-sm">Please check your backend configuration</p>
-                                                    </>
-                                                ) : feeStructures.length === 0 ? (
-                                                    <>
-                                                        <p className="text-lg">No fee structures found</p>
-                                                        <p className="text-sm mt-1">Create your first fee structure</p>
-                                                        <Link
-                                                            to="/fee-structure/create"
-                                                            className="mt-3 px-4 py-2 bg-[#faae1c] text-white rounded-lg hover:bg-[#faae1c]/90"
-                                                        >
-                                                            Create Fee Structure
-                                                        </Link>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Search size={48} className="mb-3" />
-                                                        <p className="text-lg">No matching results</p>
-                                                        <p className="text-sm mt-1">Try different search terms or filters</p>
-                                                    </>
-                                                )}
+                                        <td colSpan="6" className="p-6 text-center text-gray-500">
+                                            <div className="inset-0 z-10 flex items-center justify-center rounded-xl">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+                                                    <p className="text-xs font-medium text-gray-600 animate-pulse tracking-widest">
+                                                        Loading Data...
+                                                    </p>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
-                                ) : (
+                                ) : filteredData.length > 0 ? (
                                     filteredData.map((item) => (
                                         <tr key={item.fee_id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4">
@@ -363,9 +291,6 @@ const Index = () => {
                                                         {item.academic_year}
                                                     </div>
                                                 )}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {getClassNames(item)}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -418,6 +343,12 @@ const Index = () => {
                                             </td>
                                         </tr>
                                     ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                            <p className="text-lg font-semibold">No data found</p>
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>

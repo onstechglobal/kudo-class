@@ -21,6 +21,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\FeeStructureController;
 use App\Http\Controllers\TransportRouteController;
 use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\AdmissionController;
 
 
 
@@ -60,6 +61,9 @@ Route::middleware('auth.check')->group(function () {
 	Route::post('delete-class', [ClassController::class, 'deleteClass']);
 
 
+	Route::post('/admissions', [AdmissionController::class, 'store']);
+	
+	
 	Route::get('/attendance/students', [AttendanceController::class, 'students']);
 	Route::post('/attendance/save', [AttendanceController::class, 'save']);
 	Route::get('/attendance/student-stats/{studentId}', [AttendanceController::class, 'studentStats']);
@@ -138,24 +142,23 @@ Route::middleware('auth.check')->group(function () {
 	
 	// ==================== FEE STRUCTURE ROUTES ====================
 	// Fee Structures
-	Route::get('/fee-structures', [FeeStructureController::class, 'index']);
-	Route::post('/fee-structures', [FeeStructureController::class, 'store']);
-	Route::get('/fee-structures/{id}', [FeeStructureController::class, 'show']);
-	Route::put('/fee-structures/{id}', [FeeStructureController::class, 'update']);
-	Route::delete('/fee-structures/{id}', [FeeStructureController::class, 'destroy']);
-	Route::get('/fee-structures/stats/summary', [FeeStructureController::class, 'getStats']);
-	 
-	// Fee Classes
-	Route::get('/fee-structures/{feeId}/classes', [FeeStructureController::class, 'getFeeClasses']);
-	Route::post('/fee-structures/{feeId}/classes', [FeeStructureController::class, 'assignClasses']);
-	Route::post('/fee-structures/{feeId}/classes/remove', [FeeStructureController::class, 'removeClasses']);
-	 
-	// ==================== TRANSPORT ROUTES ====================
-	Route::get('/transport-routes', [TransportRouteController::class, 'index']);
-	Route::post('/transport-routes', [TransportRouteController::class, 'store']);
-	Route::get('/transport-routes/{id}', [TransportRouteController::class, 'show']);
-	Route::put('/transport-routes/{id}', [TransportRouteController::class, 'update']);
-	Route::post('/transport-routes/delete/{id}', [TransportRouteController::class, 'destroy']);
+    Route::get('/fee-structures', [FeeStructureController::class, 'index']);
+    Route::post('/fee-structures', [FeeStructureController::class, 'store']);
+    Route::get('/fee-structures/{id}', [FeeStructureController::class, 'show']);
+    Route::put('/fee-structures/{id}', [FeeStructureController::class, 'update']);
+    Route::delete('/fee-structures/{id}', [FeeStructureController::class, 'destroy']);
+     
+    // Fee Classes
+    Route::get('/fee-structures/{feeId}/classes', [FeeStructureController::class, 'getFeeClasses']);
+    Route::post('/fee-structures/{feeId}/classes', [FeeStructureController::class, 'assignClasses']);
+    Route::post('/fee-structures/{feeId}/classes/remove', [FeeStructureController::class, 'removeClasses']);
+     
+    // ==================== TRANSPORT ROUTES ====================
+    Route::get('/transport-routes', [TransportRouteController::class, 'index']);
+    Route::post('/transport-routes', [TransportRouteController::class, 'store']);
+    Route::get('/transport-routes/{id}', [TransportRouteController::class, 'show']);
+    Route::put('/transport-routes/{id}', [TransportRouteController::class, 'update']);
+    Route::delete('/transport-routes/{id}', [TransportRouteController::class, 'destroy']);
 
 });
 

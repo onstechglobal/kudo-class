@@ -17,12 +17,11 @@ const CreateTransport = () => {
     const [success, setSuccess] = useState(false);
 
     const [formData, setFormData] = useState({
-        fee_name: "",
+        route_name: "",
         driver_name: "",
-        amount: "",
+        monthly_fee: "",
         status: "active",
-        academic_year_id: "",
-        fee_type: "transport",
+        academic_year: "",
     });
 
     const statusOptions = [
@@ -40,7 +39,7 @@ const CreateTransport = () => {
                 }));
             setAcademicYears(years);
             if (years.length) {
-                setFormData(p => ({ ...p, academic_year_id: years[0].value }));
+                setFormData(p => ({ ...p, academic_year: years[0].value }));
             }
         }).finally(() => setFetching(false));
     }, []);
@@ -55,13 +54,13 @@ const CreateTransport = () => {
         setError("");
 
         try {
-            await api.post("/api/fee-structures", {
+            await api.post("/api/transport-routes", {
                 ...formData,
-                amount: parseFloat(formData.amount),
+                monthly_fee: parseFloat(formData.monthly_fee),
             });
 
             setSuccess(true);
-            setTimeout(() => navigate("/transport-routes"), 1500);
+            setTimeout(() => navigate("/transport"), 1500);
         } catch (err) {
             setError("Failed to create transport route");
         } finally {
@@ -84,12 +83,28 @@ const CreateTransport = () => {
             <div className="bg-[#F8FAFC] min-h-screen p-6">
                 <form onSubmit={handleSubmit}>
                     <div className="bg-white border-b border-gray-200 px-8 py-5">
-                        <PageHeader
-                            prevRoute="/transport-routes"
-                            breadcrumbParent="Transport Routes"
-                            breadcrumbCurrent="Add"
-                            title="Add Transport Route"
-                        />
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <PageHeader
+                                prevRoute="/transport"
+                                breadcrumbParent="Transport"
+                                breadcrumbCurrent="Add"
+                                title="Add Transport Route"
+                            />
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex items-center gap-2 bg-[#faae1c] hover:bg-[#faae1c] text-white px-7 py-2.5 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 disabled:opacity-70 cursor-pointer"
+                                >
+                                    {loading ? (
+                                    <Loader2 className="animate-spin" size={18} />
+                                    ) : (
+                                    <Save size={18} />
+                                    )}
+                                    Save Route
+                                </button>
+                            </div>
+                        </div>  
                     </div>
 
                     {error && (
@@ -102,7 +117,7 @@ const CreateTransport = () => {
                     {success && (
                         <div className="mx-6 mt-6 p-4 bg-green-50 border border-green-200 rounded-xl flex gap-2">
                             <Check className="text-green-500" />
-                            <span className="text-green-700">Route created successfully</span>
+                            <span className="text-green-700">Transport route created successfully</span>
                         </div>
                     )}
 
@@ -114,8 +129,8 @@ const CreateTransport = () => {
                         <div className="grid md:grid-cols-2 gap-6">
                             <Input
                                 label="Route Name *"
-                                value={formData.fee_name}
-                                onChange={e => handleChange("fee_name", e.target.value)}
+                                value={formData.route_name}
+                                onChange={e => handleChange("route_name", e.target.value)}
                             />
                             <Input
                                 label="Driver Name *"
@@ -125,8 +140,8 @@ const CreateTransport = () => {
                             <Input
                                 label="Monthly Amount (₹) *"
                                 type="number"
-                                value={formData.amount}
-                                onChange={e => handleChange("amount", e.target.value)}
+                                value={formData.monthly_fee}
+                                onChange={e => handleChange("monthly_fee", e.target.value)}
                             />
                             <CustomSelect
                                 label="Status *"
@@ -134,25 +149,12 @@ const CreateTransport = () => {
                                 value={formData.status}
                                 onChange={v => handleChange("status", v)}
                             />
-                            <div className="md:col-span-2">
-                                <CustomSelect
-                                    label="Academic Year *"
-                                    options={academicYears}
-                                    value={formData.academic_year_id}
-                                    onChange={v => handleChange("academic_year_id", v)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-8 flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="bg-[#faae1c] text-white px-8 py-3 rounded-xl font-bold flex gap-2"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : <Save />}
-                                Save Route
-                            </button>
+                            <CustomSelect
+                                label="Academic Year *"
+                                options={academicYears}
+                                value={formData.academic_year}
+                                onChange={v => handleChange("academic_year", v)}
+                            />
                         </div>
                     </div>
                 </form>

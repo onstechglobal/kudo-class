@@ -30,9 +30,24 @@ class ClassModel extends Model
      * Get All Classes with Join - Instance Method
      */
 	 
-	public function getAllClasses($school_id) {
+	public function getAllClasses($school_id, $filters=[]) {
 		return DB::table('tb_classes')
 			->where('school_id', $school_id)
+			->when(!empty($filters['search']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('class_name', 'like', '%' . $filters['search'] . '%');
+				});
+			})
+			->when(!empty($filters['status']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('status', $filters['status']);
+				});
+			})
+			->when(!empty($filters['category']), function ($query) use ($filters) {
+				$query->where(function($q) use ($filters) {
+					$q->where('department', $filters['category']);
+				});
+			})
 			->orderBy('class_order', 'asc')
 			->get();
 	}

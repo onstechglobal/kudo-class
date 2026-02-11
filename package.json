@@ -18,8 +18,10 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "country-state-city": "^3.2.1",
         "lucide-react": "^0.562.0",
         "react": "^19.2.3",
+        "react-country-state-city": "^1.1.12",
         "react-datepicker": "^9.1.0",
         "react-dom": "^19.2.3",
         "react-razorpay": "^3.0.1",

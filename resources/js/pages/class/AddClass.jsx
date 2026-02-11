@@ -30,11 +30,11 @@ const AddClass = () => {
   ];
 
   const departmentOptions = [
-  { label: 'Pre-Primary (Playgroup - KG)', value: 'Pre-Primary' },
-  { label: 'Primary (Class 1 - 5)', value: 'Primary' },
-  { label: 'Middle / Secondary (Class 6 - 10)', value: 'Secondary' },
-  { label: 'Higher Secondary (Class 11 - 12)', value: 'Higher Secondary' },
-];
+    { label: 'Pre-Primary (Playgroup - KG)', value: 'Pre-Primary' },
+    { label: 'Primary (Class 1 - 5)', value: 'Primary' },
+    { label: 'Middle / Secondary (Class 6 - 10)', value: 'Secondary' },
+    { label: 'Higher Secondary (Class 11 - 12)', value: 'Higher Secondary' },
+  ];
 
   /* ---------------- GET SCHOOL ID FROM STORAGE ---------------- */
   useEffect(() => {
