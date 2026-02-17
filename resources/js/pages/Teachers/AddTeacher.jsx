@@ -194,7 +194,7 @@ export default function AddTeacher() {
 
       if (res.data.status === 200) {
         navigate('/teachers', {
-          state: { status: res.data.status, message: res.data.message }
+          state: { status: 'success' , message: res.data.message }
         });
 
         setCredentials({

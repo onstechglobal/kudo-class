@@ -55,15 +55,19 @@ const SectionListing = ({ isChildView = false }) => {
     /* ================= FETCH SECTIONS ================= */
     const fetchSections = () => {
         setLoading(true);
+        if (!schoolId) {
+            return;
+        }
         // CHANGED FROM sections TO section
         axios.get(`${Api_url.name}api/section`, {
-                params: {
-                    search: appliedSearch,
-                    class: classSearch,
-                    teacher: teacherSearch,
-                    status: statusSearch,
-                }
-            })
+            params: {
+                school_id: schoolId,
+                search: appliedSearch,
+                class: classSearch,
+                teacher: teacherSearch,
+                status: statusSearch,
+            }
+        })
             .then(res => {
                 const data = Array.isArray(res.data) ? res.data : [];
                 console.log('Section data:', data);
@@ -112,7 +116,7 @@ const SectionListing = ({ isChildView = false }) => {
 
     useEffect(() => {
         fetchSections();
-    }, [currentPage, appliedSearch]);
+    }, [currentPage, appliedSearch, schoolId]);
 
     /* Add/edit success message */
     useEffect(() => {
@@ -172,32 +176,32 @@ const SectionListing = ({ isChildView = false }) => {
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setSchoolId(user.school_id);
-        // Fetch Classes for this school
-        axios.get(`${Api_url.name}api/get-classes`, { params: { school_id: user.school_id } })
-            .then(res => {
-            const classOptions = Array.isArray(res.data.data) ? res.data.data.map(c => ({
-                label: c.class_name,
-                value: c.class_id
-            })) : [];
-            setClassesOption(classOptions);
-            })
-            .catch(err => console.error("Error fetching classes:", err));
+            const user = JSON.parse(storedUser);
+            setSchoolId(user.school_id);
+            // Fetch Classes for this school
+            axios.get(`${Api_url.name}api/get-classes`, { params: { school_id: user.school_id } })
+                .then(res => {
+                    const classOptions = Array.isArray(res.data.data) ? res.data.data.map(c => ({
+                        label: c.class_name,
+                        value: c.class_id
+                    })) : [];
+                    setClassesOption(classOptions);
+                })
+                .catch(err => console.error("Error fetching classes:", err));
 
-        // Fetch Teachers for this school
-        axios.get(`${Api_url.name}api/teacher`, { params: { school_id: user.school_id } })
-            .then(res => {
-            const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
-                label: t.first_name,
-                value: t.teacher_id,
-                designation: t.designation
-            })) : [];
+            // Fetch Teachers for this school
+            axios.get(`${Api_url.name}api/teacher`, { params: { school_id: user.school_id } })
+                .then(res => {
+                    const teacherOptions = Array.isArray(res.data) ? res.data.map(t => ({
+                        label: t.first_name,
+                        value: t.teacher_id,
+                        designation: t.designation
+                    })) : [];
 
-            teacherOptions.unshift({ label: "Select Teacher", value: "", designation: null });
-            setTeachersOption(teacherOptions);
-            })
-            .catch(err => console.error("Error fetching teachers:", err));
+                    teacherOptions.unshift({ label: "Select Teacher", value: "", designation: null });
+                    setTeachersOption(teacherOptions);
+                })
+                .catch(err => console.error("Error fetching teachers:", err));
         }
     }, []);
 
@@ -232,22 +236,22 @@ const SectionListing = ({ isChildView = false }) => {
                 {/* BODY */}
                 <div className="p-5 space-y-5 overflow-y-auto flex-1">
                     <CustomSelect
-                    label="Class"
-                    options={classesOption}
-                    value={classSearch}
-                    onChange={(val) => setClassSearch(val)}
+                        label="Class"
+                        options={classesOption}
+                        value={classSearch}
+                        onChange={(val) => setClassSearch(val)}
                     />
                     <CustomSelect
-                    label="Class Teacher"
-                    options={teachersOption}
-                    value={teacherSearch}
-                    onChange={(val) => setTeacherSearch(val)}
+                        label="Class Teacher"
+                        options={teachersOption}
+                        value={teacherSearch}
+                        onChange={(val) => setTeacherSearch(val)}
                     />
                     <CustomSelect
-                    label="Status"
-                    options={statusOptions}
-                    value={statusSearch}
-                    onChange={(val) => setStatusSearch(val)}
+                        label="Status"
+                        options={statusOptions}
+                        value={statusSearch}
+                        onChange={(val) => setStatusSearch(val)}
                     />
                 </div>
 
@@ -385,7 +389,6 @@ const SectionListing = ({ isChildView = false }) => {
                                         <tr key={s.section_id} className="border border-gray-200 hover:bg-gray-50">
                                             <td className="p-4 min-w-[150px] sm:min-w-[200px]">
                                                 <div className="flex items-center gap-3">
-                                                    <AvatarLetter text={s.section_name?.charAt(0) || 'S'} size={40} />
                                                     <div>
                                                         <div className="text-sm font-bold text-gray-800">{s.section_name}</div>
                                                         <div className="text-xs text-gray-500">ID: {s.section_id}</div>
@@ -398,14 +401,16 @@ const SectionListing = ({ isChildView = false }) => {
                                                 <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${s.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                                     }`}>{s.status}</span>
                                             </td>
-                                            <td className="px-6 py-4 flex justify-center items-center gap-2">
-                                                {/* CHANGED FROM /sections/ TO /section/ */}
-                                                <Link to={`/sections/${s.section_id}/edit`} className="text-amber-600"><Pencil size={16} /></Link>
-                                                <button
-                                                    onClick={() => handleOpenModal(s)}
-                                                    className="text-red-600 cursor-pointer"
-                                                ><Trash2 size={16} /></button>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex justify-center gap-3">
+                                                    <Link to={`/sections/${s.section_id}/edit`} className="text-amber-600"><Pencil size={16} /></Link>
+                                                    <button
+                                                        onClick={() => handleOpenModal(s)}
+                                                        className="text-red-600 cursor-pointer"
+                                                    ><Trash2 size={16} /></button>
+                                                </div>
                                             </td>
+
                                         </tr>
                                     ))}
 

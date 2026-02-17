@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\SectionModel;
-use Illuminate\Support\Facades\DB;
 
 class SectionController extends Controller
 {
@@ -15,18 +14,22 @@ class SectionController extends Controller
         $this->model = new SectionModel();
     }
 
-    public function index(Request $request)
-    {
+   public function index(Request $request){
+		$schoolId = $request->query('school_id');
+
 		$filter = [
-			'search' => $request->query('search'),
-			'status' => $request->query('status'),
-			'class' => $request->query('class'),
+			'search'  => $request->query('search'),
+			'status'  => $request->query('status'),
+			'class'   => $request->query('class'),
 			'teacher' => $request->query('teacher'),
 		];
-        $sections = $this->model->getAllSections($filter);
-        return response()->json($sections);
-    }
 
+		// Pass the schoolId along with the filters
+		$sections = $this->model->getAllSections($schoolId, $filter);
+		
+		return response()->json($sections);
+	}
+	
 
     public function store(Request $request)
     {
@@ -39,26 +42,16 @@ class SectionController extends Controller
 
         try {
             $this->model->create($request->all());
-
-            return response()->json([
-                'status' => 200,
-                'message' => 'Section added successfully'
-            ]);
+            return response()->json(['status' => 200, 'message' => 'Section added successfully']);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 500,
-                'message' => 'Failed to add section',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['status' => 500, 'message' => 'Failed to add section', 'error' => $e->getMessage()], 500);
         }
     }
 
     public function show($id)
     {
         try {
-            $section = DB::table('tb_sections')
-                ->where('section_id', $id)
-                ->first();
+            $section = $this->model->getById($id);
 
             if (!$section) {
                 return response()->json(['message' => 'Section not found'], 404);
@@ -80,18 +73,12 @@ class SectionController extends Controller
         ]);
 
         try {
-            $section = DB::table('tb_sections')->where('section_id', $id)->first();
-            
+            $section = $this->model->getById($id);
             if (!$section) {
                 return response()->json(['message' => 'Section not found'], 404);
             }
 
-            DB::table('tb_sections')->where('section_id', $id)->update([
-                'class_id'         => $request->class_id,
-                'section_name'     => $request->section_name,
-                'class_teacher_id' => $request->class_teacher_id,
-                'status'           => $request->status,
-            ]);
+            $this->model->updateSection($id, $request->all());
 
             return response()->json(['status' => 200, 'message' => 'Section updated successfully']);
         } catch (\Exception $e) {
@@ -102,13 +89,12 @@ class SectionController extends Controller
     public function destroy($id)
     {
         try {
-            $section = DB::table('tb_sections')->where('section_id', $id)->first();
-            
+            $section = $this->model->getById($id);
             if (!$section) {
                 return response()->json(['message' => 'Section not found'], 404);
             }
 
-            DB::table('tb_sections')->where('section_id', $id)->delete();
+            $this->model->deleteSection($id);
 
             return response()->json(['status' => 200, 'message' => 'Section deleted']);
         } catch (\Exception $e) {

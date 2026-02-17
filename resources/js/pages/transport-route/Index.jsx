@@ -54,8 +54,15 @@ const TransportRouteIndex = () => {
         try {
             setLoading(true);
             setError(null);
+            const user = JSON.parse(localStorage.getItem("user"));
+            let schoolId = user?.school_id;
+            if (!schoolId || schoolId === 0) schoolId = 1;
 
-            const res = await api.get("/api/transport-routes");
+            const res = await api.get('/api/transport-routes', {
+                params: {
+                    schoolId: schoolId
+                }
+            });
 
             if (res.data?.success) {
                 const data = res.data.data || [];

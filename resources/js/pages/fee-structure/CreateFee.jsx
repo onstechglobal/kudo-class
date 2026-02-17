@@ -30,11 +30,11 @@ const CreateFee = () => {
     });
 
     const feeTypeOptions = [
+        { label: "Admission Fee", value: "admission" },
         { label: "Academic Fee", value: "academic" },
         { label: "Exam Fee", value: "exam" },
         { label: "Sports Fee", value: "sports" },
         { label: "Library Fee", value: "library" },
-        { label: "Other", value: "other" },
     ];
 
     const frequencyOptions = [
@@ -70,9 +70,12 @@ const CreateFee = () => {
                         }));
                     }
                 }
-
+                
+                const user = JSON.parse(localStorage.getItem("user"));
+                let schoolId = user?.school_id;
+                if (!schoolId || schoolId === 0) schoolId = 1;
                 const classesResponse = await api.get("/api/get-classes", {
-                    params: { school_id: 44 }
+                    params: { school_id: schoolId }
                 });
                 if (classesResponse.data?.data) {
                     const formattedClasses = classesResponse.data.data.map(cls => ({
@@ -121,8 +124,13 @@ const CreateFee = () => {
             if (!formData.class_ids.length) {
                 throw new Error("Please select at least one class");
             }
+            
+            const user = JSON.parse(localStorage.getItem("user"));
+            let schoolId = user?.school_id;
+            if (!schoolId || schoolId === 0) schoolId = 1;
 
             const payload = {
+                school_id: schoolId,
                 fee_name: formData.fee_name,
                 fee_type: formData.fee_type,
                 amount: parseFloat(formData.amount),

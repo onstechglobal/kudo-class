@@ -4,22 +4,60 @@ export const SIDEBAR_MENU = {
         { type: 'link', title: 'Dashboard', path: '/dashboard' },
         { type: 'link', title: 'School', path: '/school', permission: 'School' },
         { type: 'link', title: 'Academic Year', path: '/academic-year', permission: 'Academic Year' },
-        { type: 'link', title: 'Teachers', path: '/teachers', permission: 'Teachers' },
-        { type: 'link', title: 'Staff', path: '/staff', permission: 'Staff' },
-        { type: 'link', title: 'Parents', path: '/parents', permission: 'Parents' },
-        { type: 'link', title: 'Students', path: '/students', permission: 'Students' },
-        { type: 'link', title: 'Fee Structure', path: '/fee-structure', permission: 'Fee Structure' },
+        { type: 'link', title: 'New Admission', path: '/new-admission' },
+
         {
-            type: 'dropdown',
-            title: 'Academics',
-            key: 'academics_dev',
+            type: 'dropdown', title: 'Management', key: 'management',
             items: [
-                { title: 'Classes', path: '/classes', permission: 'Classes' },
-                { title: 'Sections', path: '/sections', permission: 'Sections' },
+                { title: 'Families', path: '/families' },
+                { title: 'Parents / Guardians', path: '/parents', permission: 'Parents' },
+                { title: 'Students', path: '/students', permission: 'Students' },
+
             ]
         },
-       // { type: 'link', title: 'Attendance', path: '/attendance', permission: 'Attendance' },
-        { type: 'link', title: 'Payment', path: '/payment', permission: 'Payment' },
+        {
+            type: 'dropdown', title: 'Academics', key: 'academics',
+            items: [
+                { title: 'Teachers', path: '/teachers', permission: 'Teachers' },
+                { title: 'Classes & Sections', path: '/classes' },
+                //{ title: 'Attendance', path: '/attendance', permission: 'Attendance' },
+                { title: 'Examinations', path: '/examinations' },
+            ]
+        },
+        {
+            type: 'dropdown', title: 'Fees & Finance', key: 'finance',
+            items: [
+                { title: 'Fee Structures', path: '/fee-structure', permission: 'Fee Structure' },
+                { title: 'Student Fees', path: '/student-fees' },
+                { title: 'Payments', path: '/payment', permission: 'Payment' },
+                { title: 'Discounts & Penalties', path: '/student-discount' },
+                { title: 'Transport', path: '/transport' },
+            ]
+        },
+        {
+            type: 'dropdown', title: 'Communication', key: 'communication',
+            items: [
+                { title: 'Notifications', path: '/notifications' },
+                { title: 'Messages', path: '/messages' },
+            ]
+        },
+        {
+            type: 'dropdown', title: 'Reports', key: 'reports',
+            items: [
+                { title: 'Reports', path: '/reports' },
+            ]
+        },
+        {
+            type: 'dropdown', title: 'Settings', key: 'settings',
+            items: [
+               
+                { title: 'Fee Policies', path: '/fee-policies' },
+                { title: 'Discount Rules', path: '/discounts' },
+                { title: 'Penalty Rules', path: '/penalty-rules' },
+                { title: 'Users & Roles', path: '/users' },
+                { title: 'Audit Logs', path: '/audit-logs' },
+            ]
+        },
         {
             type: 'dropdown',
             title: 'Access Control',
@@ -36,11 +74,11 @@ export const SIDEBAR_MENU = {
     // 2: SCHOOL ADMIN (Role 2 - Full Management Access)
     2: [
 
-        { type: 'link', title: 'DASHBOARD', path: '/dashboard' },
-        { type: 'link', title: 'NEW ADMISSION', path: '/new-admission' },
+        { type: 'link', title: 'Dashboard', path: '/dashboard' },
+        { type: 'link', title: 'New Admission', path: '/new-admission' },
 
         {
-            type: 'dropdown', title: 'MANAGEMENT', key: 'management',
+            type: 'dropdown', title: 'Management', key: 'management',
             items: [
                 { title: 'Families', path: '/families' },
                 { title: 'Parents / Guardians', path: '/parents', permission: 'Parents' },
@@ -49,7 +87,7 @@ export const SIDEBAR_MENU = {
             ]
         },
         {
-            type: 'dropdown', title: 'ACADEMICS', key: 'academics',
+            type: 'dropdown', title: 'Academics', key: 'academics',
             items: [
                 { title: 'Teachers', path: '/teachers', permission: 'Teachers' },
                 { title: 'Classes & Sections', path: '/classes' },
@@ -58,37 +96,36 @@ export const SIDEBAR_MENU = {
             ]
         },
         {
-            type: 'dropdown', title: 'FEES & FINANCE', key: 'finance',
+            type: 'dropdown', title: 'Fees & Finance', key: 'finance',
             items: [
                 { title: 'Fee Structures', path: '/fee-structure', permission: 'Fee Structure' },
                 { title: 'Student Fees', path: '/student-fees' },
                 { title: 'Payments', path: '/payment', permission: 'Payment' },
-                { title: 'Discounts & Penalties', path: '/discounts' },
+                { title: 'Discounts & Penalties', path: '/student-discount' },
                 { title: 'Transport', path: '/transport' },
             ]
         },
         {
-            type: 'dropdown', title: 'COMMUNICATION', key: 'communication',
+            type: 'dropdown', title: 'Communication', key: 'communication',
             items: [
                 { title: 'Notifications', path: '/notifications' },
                 { title: 'Messages', path: '/messages' },
             ]
         },
         {
-            type: 'dropdown', title: 'REPORTS', key: 'reports',
+            type: 'dropdown', title: 'Reports', key: 'reports',
             items: [
                 { title: 'Reports', path: '/reports' },
             ]
         },
         {
-            type: 'dropdown', title: 'SETTINGS', key: 'settings',
+            type: 'dropdown', title: 'Settings', key: 'settings',
             items: [
-                { title: 'Academic Years', path: '/academic-year' },
-                { title: 'Fee Policies', path: '/admin/fee-policies' },
-                { title: 'Discount Rules', path: '/admin/discount-rules' },
-                { title: 'Penalty Rules', path: '/admin/penalty-rules' },
-                { title: 'Users & Roles', path: '/admin/users' },
-                { title: 'Audit Logs', path: '/admin/audit-logs' },
+                { title: 'Fee Policies', path: '/fee-policies' },
+                { title: 'Discount Rules', path: '/discounts' },
+                { title: 'Penalty Rules', path: '/penalty-rules' },
+                { title: 'Users & Roles', path: '/school/users' },
+                { title: 'Audit Logs', path: '/audit-logs' },
             ]
         }
     ],
@@ -98,7 +135,7 @@ export const SIDEBAR_MENU = {
     3: [
         {
             type: 'dropdown',
-            title: 'CORE',
+            title: 'Core',
             key: 'core_teacher',
             items: [
                 { title: 'Dashboard', path: '/dashboard' },
@@ -106,7 +143,7 @@ export const SIDEBAR_MENU = {
         },
         {
             type: 'dropdown',
-            title: 'ACADEMICS',
+            title: 'Academics',
             key: 'academics_teacher',
             items: [
                 { title: 'My Classes', path: '/teacher/classes' },
@@ -117,7 +154,7 @@ export const SIDEBAR_MENU = {
         },
         {
             type: 'dropdown',
-            title: 'COMMUNICATION',
+            title: 'Communication',
             key: 'comm_teacher',
             items: [
                 { title: 'Messages', path: '/messages' },
@@ -126,7 +163,7 @@ export const SIDEBAR_MENU = {
         },
         {
             type: 'dropdown',
-            title: 'PROFILE',
+            title: 'Profile',
             key: 'profile_teacher',
             items: [
                 { title: 'My Profile', path: '/profile' },
@@ -139,7 +176,7 @@ export const SIDEBAR_MENU = {
     4: [
         {
             type: 'dropdown',
-            title: 'CORE',
+            title: 'Core',
             key: 'core_parent',
             items: [
                 { title: 'Dashboard', path: '/dashboard' },
@@ -148,17 +185,17 @@ export const SIDEBAR_MENU = {
         },
         {
             type: 'dropdown',
-            title: 'FEES & FINANCE',
+            title: 'Fees & Finance',
             key: 'finance_parent',
             items: [
-                { title: 'Fees', path: '/parent/fees' },
-                { title: 'Payments', path: '/parent/payments' },
+                { title: 'Fees', path: '/student-fees' },
+                { title: 'Payments', path: '/payment' },
                 { title: 'Receipts', path: '/parent/receipts' },
             ]
         },
         {
             type: 'dropdown',
-            title: 'ADMISSIONS',
+            title: 'Admissions',
             key: 'admissions_parent',
             items: [
                 { title: 'Admission Requests', path: '/parent/admission-requests' },
@@ -166,7 +203,7 @@ export const SIDEBAR_MENU = {
         },
         {
             type: 'dropdown',
-            title: 'COMMUNICATION',
+            title: 'Communication',
             key: 'comm_parent',
             items: [
                 { title: 'Notifications', path: '/notifications' },
@@ -175,7 +212,7 @@ export const SIDEBAR_MENU = {
         },
         {
             type: 'dropdown',
-            title: 'PROFILE',
+            title: 'profile',
             key: 'profile_parent',
             items: [
                 { title: 'My Profile', path: '/profile' },

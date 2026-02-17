@@ -87,15 +87,33 @@ class StudentModel
 	
 	
 	public function fetchStudents($params) {
-        $query = DB::table('tb_students as s')
-            ->leftJoin('tb_parents as p', 's.family_id', '=', 'p.family_id')
-            ->select(
-                's.*',
-                'p.first_name as parent_first',
-                'p.last_name as parent_last',
-                'p.mobile as parent_mobile'
-            );
-
+        // $query = DB::table('tb_students as s')
+        //     ->leftJoin('tb_parents as p', 's.family_id', '=', 'p.family_id')
+        //     ->select(
+        //         's.*',
+        //         'p.first_name as parent_first',
+        //         'p.last_name as parent_last',
+        //         'p.mobile as parent_mobile'
+        //     );
+ 
+        $query =    DB::table('tb_students as s')
+                ->leftJoin(DB::raw('(
+                    SELECT p1.*
+                    FROM tb_parents p1
+                    INNER JOIN (
+                        SELECT family_id, MIN(parent_id) as min_parent_id
+                        FROM tb_parents
+                        GROUP BY family_id
+                    ) p2
+                    ON p1.parent_id = p2.min_parent_id
+                ) as p'), 's.family_id', '=', 'p.family_id')
+                ->select(
+                    's.*',
+                    'p.first_name as parent_first',
+                    'p.last_name as parent_last',
+                    'p.mobile as parent_mobile'
+                );
+ 
         // Filter by Search Query (Student Name, Admission No, Parent Name, or City)
         if (!empty($params['search'])) {
             $search = $params['search'];
@@ -108,12 +126,12 @@ class StudentModel
                   ->orWhere('p.last_name', 'LIKE', "%$search%");
             });
         }
-
+ 
         // Filter by Status
         if (!empty($params['status'])) {
             $query->where('s.status', $params['status']);
         }
-
+ 
         // Return paginated results, ordered by most recent admission
         return $query->orderBy('s.student_id', 'desc')->paginate(10);
     }

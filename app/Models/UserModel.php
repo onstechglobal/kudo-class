@@ -349,5 +349,35 @@ class UserModel{
 			];
 		}
 	}
+	
+	
+	public function getUsersBySchool(int $schoolId, $filters = []) {
+        return DB::table($this->table . ' as u')
+            ->leftJoin('tb_roles as r', 'r.role_id', '=', 'u.role_id')
+            ->select(
+                'u.user_id',
+                'u.name',
+                'u.username',
+                'u.email',
+                'u.mobile',
+                'u.role_id',
+                'r.role_name',
+                'u.status'
+            )
+            ->where('u.school_id', $schoolId) // Filter by school
+            ->where('u.role_id', '!=', 1)    // Exclude admin
+            ->when(!empty($filters['search']), function ($query) use ($filters) {
+                $query->where(function($q) use ($filters) {
+                    $q->where('u.username', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('u.name', 'like', '%' . $filters['search'] . '%')
+                    ->orWhere('u.email', 'like', '%' . $filters['search'] . '%');
+                });
+            })
+            ->when(!empty($filters['status']), function ($query) use ($filters) {
+                $query->where('u.status', $filters['status']);
+            })
+            ->orderBy('u.user_id', 'desc')
+            ->get();
+    }
 
 }

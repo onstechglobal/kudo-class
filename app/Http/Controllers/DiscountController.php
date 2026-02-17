@@ -10,8 +10,17 @@ class DiscountController extends Controller{
     /**
      * List discounts
      */
-    public function index(){
-        $discounts = DiscountModel::getAllDiscounts();
+    public function index(Request $request){
+        $school_id = $request->query('schoolId');
+
+        if (!$school_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'School ID is required'
+            ], 400);
+        }
+
+        $discounts = DiscountModel::getAllDiscounts($school_id);
 
         return response()->json([
             'success' => true,
@@ -19,11 +28,13 @@ class DiscountController extends Controller{
         ]);
     }
 
+
     /**
      * Store discount
      */
     public function store(Request $request){
         $validator = Validator::make($request->all(), [
+            'school_id' => 'required|integer',
             'parent_type' => 'required|string|max:50',
             'discount_type' => 'required|in:percentage,flat',
             'discount_value' => 'required|numeric|min:0',
@@ -39,6 +50,7 @@ class DiscountController extends Controller{
         }
 
         if (DiscountModel::existsByParentAndFee(
+            $request->school_id,
             $request->parent_type,
             $request->applies_to_fee_type
         )) {
@@ -49,6 +61,7 @@ class DiscountController extends Controller{
         }
 
         $discount = DiscountModel::createDiscount($request->only([
+            'school_id',
             'parent_type',
             'discount_type',
             'discount_value',
@@ -62,6 +75,7 @@ class DiscountController extends Controller{
             'message' => 'Discount created successfully'
         ]);
     }
+
 
     /**
      * Show single discount
@@ -155,4 +169,5 @@ class DiscountController extends Controller{
             'message' => 'Discount deleted successfully'
         ]);
     }
+
 }

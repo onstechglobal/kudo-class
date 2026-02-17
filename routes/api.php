@@ -15,14 +15,18 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SectionController;
-use App\Http\Controllers\RazorpayController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\FeeStructureController;
 use App\Http\Controllers\TransportRouteController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\AdmissionController;
-
+use App\Http\Controllers\StudentFeeController;
+use App\Http\Controllers\PenaltyRuleController;
+use App\Http\Controllers\FeesPolicyController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\FamilyController;
 
 
 Route::post('/schoolverify', [SchoolController::class, 'schoolverify']);
@@ -62,6 +66,12 @@ Route::middleware('auth.check')->group(function () {
 
 
 	Route::post('/admissions', [AdmissionController::class, 'store']);
+	Route::get('/get-fee-policies', [AdmissionController::class, 'getFeePolicies']);
+	Route::get('/get-class-fees', [AdmissionController::class, 'getClassFees']);
+	
+	
+	Route::get('/get-families', [FamilyController::class, 'index']);
+	
 	
 	
 	Route::get('/attendance/students', [AttendanceController::class, 'students']);
@@ -118,6 +128,9 @@ Route::middleware('auth.check')->group(function () {
 	Route::get('/users/{id}', [UserController::class, 'show']);
 	Route::put('/users/{id}', [UserController::class, 'update']);
 	Route::delete('/users/{id}', [UserController::class, 'destroy']);
+	
+	Route::get('/school/users', [UserController::class, 'schoolUsers']);
+	
 
 	Route::get('/roles', [RoleController::class, 'index']);
 	Route::post('/roles', [RoleController::class, 'store']);
@@ -131,8 +144,11 @@ Route::middleware('auth.check')->group(function () {
 	Route::put('/permissions/{id}', [PermissionController::class,'update']);
 	Route::delete('/permissions/{id}', [PermissionController::class,'destroy']);
 
-	Route::post('/razorpay/create-order', [RazorpayController::class, 'createOrder']);
-	Route::post('/razorpay/verify-payment', [RazorpayController::class, 'verifyPayment']);
+	Route::prefix('payments')->group(function () {
+		Route::get('/student/{studentId}', [PaymentController::class, 'getStudentData']);
+		Route::post('/create-order', [PaymentController::class, 'createOrder']);
+		Route::post('/verify', [PaymentController::class, 'verifyPayment']);
+	});
 	
 	Route::get('/discounts', [DiscountController::class, 'index']);
     Route::post('/discounts', [DiscountController::class, 'store']);
@@ -159,6 +175,28 @@ Route::middleware('auth.check')->group(function () {
     Route::get('/transport-routes/{id}', [TransportRouteController::class, 'show']);
     Route::put('/transport-routes/{id}', [TransportRouteController::class, 'update']);
     Route::delete('/transport-routes/{id}', [TransportRouteController::class, 'destroy']);
+	
+	
+	Route::prefix('penalty-rules')->group(function () {
+ 
+        Route::get('/', [PenaltyRuleController::class, 'index']);
+        Route::post('/', [PenaltyRuleController::class, 'store']);
+        Route::get('/{id}', [PenaltyRuleController::class, 'show']);
+        Route::put('/{id}', [PenaltyRuleController::class, 'update']);
+        Route::delete('/{id}', [PenaltyRuleController::class, 'destroy']);
+ 
+    });
+	
+	
+	Route::get('/fees-policy', [FeesPolicyController::class, 'index']);
+    Route::post('/fees-policy', [FeesPolicyController::class, 'store']);
+    Route::get('/fees-policy/{id}', [FeesPolicyController::class, 'show']);
+    Route::put('/fees-policy/{id}', [FeesPolicyController::class, 'update']);
+    Route::delete('/fees-policy/{id}', [FeesPolicyController::class, 'destroy']);
+ 
+	Route::get('/student-fees', [StudentFeeController::class, 'index']);
+
+	Route::get('/invoice/{id}', [InvoiceController::class, 'download']);
 
 });
 

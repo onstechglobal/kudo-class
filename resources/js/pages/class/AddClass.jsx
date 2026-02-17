@@ -17,8 +17,8 @@ const AddClass = () => {
   const [formData, setFormData] = useState({
     school_id: '',
     class_name: '',
-    numeric_value: '', 
-    department: 'General',
+    //numeric_value: '', 
+    //department: 'General',
     class_order: '1',
     status: 'active'
   });
@@ -125,7 +125,7 @@ const AddClass = () => {
                   />
 
                   {/* NUMERIC VALUE */}
-                  <Input
+                  {/* <Input
                     label="Numeric Value"
                     name="numeric_value"
                     type="number"
@@ -134,16 +134,16 @@ const AddClass = () => {
                     onChange={handleChange}
                     error={errors.numeric_value}
                     info="Used for sorting"
-                  />
+                  />  */}
 
                   {/* DEPARTMENT */}
-                  <CustomSelect
+                  {/* <CustomSelect
                     label="Department/Category"
                     options={departmentOptions}
                     value={formData.department}
                     onChange={(val) => handleSelectChange('department', val)}
                     error={errors.department}
-                  />
+                  /> */}
 
                   {/* STATUS */}
                   <CustomSelect

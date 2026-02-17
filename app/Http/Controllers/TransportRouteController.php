@@ -8,26 +8,26 @@ use Illuminate\Support\Facades\Validator;
 
 class TransportRouteController extends Controller
 {
+    // =========================================
+    // GET ALL ROUTES
+    // =========================================
     public function index(Request $request)
     {
         try {
-            $query = TransportRouteModel::query();
+            $school_id = $request->query('schoolId');
 
-            // Search filter
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('route_name', 'like', "%{$search}%")
-                      ->orWhere('driver_name', 'like', "%{$search}%");
-                });
+            if (!$school_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'School ID is required'
+                ], 400);
             }
 
-            // Status filter
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
-
-            $routes = $query->orderBy('created_at', 'desc')->get();
+            $routes = TransportRouteModel::getRoutes(
+                $school_id,
+                $request->search,
+                $request->status
+            );
 
             return response()->json([
                 'success' => true,
@@ -44,138 +44,115 @@ class TransportRouteController extends Controller
         }
     }
 
+    // =========================================
+    // STORE
+    // =========================================
     public function store(Request $request)
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'route_name'    => 'required|string|max:150',
-                'monthly_fee'  => 'required|numeric|min:0',
-                'academic_year'=> 'required|string|max:20',
-                'driver_name'  => 'nullable|string|max:100',
-                'status'       => 'required|in:active,inactive',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'school_id'    => 'required|integer',
+            'route_name'   => 'required|string|max:150',
+            'monthly_fee'  => 'required|numeric|min:0',
+            'academic_year'=> 'required|string|max:20',
+            'driver_name'  => 'nullable|string|max:100',
+            'status'       => 'required|in:active,inactive',
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation error',
-                    'errors'  => $validator->errors()
-                ], 422);
-            }
-
-            $route = TransportRouteModel::create($request->all());
-
-            return response()->json([
-                'success' => true,
-                'data' => $route,
-                'message' => 'Transport route created successfully'
-            ]);
-
-        } catch (\Exception $e) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create transport route',
-                'error' => $e->getMessage()
-            ], 500);
+                'errors'  => $validator->errors()
+            ], 422);
         }
+
+        $route = TransportRouteModel::createRoute($request->all());
+
+        return response()->json([
+            'success' => true,
+            'data' => $route,
+            'message' => 'Transport route created successfully'
+        ]);
     }
 
-    public function show($id)
+    // =========================================
+    // SHOW
+    // =========================================
+    public function show(Request $request, $id)
     {
-        try {
-            $route = TransportRouteModel::find($id);
+        $school_id = $request->query('schoolId');
 
-            if (!$route) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transport route not found'
-                ], 404);
-            }
+        $route = TransportRouteModel::getRouteById($id);
 
-            return response()->json([
-                'success' => true,
-                'data' => $route,
-                'message' => 'Transport route fetched successfully'
-            ]);
-
-        } catch (\Exception $e) {
+        if (!$route) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch transport route',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Transport route not found'
+            ], 404);
         }
+
+        return response()->json([
+            'success' => true,
+            'data' => $route
+        ]);
     }
 
+    // =========================================
+    // UPDATE
+    // =========================================
     public function update(Request $request, $id)
     {
-        try {
-            $route = TransportRouteModel::find($id);
+        $validator = Validator::make($request->all(), [
+            'route_name'   => 'sometimes|required|string|max:150',
+            'monthly_fee'  => 'sometimes|required|numeric|min:0',
+            'academic_year'=> 'sometimes|required|string|max:20',
+            'driver_name'  => 'nullable|string|max:100',
+            'status'       => 'sometimes|required|in:active,inactive',
+        ]);
 
-            if (!$route) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transport route not found'
-                ], 404);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'route_name'   => 'sometimes|required|string|max:150',
-                'monthly_fee' => 'sometimes|required|numeric|min:0',
-                'driver_name' => 'nullable|string|max:100',
-                'status'      => 'sometimes|required|in:active,inactive',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation error',
-                    'errors'  => $validator->errors()
-                ], 422);
-            }
-
-            $route->update($request->all());
-
-            return response()->json([
-                'success' => true,
-                'data' => $route,
-                'message' => 'Transport route updated successfully'
-            ]);
-
-        } catch (\Exception $e) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update transport route',
-                'error' => $e->getMessage()
-            ], 500);
+                'errors'  => $validator->errors()
+            ], 422);
         }
+
+        $route = TransportRouteModel::updateRoute(
+            $id,
+            $request->all()
+        );
+
+        if (!$route) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transport route not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $route,
+            'message' => 'Transport route updated successfully'
+        ]);
     }
 
-    public function destroy($id)
+    // =========================================
+    // DELETE
+    // =========================================
+    public function destroy(Request $request, $id)
     {
-        try {
-            $route = TransportRouteModel::find($id);
 
-            if (!$route) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transport route not found'
-                ], 404);
-            }
+        $deleted = TransportRouteModel::deleteRoute($id);
 
-            $route->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transport route deleted successfully'
-            ]);
-
-        } catch (\Exception $e) {
+        if (!$deleted) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete transport route',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Transport route not found'
+            ], 404);
         }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transport route deleted successfully'
+        ]);
     }
 }

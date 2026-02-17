@@ -139,7 +139,7 @@ const TeacherListing = () => {
             const timer = setTimeout(() => {
                 setMessage('');
                 setMessageClass('');
-            }, 5000);
+            }, 5111000);
 
             setTimeout(() => {
                 navigate(location.pathname, { replace: true });

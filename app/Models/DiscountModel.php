@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class DiscountModel extends Model{
+class DiscountModel extends Model
+{
     protected $table = 'tb_discounts';
     protected $primaryKey = 'discount_id';
+    public $timestamps = true;
 
     protected $fillable = [
+        'school_id',
         'parent_type',
         'discount_type',
         'discount_value',
@@ -24,26 +27,33 @@ class DiscountModel extends Model{
        MODEL QUERY METHODS
     ========================== */
 
-    // Get all discounts
-    public static function getAllDiscounts(){
-        return self::orderBy('created_at', 'desc')->get();
+    // Get all discounts (school wise)
+    public static function getAllDiscounts($school_id)
+    {
+        return self::where('school_id', $school_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     // Create discount
-    public static function createDiscount(array $data){
+    public static function createDiscount(array $data)
+    {
         return self::create($data);
     }
 
     // Get discount by ID
-    public static function getDiscountById($id){
-        return self::where('discount_id', $id)->first();
+    public static function getDiscountById($id)
+    {
+        return self::find($id);
     }
 
-    public static function existsByParentAndFee($parentType, $feeType, $excludeId = null){
-        $query = self::where('parent_type', $parentType)
+    // Check duplicate (school wise)
+    public static function existsByParentAndFee($school_id, $parentType, $feeType, $excludeId = null)
+    {
+        $query = self::where('school_id', $school_id)
+            ->where('parent_type', $parentType)
             ->where('applies_to_fee_type', $feeType);
 
-        // used during update (ignore current record)
         if ($excludeId) {
             $query->where('discount_id', '!=', $excludeId);
         }
@@ -52,13 +62,14 @@ class DiscountModel extends Model{
     }
 
     // Update discount
-    public function updateDiscount(array $data){
+    public function updateDiscount(array $data)
+    {
         return $this->update($data);
     }
 
     // Delete discount
-    public function deleteDiscount(){
+    public function deleteDiscount()
+    {
         return $this->delete();
     }
-    
 }

@@ -136,4 +136,26 @@ class UserController extends Controller
 		$user = $this->model->Updatepassword($request->all(), $id);
 		return response()->json($user);	
 	}
+	
+	
+	public function schoolUsers(Request $request){
+        // Get schoolId and make sure it's an integer
+        $schoolId = $request->query('schoolId');
+ 
+        if (is_array($schoolId)) {
+            $schoolId = (int) ($schoolId[0] ?? 1); // take the first one if array
+        } else {
+            $schoolId = (int) ($schoolId ?? 1); // default to 1 if null
+        }
+ 
+        $filters = [
+            'search' => $request->query('search'),
+            'status' => $request->query('status'),
+        ];
+ 
+        return response()->json(
+            $this->model->getUsersBySchool($schoolId, $filters)
+        );
+    }
+	
 }

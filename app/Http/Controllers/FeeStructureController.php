@@ -13,10 +13,12 @@ class FeeStructureController extends Controller
     /**
      * Display a listing of fees (NON-TRANSPORT ONLY)
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
+            $school_id = $request->schoolId;
             $feeStructures = FeeStructureModel::with(['classes'])
+                ->where('school_id', $school_id)
                 ->where('fee_type', '!=', 'transport')
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -24,7 +26,7 @@ class FeeStructureController extends Controller
             $academicYearsData = DB::table('tb_academic_years')->get();
 
             $classModel = new ClassModel();
-            $school_id = '44';
+            
             $allClasses = $classModel->getAllClasses($school_id);
 
             $formattedData = $feeStructures->map(function ($fee) use ($academicYearsData, $allClasses) {
@@ -52,6 +54,8 @@ class FeeStructureController extends Controller
                     }
                 }
 
+               $classNamesString = implode(', ', $classNames);
+
                 return [
                     'fee_id' => $fee->fee_id,
                     'fee_name' => $fee->fee_name,
@@ -59,6 +63,7 @@ class FeeStructureController extends Controller
                     'fee_type' => $fee->fee_type,
                     'frequency' => $fee->frequency,
                     'status' => $fee->status,
+                    'classNamesString' => $classNamesString,
                     'classes' => $classNames,
                     'class_ids' => $classIds,
                     'academic_year' => $academicYearName,
@@ -123,7 +128,7 @@ class FeeStructureController extends Controller
             }
 
             $feeStructure = FeeStructureModel::create([
-                'school_id' => $academicYear->school_id ?? 1,
+                'school_id' => $request->school_id ?? 1,
                 'academic_year_id' => $request->academic_year_id,
                 'fee_name' => $request->fee_name,
                 'amount' => $request->amount,

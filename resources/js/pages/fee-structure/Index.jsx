@@ -44,7 +44,15 @@ const Index = () => {
             setLoading(true);
             setError(null);
             
-            const response = await api.get('/api/fee-structures');
+            const user = JSON.parse(localStorage.getItem("user"));
+            let schoolId = user?.school_id;
+            if (!schoolId || schoolId === 0) schoolId = 1;
+
+           const response = await api.get('/api/fee-structures', {
+                params: {
+                    schoolId: schoolId
+                }
+            });
             
             if (response.data.success && response.data.data) {
                 const data = response.data.data;
@@ -258,6 +266,7 @@ const Index = () => {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
                                     <th className="px-6 py-4">Fee Name</th>
+                                    <th className="px-6 py-4">Class Name</th>
                                     <th className="px-6 py-4">Fee Type</th>
                                     <th className="px-6 py-4">Frequency</th>
                                     <th className="px-6 py-4">Amount</th>
@@ -291,6 +300,11 @@ const Index = () => {
                                                         {item.academic_year}
                                                     </div>
                                                 )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="text-xs font-medium text-gray-600">
+                                                    {item.classNamesString}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -345,7 +359,7 @@ const Index = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                                             <p className="text-lg font-semibold">No data found</p>
                                         </td>
                                     </tr>

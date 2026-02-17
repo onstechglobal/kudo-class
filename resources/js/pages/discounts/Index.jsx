@@ -44,8 +44,13 @@ const Index = () => {
 
     const fetchDiscounts = (page) => {
         setLoading(true);
+        const user = JSON.parse(localStorage.getItem("user"));
+        let schoolId = user?.school_id;
+        if (!schoolId || schoolId === 0) schoolId = 1;
+
         axios.get(`${Api_url.name}api/discounts`, {
             params: {
+                schoolId: schoolId,
                 page,
                 search: appliedSearch,
                 status: statusFilter,

@@ -98,9 +98,16 @@ const AddDiscount = () => {
         { withCredentials: true }
       );
 
+      const user = JSON.parse(localStorage.getItem("user"));
+      let schoolId = user?.school_id;
+      if (!schoolId || schoolId === 0) schoolId = 1;
+
       const response = await axios.post(
         `${Api_url.name}api/discounts`,
-        formData,
+        {
+          ...formData,
+          school_id: schoolId
+        },
         {
           headers: { 'X-CSRF-TOKEN': tokenData.token },
           withCredentials: true

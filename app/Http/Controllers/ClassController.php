@@ -19,7 +19,6 @@ class ClassController extends Controller
 		$validator = Validator::make($request->all(), [
 			'school_id'     => 'required',
 			'class_name'    => 'required|string|max:255',
-			'numeric_value' => 'required|numeric', 
 			'status'        => 'required|in:active,inactive'
 		]);
 
@@ -88,7 +87,7 @@ class ClassController extends Controller
         $validator = Validator::make($request->all(), [
             'class_id'    => 'required',
             'class_name'  => 'required|string|max:255',
-            'class_order' => 'required|numeric',
+            //'class_order' => 'required|numeric',
             'status'      => 'required|in:active,inactive'
         ]);
 

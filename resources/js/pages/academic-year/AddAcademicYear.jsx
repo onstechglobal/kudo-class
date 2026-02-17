@@ -29,7 +29,6 @@ const AddAcademicYear = () => {
 
   const [formData, setFormData] = useState({
     school_id: '',
-    year_name: '',
     start_date: '',
     end_date: '',
     status: 'active'
@@ -63,8 +62,7 @@ const AddAcademicYear = () => {
     let newErrors = {};
 
     if (!formData.school_id) newErrors.school_id = 'School is required';
-    if (!formData.year_name.trim())
-      newErrors.year_name = 'Academic year name is required';
+    
     if (!formData.start_date)
       newErrors.start_date = 'Start date is required';
     if (!formData.end_date)
@@ -211,7 +209,7 @@ const AddAcademicYear = () => {
                   <section>
                     <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
                       <School className="text-blue-600" size={24} />
-                      Basic Information
+                      Academic Years Details
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -231,14 +229,6 @@ const AddAcademicYear = () => {
                         onChange={(val) => handleSelectChange('status', val)}
                       />
 
-                      <Input
-                        label="Academic Year Name"
-                        name="year_name"
-                        placeholder="2026-27"
-                        value={formData.year_name}
-                        onChange={handleChange}
-                        error={errors.year_name}
-                      />
                     </div>
                   </section>
 

@@ -37,7 +37,8 @@ const ClassListing = () => {
         try {
             // 1. Get the school_id from localStorage
             const storedUser = JSON.parse(localStorage.getItem("user"));
-            const schoolId = storedUser?.school_id;
+            let schoolId = storedUser?.school_id;
+            if (!schoolId || schoolId === 0) schoolId = 1;
 
             // 2. Pass it as a query parameter
             const response = await axios.get(`${Api_url.name}api/get-classes`, {
@@ -251,7 +252,6 @@ const ClassListing = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs uppercase font-bold">
                                     <tr>
-                                        <th className="px-6 py-4">School</th>
                                         <th className="px-6 py-4">Class Name</th>
                                         <th className="px-6 py-4">Status</th>
                                         <th className="px-6 py-4 text-center">Actions</th>
@@ -274,13 +274,7 @@ const ClassListing = () => {
                                     )}
                                     {!loading && classes.length !== 0 && filteredData.map(item => (
                                         <tr key={item.class_id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <AvatarLetter text={item.school_name} size={35} />
-                                                    <span className="text-sm font-semibold text-gray-700">{item.school_name}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-gray-900">
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-800">
                                                 {item.class_name}
                                             </td>
                                             <td className="px-6 py-4">

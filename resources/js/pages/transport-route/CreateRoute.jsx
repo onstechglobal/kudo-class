@@ -54,8 +54,13 @@ const CreateTransport = () => {
         setError("");
 
         try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            let schoolId = user?.school_id;
+            if (!schoolId || schoolId === 0) schoolId = 1;
+
             await api.post("/api/transport-routes", {
                 ...formData,
+                school_id: schoolId,
                 monthly_fee: parseFloat(formData.monthly_fee),
             });
 

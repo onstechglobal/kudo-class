@@ -73,6 +73,19 @@ import TransportRouteIndex from "./pages/transport-route/Index";
 import CreateRoute from "./pages/transport-route/CreateRoute";
 import EditRoute from "./pages/transport-route/EditRoute";
 
+import ActiveDiscounts from './pages/fee-discount/Index';
+import StudentFees from "./pages/student-fees/StudentFees";
+
+import PenaltyRules from "./pages/penalty-rules/PenaltyRules";
+import CreatePenaltyRule from "./pages/penalty-rules/CreatePenalty";
+import EditPenaltyRule from "./pages/penalty-rules/EditPenalty";
+
+import FeePolicies from './pages/fees-policy/Index';
+import CreatePolicy from "./pages/fees-policy/CreatePolicy";
+import EditPolicy from "./pages/fees-policy/EditPolicy";
+
+import SchoolUserListing from "./pages/school-users/Index";
+
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("token");
@@ -155,6 +168,23 @@ export default function App() {
                 <Route path="/transport/edit/:id" element={<EditRoute />} />
 
                 <Route path="/families" element={<FamilyListing />} />
+
+
+                <Route path="/student-discount" element={<ActiveDiscounts />} />
+
+                <Route path="/student-fees" element={<StudentFees />} />
+
+                <Route path="/student-discount" element={<ActiveDiscounts />} />
+
+                <Route path="/penalty-rules" element={<PenaltyRules />} />
+                <Route path="/penalty-rules/create" element={<CreatePenaltyRule />} />
+                <Route path="/penalty-rules/edit/:id" element={<EditPenaltyRule />} />
+
+                <Route path="/fee-policies" element={<FeePolicies />} />
+                <Route path="/fee-policies/create" element={<CreatePolicy />} />
+                <Route path="/fee-policies/edit/:id" element={<EditPolicy />} />
+
+                <Route path="/school/users" element={<SchoolUserListing />} />
 
 
             </Routes>

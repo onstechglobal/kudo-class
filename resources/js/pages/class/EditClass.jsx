@@ -140,7 +140,7 @@ const EditClass = () => {
                   />
 
                   {/* NUMERIC VALUE */}
-                  <Input
+                  {/* <Input
                     label="Numeric Value"
                     name="numeric_value"
                     type="number"
@@ -149,16 +149,16 @@ const EditClass = () => {
                     onChange={handleChange}
                     error={errors.numeric_value}
                     info="Used for sorting"
-                  />
+                  /> */}
 
                   {/* DEPARTMENT */}
-                  <CustomSelect
+                  {/* <CustomSelect
                     label="Department/Category"
                     options={departmentOptions}
                     value={formData.department}
                     onChange={(val) => handleSelectChange('department', val)}
                     error={errors.department}
-                  />
+                  /> */}
 
                   {/* STATUS */}
                   <CustomSelect

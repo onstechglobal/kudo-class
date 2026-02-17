@@ -17,8 +17,8 @@ class ClassModel extends Model
         return DB::table($this->table)->insert([
             'school_id'     => $data['school_id'], // Dynamic from local storage
             'class_name'    => $data['class_name'],
-            'numeric_value' => $data['numeric_value'],
-            'department'    => $data['department'], 
+            // 'numeric_value' => $data['numeric_value'],
+            // 'department'    => $data['department'], 
             'class_order'   => $data['class_order'],
             'status'        => $data['status'],
             'created_at'    => now()
@@ -70,8 +70,8 @@ class ClassModel extends Model
             ->where('class_id', $data['class_id'])
             ->update([
                 'class_name'    => $data['class_name'],
-                'numeric_value' => $data['numeric_value'],
-                'department'    => $data['department'],
+                // 'numeric_value' => $data['numeric_value'],
+                // 'department'    => $data['department'],
                 'class_order'   => $data['class_order'],
                 'status'        => $data['status'],
                 //'updated_at'    => now()

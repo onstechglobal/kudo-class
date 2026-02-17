@@ -55,10 +55,15 @@ class AcademicModel
 
     /* ====== INSERT NEW ACADEMIC YEAR ========= */
     public function insertAcademicYear($data) {
+
+		$startYear = date('Y', strtotime($data['start_date']));
+		$endYear   = date('Y', strtotime($data['end_date']));
+		$yearName  = $startYear . '-' . $endYear;
+
         return DB::table($this->table)->insert([
             'academic_year_id' => null, // Auto-increment
             'school_id'        => $data['school_id'],
-            'year_name'        => $data['year_name'],
+            'year_name'        => $yearName,
             'start_date'       => $data['start_date'],
             'end_date'         => $data['end_date'],
             // Mapping frontend 'active'/'inactive' to DB '1'/'0'
@@ -66,7 +71,6 @@ class AcademicModel
             'created_at'       => now(),
         ]);
     }
-	
 	
 	public function getById($id) {
 		return DB::table($this->table)->where('academic_year_id', $id)->first();
