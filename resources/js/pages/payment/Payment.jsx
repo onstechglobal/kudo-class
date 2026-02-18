@@ -6,10 +6,10 @@ import loadRazorpay from "../../helpers/loadRazorpay";
 
 const Payment = () => {
 
-    const studentId = 1; // dynamic later
     const user = JSON.parse(localStorage.getItem("user"));
     const isSchool = user?.role_id === 1 || user?.role_id === 2;
     const isParent = user?.role_id === 4;
+    const studentId = user?.student_id ?? null;
 
     const [activeTab, setActiveTab] = useState(
         user?.role_id === 1 || user?.role_id === 2 ? 'history' : 'pending'

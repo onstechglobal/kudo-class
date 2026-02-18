@@ -29,7 +29,7 @@ export const SIDEBAR_MENU = {
             items: [
                 { title: 'Fee Structures', path: '/fee-structure', permission: 'Fee Structure' },
                 { title: 'Student Fees', path: '/student-fees' },
-                { title: 'Payments', path: '/payment', permission: 'Payment' },
+                { title: 'Payments', path: '/receipts', permission: 'Payment' },
                 { title: 'Discounts & Penalties', path: '/student-discount' },
                 { title: 'Transport', path: '/transport' },
             ]
@@ -50,7 +50,7 @@ export const SIDEBAR_MENU = {
         {
             type: 'dropdown', title: 'Settings', key: 'settings',
             items: [
-               
+
                 { title: 'Fee Policies', path: '/fee-policies' },
                 { title: 'Discount Rules', path: '/discounts' },
                 { title: 'Penalty Rules', path: '/penalty-rules' },
@@ -100,7 +100,7 @@ export const SIDEBAR_MENU = {
             items: [
                 { title: 'Fee Structures', path: '/fee-structure', permission: 'Fee Structure' },
                 { title: 'Student Fees', path: '/student-fees' },
-                { title: 'Payments', path: '/payment', permission: 'Payment' },
+                { title: 'Payments', path: '/receipts', permission: 'Payment' },
                 { title: 'Discounts & Penalties', path: '/student-discount' },
                 { title: 'Transport', path: '/transport' },
             ]
@@ -126,6 +126,14 @@ export const SIDEBAR_MENU = {
                 { title: 'Penalty Rules', path: '/penalty-rules' },
                 { title: 'Users & Roles', path: '/school/users' },
                 { title: 'Audit Logs', path: '/audit-logs' },
+            ]
+        },
+        {
+            type: 'dropdown',
+            title: 'Profile',
+            key: 'profile_school',
+            items: [
+                { title: 'My Profile', path: '/edit-school-profile' },
             ]
         }
     ],
@@ -190,7 +198,7 @@ export const SIDEBAR_MENU = {
             items: [
                 { title: 'Fees', path: '/student-fees' },
                 { title: 'Payments', path: '/payment' },
-                { title: 'Receipts', path: '/parent/receipts' },
+                { title: 'Receipts', path: '/receipts' },
             ]
         },
         {

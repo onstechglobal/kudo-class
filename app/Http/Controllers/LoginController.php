@@ -22,11 +22,13 @@ class LoginController extends Controller{
 			'password' => 'required'
 		]);
 		
-		if(!empty($request['schoolcode'])){
-			$user = $this->model->getUserByEmailapp($request->all());
-		}else{
-			$user = $this->model->getUserByEmail($request->email);
-		}
+		$activeStudentId = null;
+ 
+        if(!empty($request['schoolcode'])){
+            $user = $this->model->getUserByEmailapp($request->all());
+        }else{
+            $user = $this->model->getUserByEmail($request->email);
+        }
 
 		if (!$user || !Hash::check($request->password, $user->password)) {
 			return response()->json([
@@ -34,6 +36,12 @@ class LoginController extends Controller{
 				'message' => 'Invalid email or password'
 			], 401);
 		}
+		
+		  if(empty($request['schoolcode'])){
+            if ($user->role_id == 4) {
+                $activeStudentId = $this->model->getActiveStudentIdByFamily($user->family_id);
+            }
+        }
 
 		//SESSION LOGIN
 		session([
@@ -47,19 +55,22 @@ class LoginController extends Controller{
 		$permissions = !empty($permissions) ? $permissions : [];
 
 		return response()->json([
-			'status' => true,
-			'message' => 'Login successful',
-			'user' => [
-				'id'          => $user->user_id,
-				'username'    => $user->username,
-				'name'   	  => $user->name ?? 'User',
-				'email'       => $user->email,
-				'school_id'   => $user->school_id,
-				'role'        => !empty($user->role_name) ? $user->role_name : '',
-				'role_id'     => $user->role_id,
-				'permissions' => $permissions
-			]
-		]);
+            'status' => true,
+            'message' => 'Login successful',
+            'user' => [
+                'id'          => $user->user_id,
+                'username'    => $user->username,
+                'name'        => $user->name ?? 'User',
+                'email'       => $user->email,
+                'school_id'   => $user->school_id,
+                'role'        => !empty($user->role_name) ? $user->role_name : '',
+                'role_id'     => $user->role_id,
+                'teacher_id'  => $user->teacher_id ?? null,
+                'parent_id'   => $user->parent_id ?? null,
+                'student_id'  => $activeStudentId,
+                'permissions' => $permissions
+            ]
+        ]);
 	}
  
 }

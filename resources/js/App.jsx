@@ -60,6 +60,7 @@ import AdmissionForm from "./pages/admission/AdmissionForm";
 import AcademicsManager from "./components/common/AcademicsManager";
 
 import FamilyListing from "./pages/family/FamilyListing";
+import EditFamily from "./pages/family/EditFamily";
 
 import Discounts from "./pages/discounts/Index";
 import AddDiscount from "./pages/discounts/AddDiscount";
@@ -85,6 +86,11 @@ import CreatePolicy from "./pages/fees-policy/CreatePolicy";
 import EditPolicy from "./pages/fees-policy/EditPolicy";
 
 import SchoolUserListing from "./pages/school-users/Index";
+
+import Receipts from "./pages/receipts/Receipts";
+import View from "./pages/student-fees/View";
+
+import EditProfile from "./pages/school-profile-edit";
 
 
 function ProtectedRoute({ children }) {
@@ -168,11 +174,13 @@ export default function App() {
                 <Route path="/transport/edit/:id" element={<EditRoute />} />
 
                 <Route path="/families" element={<FamilyListing />} />
+                <Route path="/families/edit/:id" element={<EditFamily />} />
 
 
                 <Route path="/student-discount" element={<ActiveDiscounts />} />
 
                 <Route path="/student-fees" element={<StudentFees />} />
+                <Route path="/student-fees/:id" element={<View />} />
 
                 <Route path="/student-discount" element={<ActiveDiscounts />} />
 
@@ -185,6 +193,10 @@ export default function App() {
                 <Route path="/fee-policies/edit/:id" element={<EditPolicy />} />
 
                 <Route path="/school/users" element={<SchoolUserListing />} />
+
+                <Route path="/receipts" element={<Receipts />} />
+
+                <Route path="/edit-school-profile" element={<EditProfile />} />
 
 
             </Routes>

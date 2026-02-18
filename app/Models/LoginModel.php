@@ -7,14 +7,31 @@ use Illuminate\Support\Facades\DB;
 class LoginModel{
 
     /* GET USER BY EMAIL */
-	public function getUserByEmail($email) {
-		return DB::table('tb_users as u')
-			->leftJoin('tb_roles as r', 'u.role_id', '=', 'r.role_id')
-			->where('u.email', $email)
-			->where('u.status', 'active')
-			->select('u.*', 'r.role_name')
-			->first();
-	}
+	public function getUserByEmail($email){
+        return DB::table('tb_users as u')
+            ->leftJoin('tb_roles as r', 'u.role_id', '=', 'r.role_id')
+            ->leftJoin('tb_teachers as t', 't.user_id', '=', 'u.user_id')
+            ->leftJoin('tb_parents as p', 'p.user_id', '=', 'u.user_id')
+            ->where('u.email', $email)
+            ->where('u.status', 'active')
+            ->select(
+                'u.*',
+                'r.role_name',
+                't.teacher_id',
+                'p.parent_id',
+                'p.family_id'
+            )
+            ->first();
+    }
+ 
+    public function getActiveStudentIdByFamily($familyId){
+        return DB::table('tb_students')
+            ->where('family_id', $familyId)
+            ->where('status', 'active')
+            ->orderBy('student_id') // optional
+            ->value('student_id');
+    }
+	
 	
 	public function getUserByEmailapp(array $data){
 		if($data['accounttype'] == 'Teacher'){

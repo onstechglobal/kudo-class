@@ -6,30 +6,45 @@ import { SIDEBAR_MENU } from "./sidebarConfig";
 import "../../style.css";
 
 export default function Sidebar({ open, onClose }) {
-  const location = useLocation();
-  const userData = JSON.parse(localStorage.getItem("user") || "{}");
-  const roleId = parseInt(userData.role_id);
-  const permissions = userData.permissions || [];
+	const location = useLocation();
+	const userData = JSON.parse(localStorage.getItem("user") || "{}");
+	const roleId = parseInt(userData.role_id);
+	const permissions = userData.permissions || [];
+	
+	{/* 13-02-2026 */}
+	// 1. Changed state to an object to track each menu independently
+	{/* const [menuOpen, setMenuOpen] = useState({}); */}
+	
+	// 1. Initialize state once based on the CURRENT URL to avoid the "flash"
+	const [menuOpen, setMenuOpen] = useState(() => {
+	  const currentPath = window.location.pathname;
+	  const initialState = {};
+	  
+	  Object.values(SIDEBAR_MENU).flat().forEach(menu => {
+		if (menu.type === "dropdown" && menu.items.some(sub => currentPath.startsWith(sub.path))) {
+		  initialState[menu.key] = true;
+		}
+	  });
+	  return initialState;
+	});
+	{/* 13-02-2026 */}
 
-  // 1. Changed state to an object to track each menu independently
-  const [menuOpen, setMenuOpen] = useState({});
+	// 2. Auto-open logic: Detect active route on load/refresh and set that key to true
+	useEffect(() => {
+		const currentPath = location.pathname;
+		const activeMenu = (SIDEBAR_MENU[roleId] || []).find(
+		  (menu) =>
+			menu.type === "dropdown" &&
+			menu.items.some((sub) => currentPath.startsWith(sub.path))
+		);
 
-  // 2. Auto-open logic: Detect active route on load/refresh and set that key to true
-  useEffect(() => {
-    const currentPath = location.pathname;
-    const activeMenu = (SIDEBAR_MENU[roleId] || []).find(
-      (menu) =>
-        menu.type === "dropdown" &&
-        menu.items.some((sub) => currentPath.startsWith(sub.path))
-    );
-
-    if (activeMenu) {
-      setMenuOpen((prev) => ({
-        ...prev,
-        [activeMenu.key]: true,
-      }));
-    }
-  }, [roleId]); // Only runs on initial load or role change
+		if (activeMenu) {
+		  setMenuOpen((prev) => ({
+			...prev,
+			[activeMenu.key]: true,
+		  }));
+		}
+	}, [roleId]); // Only runs on initial load or role change
 
   const hasPermission = (moduleName) => {
     if (roleId === 1 || roleId === 2) return true;
@@ -135,25 +150,40 @@ export default function Sidebar({ open, onClose }) {
                       }`}
                     />
                   </button>
-
-                  <div
-                    className={`ml-4 border-l-2 border-white/10 overflow-hidden transition-all duration-300 ${
-                      isOpen
-                        ? "max-h-[500px] opacity-100 mt-1"
-                        : "max-h-0 opacity-0"
-                    }`}
-                  >
-                    {filteredSubItems.map((sub, sIdx) => (
-                      <NavLink
-                        key={sIdx}
-                        to={sub.path}
-                        onClick={onClose}
-                        className={subLinkClass}
-                      >
-                        {sub.title}
-                      </NavLink>
-                    ))}
-                  </div>
+					{/* 13-02-2026 */}
+					<div
+					  className={`ml-4 border-l-2 border-white/10 transition-[grid-template-rows,opacity] duration-300 grid ${
+						isOpen ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
+					  }`}
+					>
+					  <div className="overflow-hidden">
+						{filteredSubItems.map((sub, sIdx) => (
+						  <NavLink key={sIdx} to={sub.path} className={subLinkClass}>
+							{sub.title}
+						  </NavLink>
+						))}
+					  </div>
+					</div>
+					{/* 13-02-2026 */}
+					
+					{/* <div
+						className={`ml-4 border-l-2 border-white/10 overflow-hidden transition-all duration-300 ${
+						  isOpen
+							? "max-h-[500px] opacity-100 mt-1"
+							: "max-h-0 opacity-0"
+						}`}
+					  >
+						{filteredSubItems.map((sub, sIdx) => (
+						  <NavLink
+							key={sIdx}
+							to={sub.path}
+							onClick={onClose}
+							className={subLinkClass}
+						  >
+							{sub.title}
+						  </NavLink>
+						))}
+					</div> */}
                 </div>
               );
             }

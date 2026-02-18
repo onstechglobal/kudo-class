@@ -25,4 +25,13 @@ class StudentFeeController extends Controller
             ]);
         }
     }
+
+    public function show($studentId){
+        $data = StudentFeeModel::getStudentFeeDetails($studentId);
+
+        return response()->json([
+            'status' => true,
+            'data' => $data
+        ]);
+    }
 }

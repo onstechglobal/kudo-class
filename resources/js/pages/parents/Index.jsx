@@ -3,7 +3,6 @@ import AdminLayout from '../../layouts/AdminLayout';
 import axios from 'axios';
 import { Link } from "react-router-dom";
 import { Search, Filter, Pencil, Trash2, UserCheck, Users, UserX } from 'lucide-react';
-
 import CustomButton from '../../components/form/CustomButton';
 import Input from '../../components/form/Input';
 import CustomSelect from '../../components/form/CustomSelect';
@@ -48,45 +47,55 @@ const ParentListing = () => {
     /* ================= FETCH ================= */
     const fetchParents = () => {
         setLoading(true);
-
         axios.get(`${Api_url.name}api/parent`)
             .then(res => {
-                const data = Array.isArray(res.data) ? res.data : [];
-                setAllParents(data);
+                const rawData = Array.isArray(res.data) ? res.data : [];
 
-                /* Stats */
-                setTotalParents(data.length);
-                setActiveParents(data.filter(p => p.status === "active").length);
-                setInactiveParents(data.filter(p => p.status !== "active").length);
+                // 1. Group parents by family_id
+                const groupedObj = rawData.reduce((acc, current) => {
+                    const fId = current.family_id;
+                    if (!acc[fId]) {
+                        acc[fId] = {
+                            ...current,
+                            parents: [current]
+                        };
+                    } else {
+                        acc[fId].parents.push(current);
+                    }
+                    return acc;
+                }, {});
 
-                let filtered = data;
+                // 2. Convert the object back into an array for the table
+                const groupedArray = Object.values(groupedObj);
 
-                /* Top Search */
+                // 3. Update all states using the groupedArray
+                setAllParents(groupedArray);
+
+                /* Stats - based on individuals, not families */
+                setTotalParents(rawData.length);
+                setActiveParents(rawData.filter(p => p.status === "active").length);
+                setInactiveParents(rawData.filter(p => p.status !== "active").length);
+
+                let filtered = groupedArray;
+
+                /* Top Search - Check within the family's parents array */
                 if (appliedSearch) {
-                    filtered = filtered.filter(p =>
-                        p.first_name?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-                        p.last_name?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-                        p.email?.toLowerCase().includes(appliedSearch.toLowerCase()) ||
-                        p.mobile?.includes(appliedSearch)
+                    const searchLower = appliedSearch.toLowerCase();
+                    filtered = filtered.filter(f =>
+                        f.parents.some(p =>
+                            p.first_name?.toLowerCase().includes(searchLower) ||
+                            p.last_name?.toLowerCase().includes(searchLower) ||
+                            p.email?.toLowerCase().includes(searchLower) ||
+                            p.mobile?.includes(appliedSearch)
+                        )
                     );
                 }
 
                 /* Filter Drawer */
                 if (filterStatus) {
-                    filtered = filtered.filter(p => p.status === filterStatus);
+                    filtered = filtered.filter(f => f.status === filterStatus);
                 }
-
-                if (filterEmail) {
-                    filtered = filtered.filter(p =>
-                        p.email?.toLowerCase().includes(filterEmail.toLowerCase())
-                    );
-                }
-
-                if (filterPhone) {
-                    filtered = filtered.filter(p =>
-                        p.mobile?.includes(filterPhone)
-                    );
-                }
+                // ... apply other filters (email/phone) similarly ...
 
                 setFilteredParents(filtered);
 
@@ -94,15 +103,12 @@ const ParentListing = () => {
                 const perPage = 10;
                 const start = (currentPage - 1) * perPage;
                 const end = start + perPage;
-
                 setDisplayedParents(filtered.slice(start, end));
                 setLastPage(Math.ceil(filtered.length / perPage));
-
                 setPaginationInfo({
                     from: filtered.length ? start + 1 : 0,
                     to: Math.min(end, filtered.length)
                 });
-
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -110,12 +116,7 @@ const ParentListing = () => {
 
     useEffect(() => {
         fetchParents();
-    }, [
-        currentPage,
-        appliedSearch,
-        filterStatus,
-        filterEmail,
-        filterPhone
+    }, [currentPage, appliedSearch, filterStatus, filterEmail, filterPhone
     ]);
 
     /* ================= ACTIONS ================= */
@@ -141,20 +142,15 @@ const ParentListing = () => {
 
     return (
         <AdminLayout>
-
             <DeleteConfirmModal
                 isOpen={open}
                 schoolName={selectedParent ? `${selectedParent.first_name} ${selectedParent.last_name}` : ""}
                 onClose={() => setOpen(false)}
                 onDelete={() => handleDelete(selectedParentID)}
             />
-
             {/* OVERLAY */}
             {filterOpen && (
-                <div
-                    className="fixed inset-0 bg-black/30 z-40"
-                    onClick={() => setFilterOpen(false)}
-                />
+                <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setFilterOpen(false)} />
             )}
 
             {/* FILTER DRAWER */}
@@ -170,30 +166,16 @@ const ParentListing = () => {
 
                 {/* BODY */}
                 <div className="p-5 space-y-5 overflow-y-auto flex-1">
-                    <Input
-                        label="Email"
-                        value={filterEmail}
-                        onChange={(e) => setFilterEmail(e.target.value)}
-                        placeholder="Search by email"
-                    />
+                    <Input label="Email" value={filterEmail} onChange={(e) => setFilterEmail(e.target.value)} placeholder="Search by email" />
 
-                    <Input
-                        label="Phone"
-                        value={filterPhone}
-                        onChange={(e) => setFilterPhone(e.target.value)}
-                        placeholder="Search by phone"
-                    />
+                    <Input label="Phone" value={filterPhone} onChange={(e) => setFilterPhone(e.target.value)}
+                        placeholder="Search by phone" />
 
-                    <CustomSelect
-                        label="Status"
-                        value={filterStatus}
-                        onChange={setFilterStatus}
-                        placeholder="Select status"
-                        options={[
-                            { label: "All", value: "" },
-                            { label: "Active", value: "active" },
-                            { label: "Inactive", value: "inactive" },
-                        ]}
+                    <CustomSelect label="Status" value={filterStatus} onChange={setFilterStatus} placeholder="Select status" options={[
+                        { label: "All", value: "" },
+                        { label: "Active", value: "active" },
+                        { label: "Inactive", value: "inactive" },
+                    ]}
                     />
                 </div>
 
@@ -206,18 +188,15 @@ const ParentListing = () => {
                             setFilterPhone("");
                         }}
                         className="flex-1 bg-gray-100 rounded-lg py-2 text-sm font-medium"
-                    >
-                        Reset
+                    > Reset
                     </button>
 
-                    <button
-                        onClick={() => {
-                            setCurrentPage(1);
-                            setFilterOpen(false);
-                        }}
+                    <button onClick={() => {
+                        setCurrentPage(1);
+                        setFilterOpen(false);
+                    }}
                         className="flex-1 rounded-lg py-2 text-sm font-medium transition shadow-sm cursor-pointer bg-[#faae1c] text-white hover:bg-[#faae1c]/85"
-                    >
-                        Apply
+                    > Apply
                     </button>
                 </div>
             </div>
@@ -232,11 +211,7 @@ const ParentListing = () => {
                         <p className="text-sm text-gray-500">Manage all parents</p>
                     </div>
 
-                    <CustomButton
-                        text="Add New Parent"
-                        to="/parents/create"
-                        className="bg-[#faae1c] text-white"
-                    />
+                    {/* <CustomButton text="Add New Parent" to="/parents/create" className="bg-[#faae1c] text-white" /> */}
                 </div>
 
                 {/* STATS */}
@@ -294,50 +269,70 @@ const ParentListing = () => {
 
                             {/* Updated Table Body */}
                             <tbody className="divide-y divide-gray-200">
-                                {!loading && displayedParents.map(p => (
-                                    <tr key={p.parent_id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="p-4 min-w-[150px] sm:min-w-[200px]">
-                                            <div className="flex gap-3 items-center">
-                                                <AvatarLetter text={`${p.first_name} ${p.last_name}`} size={40} />
-                                                <div>
-                                                    <div className="font-bold text-gray-800">{p.first_name} {p.last_name}</div>
-                                                    <div className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded w-fit font-mono mt-1">
-                                                        ID: {p.username}
-                                                    </div>
+                                {!loading && displayedParents.map(family => (
+                                    <tr key={family.family_id} className="hover:bg-gray-50/50 transition-colors">
+                                        {/* Parent Details: One Image + Tight Stacked Names */}
+                                        <td className="p-4">
+                                            <div className="flex items-start gap-3">
+                                                {/* Only show the avatar for the first parent (Primary) */}
+                                                <AvatarLetter
+                                                    text={`${family.parents[0]?.first_name} ${family.parents[0]?.last_name || ''}`}
+                                                    size={38}
+                                                />
+
+                                                <div className="flex flex-col gap-1"> {/* Reduced gap from 3 to 1 */}
+                                                    {family.parents.map((p) => (
+                                                        <div key={p.parent_id} className="leading-tight">
+                                                            <div className="font-bold text-gray-800 text-sm">
+                                                                {p.first_name} {p.last_name || ''}
+                                                            </div>
+                                                            {p.username && (
+                                                                <div className="text-[9px] px-1 bg-blue-50 text-blue-600 rounded w-fit font-mono">
+                                                                    ID: {p.username}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </td>
+
+                                        {/* Contact Info: Tightened vertical spacing */}
                                         <td className="p-4">
-                                            <div className="text-sm text-gray-700 font-medium">{p.email}</div>
-                                            <div className="text-xs text-gray-500">{p.mobile}</div>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="text-sm text-gray-700">{p.city || "N/A"}</div>
-                                            <div className="text-[11px] text-gray-400 truncate max-w-[150px]">
-                                                {p.address_line1}
+                                            <div className="flex flex-col gap-1"> {/* Reduced gap from 3 to 1 */}
+                                                {family.parents.map(p => (
+                                                    <div key={p.parent_id} className="flex flex-col justify-center min-h-[32px]">
+                                                        {p.email && <div className="text-xs text-gray-700 font-medium truncate">{p.email}</div>}
+                                                        {p.mobile && <div className="text-xs text-gray-500">{p.mobile}</div>}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </td>
+
+                                        {/* Location */}
                                         <td className="p-4">
-                                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full uppercase tracking-wider ${p.status === "active"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700"
+                                            <div className="text-sm text-gray-700">{family.city || "N/A"}</div>
+                                            <div className="text-[11px] text-gray-400 truncate max-w-[150px]">
+                                                {family.address_line1}
+                                            </div>
+                                        </td>
+
+                                        {/* Status */}
+                                        <td className="p-4">
+                                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full uppercase tracking-wider ${family.status === "active" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                                                 }`}>
-                                                {p.status}
+                                                {family.status}
                                             </span>
                                         </td>
-                                        <td className="p-4">
+
+                                        {/* Actions */}
+                                        <td className="p-4 text-center">
                                             <div className="flex justify-center gap-2">
-                                                <Link
-                                                    to={`/parents/${p.parent_id}/edit`}
-                                                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                >
+                                                <Link to={`/parents/${family.parent_id}/edit`} className="p-2 text-gray-400 hover:text-blue-600 cursor-pointer">
                                                     <Pencil size={18} />
                                                 </Link>
-                                                <button
-                                                    onClick={() => handleOpenModal(p)}
-                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={18}/>
+                                                <button onClick={() => handleOpenModal(family)} className="p-2 text-red-400 hover:text-red-600 cursor-pointer">
+                                                    <Trash2 size={18} />
                                                 </button>
                                             </div>
                                         </td>

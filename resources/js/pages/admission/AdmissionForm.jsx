@@ -34,6 +34,7 @@ const AdmissionForm = () => {
     parentEmail: '',
     parentType: 'Normal',
     studentName: '',
+    studentLastName: '',
     lastName: '',
     dob: '',
     studentClass: '',
@@ -93,9 +94,12 @@ const AdmissionForm = () => {
   ];
 
 
+
   const calculateFees = () => {
     let academicBase = 0;
+    let actualMonths = 1; // Default to 1 if no monthly frequency is found
 
+    // 1. Calculate Academic Fees and determine the month multiplier
     classFees.forEach(fee => {
       const baseAmount = parseFloat(fee.amount) || 0;
 
@@ -106,23 +110,28 @@ const AdmissionForm = () => {
         let monthsCount = (sessionEnd.getFullYear() - today.getFullYear()) * 12;
         monthsCount += sessionEnd.getMonth() - today.getMonth() + 1;
 
-        const actualMonths = Math.max(0, monthsCount);
-
+        actualMonths = Math.max(0, monthsCount);
         academicBase += baseAmount * actualMonths;
       } else {
         academicBase += baseAmount;
       }
     });
 
-    const transport = parseFloat(formData.transportRoute) || 0;
+    // 2. Calculate Transport Fees (Multiplied by the same months)
+    const transportMonthlyRate = parseFloat(formData.transportRoute) || 0;
+    const totalTransport = transportMonthlyRate > 0 ? transportMonthlyRate * actualMonths : 0;
+
+    // 3. Calculate Discounts (Usually applied only to academic base)
     let discount = 0;
     if (formData.parentType === "Teacher") discount = academicBase * 0.15;
     else if (formData.parentType === "Staff") discount = academicBase * 0.10;
+
     return {
       academicBase,
       discount,
-      transport,
-      total: academicBase - discount + transport
+      transport: totalTransport,
+      multiplier: actualMonths, // exported to show in UI
+      total: academicBase - discount + totalTransport
     };
   };
 
@@ -227,6 +236,7 @@ const AdmissionForm = () => {
     validateField(name, newValue);
   };
 
+
   const nextStep = async () => {
     if (!validateStep(currentStep)) return;
     if (currentStep < 5) {
@@ -237,12 +247,18 @@ const AdmissionForm = () => {
       try {
         setIsSubmitting(true);
         const user = JSON.parse(localStorage.getItem("user"));
-        const response = await axios.post(`api/admissions`, {
+
+        // PREPARE THE DATA FOR DATABASE
+        const payload = {
           ...formData,
+          transportRoute: fees.transport.toString(),
           school_id: user.school_id,
           fee_summary: fees,
           fee_details: classFees
-        });
+        };
+
+        const response = await axios.post(`api/admissions`, payload);
+
         if (response.data.success) {
           alert("Success! Admission complete.");
           window.location.reload();
@@ -254,6 +270,7 @@ const AdmissionForm = () => {
       }
     }
   };
+
 
   return (
     <AdminLayout>
@@ -320,6 +337,22 @@ const AdmissionForm = () => {
                       onChange={handleChange}
                       error={errors.city}
                     />
+                    <Input
+                      label="State"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      error={errors.state}
+                    />
+
+                    <Input
+                      label="District"
+                      name="district"
+                      value={formData.district}
+                      onChange={handleChange}
+                      error={errors.district}
+                    />
+
                     <Input
                       label="Pincode"
                       name="pincode"
@@ -401,11 +434,18 @@ const AdmissionForm = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                   <Input
-                    label="Student Name"
+                    label="Student First Name"
                     name="studentName"
                     value={formData.studentName}
                     onChange={handleChange}
                     error={errors.studentName}
+                  />
+
+                  <Input
+                    label="Student Last Name"
+                    name="studentLastName"
+                    value={formData.studentLastName}
+                    onChange={handleChange}
                   />
 
                   <div className="space-y-2 col-span-ful">
@@ -554,7 +594,15 @@ const AdmissionForm = () => {
                   <div className="space-y-3 pt-4 border-t border-slate-200">
                     <div className="flex justify-between"><span>Base Academic Fees</span><span className="font-bold">₹{fees.academicBase.toLocaleString()}</span></div>
                     {fees.discount > 0 && <div className="flex justify-between text-emerald-600 italic"><span>({formData.parentType}) Discount</span><span>- ₹{fees.discount.toLocaleString()}</span></div>}
-                    <div className="flex justify-between"><span>Transport Fee</span><span className="font-bold">₹{fees.transport.toLocaleString()}</span></div>
+
+                    <div className="flex justify-between">
+                      <span>
+                        Transport Fee
+                        {fees.transport > 0 && <span className="text-[10px] ml-2 text-slate-400">(₹{(parseFloat(formData.transportRoute)).toLocaleString()} × {fees.multiplier} months)</span>}
+                      </span>
+                      <span className="font-bold">₹{fees.transport.toLocaleString()}</span>
+                    </div>
+
                     <div className="flex justify-between text-xl font-black text-blue-600 pt-4 border-t border-dashed">
                       <span>Net Total</span>
                       <span>₹{fees.total.toLocaleString()}</span>

@@ -71,7 +71,9 @@ Route::middleware('auth.check')->group(function () {
 	
 	
 	Route::get('/get-families', [FamilyController::class, 'index']);
-	
+	Route::post('delete-family', [FamilyController::class, 'delete']);
+	Route::get('get-family-by-id/{id}', [FamilyController::class, 'getById']);
+	Route::post('update-family', [FamilyController::class, 'update']);
 	
 	
 	Route::get('/attendance/students', [AttendanceController::class, 'students']);
@@ -195,8 +197,10 @@ Route::middleware('auth.check')->group(function () {
     Route::delete('/fees-policy/{id}', [FeesPolicyController::class, 'destroy']);
  
 	Route::get('/student-fees', [StudentFeeController::class, 'index']);
+	Route::get('/student-fees/{studentId}', [StudentFeeController::class, 'show']);
 
 	Route::get('/invoice/{id}', [InvoiceController::class, 'download']);
+	
 
 });
 

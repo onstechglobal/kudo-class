@@ -99,20 +99,36 @@ class ParentModel
     /**
      * Parent listing (JOIN WITH USERS – SAME AS TEACHER)
      */
-    public function getAllParents(){
+    public function getAllParents11(){
 		return DB::table('tb_parents as p')
 			->join('tb_users as u', 'u.user_id', '=', 'p.user_id')
-			->leftJoin('tb_families as f', 'p.family_id', '=', 'f.id') // Add this join
+			->leftJoin('tb_families as f', 'p.family_id', '=', 'f.id')
 			->select(
-				'p.parent_id',
-				'p.first_name',
-				'p.last_name',
-				'p.email',
-				'p.mobile',
-				'p.status',
+				'p.*',
 				'u.username',
 				'f.city',           // New field
 				'f.address_line1'   // New field
+			)
+			->orderBy('p.parent_id', 'desc')
+			->get();
+	}
+	
+	
+	public function getAllParents() {
+		return DB::table('tb_parents as p')
+			// Use leftJoin here so parents without users aren't filtered out
+			->leftJoin('tb_users as u', 'u.user_id', '=', 'p.user_id')
+			
+			// Use leftJoin here so parents without family records aren't filtered out
+			->leftJoin('tb_families as f', 'p.family_id', '=', 'f.id')
+			
+			->select(
+				'p.*',                // All parent columns (12 rows)
+				'u.username',         // Will be NULL for the 5 parents without users
+				'f.address_line1',    // Family details
+				'f.city',
+				'f.state',
+				'f.pincode'
 			)
 			->orderBy('p.parent_id', 'desc')
 			->get();

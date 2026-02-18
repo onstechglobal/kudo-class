@@ -1,9 +1,8 @@
-// C:\xampp\htdocs\kudoclass\resources\js\pages\student-fees\StudentFees.jsx
-
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import AdminLayout from "@/layouts/AdminLayout";
 import Stat from "../../components/common/StatCard";
-import { Search, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle,Eye } from "lucide-react";
 import api from "../../helpers/api";
 
 const StudentFees = () => {
@@ -126,12 +125,8 @@ const StudentFees = () => {
                                     <th className="px-6 py-4">Name</th>
                                     <th className="px-6 py-4">Class</th>
                                     <th className="px-6 py-4">Section</th>
-                                    <th className="px-6 py-4">Fee Type</th>
-                                    <th className="px-6 py-4">Net Amount</th>
-                                    <th className="px-6 py-4">Paid</th>
-                                    <th className="px-6 py-4">Balance</th>
                                     <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4">Blocked</th>
+                                    <th className="p-4 text-center">Action</th>
                                 </tr>
                             </thead>
 
@@ -148,58 +143,41 @@ const StudentFees = () => {
                                         </td>
                                     </tr>
                                 ) : filteredData.length > 0 ? (
-                                    filteredData.map((fee) => (
-                                        <tr key={fee.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-sm text-gray-700">
-                                                <div className="flex items-center gap-3">
-                                                    <div>
-                                                        <div className="text-sm font-bold text-gray-800">{fee.student_name}</div>
-                                                        {/* <div className="text-xs text-gray-500">#{fee.admission_no}</div> */}
-                                                    </div>
+                                    filteredData.map((student) => (
+                                        <tr key={student.student_id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="p-4 text-sm font-bold text-gray-900">
+                                                {student.student_name}
+                                            </td>
+
+                                            <td className="p-4 text-sm text-gray-600">
+                                                {student.class_name}
+                                            </td>
+
+                                            <td className="p-4 text-sm text-gray-600">
+                                                {student.section_name}
+                                            </td>
+
+                                            <td className="p-4 text-sm text-gray-600">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                student.total_balance == 0
+                                                    ? "bg-green-100 text-green-800"
+                                                    : "bg-red-100 text-red-800"
+                                                }`}>
+                                                {student.total_balance == 0 ? "Paid" : "Pending"}
+                                                </span>
+                                            </td>
+
+                                            <td className="p-4">
+                                                <div className="flex justify-center items-center gap-3">
+                                                    <Link
+                                                        to={`/student-fees/${student.student_id}`}
+                                                        className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </Link>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {fee.class_name}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {fee.section_name}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm">
-                                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    {fee.fee_type}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm font-semibold text-gray-800">
-                                                ₹{fee.net_amount}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-green-600 font-semibold">
-                                                ₹{fee.paid_amount}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-red-600 font-semibold">
-                                                ₹{fee.balance}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                    fee.status === "paid"
-                                                        ? "bg-green-100 text-green-800"
-                                                        : fee.status === "partial"
-                                                        ? "bg-yellow-100 text-yellow-800"
-                                                        : "bg-red-100 text-red-800"
-                                                }`}>
-                                                    {fee.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {fee.is_blocked == 1 ? (
-                                                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                        Blocked
-                                                    </span>
-                                                ) : (
-                                                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                        Active
-                                                    </span>
-                                                )}
-                                            </td>
+
                                         </tr>
                                     ))
                                 ) : (

@@ -22,6 +22,7 @@ class AdmissionModel
                 'pincode'       => $data['pincode'] ?? '',
                 'country'       => 'India',
                 'created_at'    => now(),
+                'status'    => 'active',
             ]);
 
             // 2. Create User Account for Primary Parent
@@ -78,7 +79,7 @@ class AdmissionModel
                 'family_id'        => $familyId,
                 'academic_year_id' => $academicYearId, 
                 'first_name'       => $data['studentName'],
-                'last_name'        => $data['lastName'] ?? '',
+                'last_name'        => $data['studentLastName'] ?? '',
                 'dob'              => $data['dob'],
                 'class_id'         => $data['studentClass'],
                 'policy_id'        => $data['policy_id'],
@@ -122,6 +123,7 @@ class AdmissionModel
                     'contract_end_date'   => $fee['end_date'] ?? null,
                     'status'            => 'pending',
                     'created_at'        => now(),
+					'due_day'       => 1,
                 ];
             }
 
@@ -136,11 +138,11 @@ class AdmissionModel
                     'discount'          => '0.00',
                     'net_amount'        => (string)$data['transportRoute'],
                     'paid_amount'       => '0.00',
-                    'due_day'       => '1',
                     'contract_start_date' => now()->format('Y-m-d'),
                     'contract_end_date'   => $data['fee_details'][0]['end_date'] ?? null,
                     'status'            => 'pending',
                     'created_at'        => now(),
+					'due_day'       => 1,
                 ];
             }
 
